@@ -32,7 +32,7 @@ const Sidebar = ({ activeSection, setActiveSection }) => {
   return (
     <div className={`sidebar ${isCollapsed ? "collapsed" : ""}`}>
       <div className="sidebar-header">
-        {!isCollapsed && <h2>Lactic Acid Lab</h2>}
+        {!isCollapsed && <h2 className="font-poppins">Lactic Acid Lab.</h2>}
         <button className="collapse-btn" onClick={() => setIsCollapsed(!isCollapsed)}>
           {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
         </button>
@@ -43,7 +43,7 @@ const Sidebar = ({ activeSection, setActiveSection }) => {
           return (
             <button
               key={item.id}
-              className={`nav-item ${activeSection === item.id ? "active" : ""}`}
+              className={`nav-item ${activeSection === item.id ? "active" : ""} font-poppins`}
               onClick={() => setActiveSection(item.id)}
               title={isCollapsed ? item.label : ""}
             >

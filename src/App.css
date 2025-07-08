@@ -5,14 +5,14 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans",
-    "Droid Sans", "Helvetica Neue", sans-serif;
+  font-family: 'Poppins', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: #ffffff;
   color: #334155;
   min-height: 100vh;
 }
+
 
 .app {
   display: flex;
@@ -211,8 +211,9 @@ body {
 /* Modern Card-Based Table */
 .modern-table {
   background: transparent;
+  table-layout: fixed;
   border-radius: 0;
-  overflow: visible;
+  width: 100%;
 }
 
 .table-header {
@@ -231,17 +232,22 @@ body {
 }
 
 .header-cell {
-  padding: 0.75rem 0;
+  padding: 0.5rem 0.3rem;
   font-weight: 600;
   color: #64748b;
-  font-size: 0.875rem;
-  text-transform: uppercase;
+  font-size: 0.85rem;
   letter-spacing: 0.05em;
   position: relative;
-  display: flex;
+  display: block;
   align-items: center;
   gap: 0.5rem;
   text-align: left;
+}
+
+
+.header-cell, .row-cell {
+  word-wrap: break-word;
+  flex: 1 1 0;
 }
 
 .filter-header {
@@ -304,7 +310,7 @@ body {
 
 /* Card-Style Table Rows */
 .table-row {
-  display: grid;
+  display: flex;
   grid-template-columns: 2.5fr 1.2fr 1.2fr 1.2fr 1.2fr 1fr 80px;
   gap: 1rem;
   padding: 1.5rem;
@@ -317,8 +323,8 @@ body {
 }
 
 .table-row:hover {
-  border-color: #e2e8f0;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+  border-color: #3b82f6;
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
   transform: translateY(-1px);
 }
 
@@ -329,7 +335,9 @@ body {
 }
 
 .row-cell {
-  display: flex;
+  padding: 0.5rem 0.3rem;
+  overflow: hidden;
+  word-break: break-word;
   align-items: center;
   font-size: 0.875rem;
   text-align: left;
@@ -343,6 +351,7 @@ body {
   cursor: pointer;
   text-decoration: none;
   padding: 0;
+  font-family: poppins;
   font-size: 0.875rem;
   text-align: left;
   transition: color 0.2s ease;
@@ -451,7 +460,7 @@ body {
 /* Clean Icon-Only Action Buttons */
 .action-buttons {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.25rem;
   justify-content: center;
 }
 
@@ -486,10 +495,10 @@ body {
 .inline-edit-input,
 .inline-edit-select {
   width: 100%;
-  padding: 0.5rem;
+  padding: 0.3rem;
   border: 2px solid #e2e8f0;
   border-radius: 8px;
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   background: white;
   transition: border-color 0.2s ease;
 }
@@ -773,6 +782,45 @@ body {
   border-top: 2px solid #e2e8f0;
 }
 
+/* Inline Form Container */
+.form-container {
+  background: white;
+  border-radius: 16px;
+  border: 2px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  margin-top: 1rem;
+  transition: all 0.2s ease;
+}
+
+.form-header {
+  padding: 1.5rem 2rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-bottom: 1px solid #e2e8f0;
+  border-radius: 16px 16px 0 0;
+}
+
+.form-header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+}
+
+/* Form inside container adjustments */
+.form-container .form {
+  padding: 2rem;
+  margin: 0;
+}
+
+.form-container .form-actions {
+  border-top: 1px solid #e2e8f0;
+  margin-top: 2rem;
+  padding-top: 2rem;
+}
+
 /* Responsive Grid Adjustments */
 @media (max-width: 1400px) {
   .table-header,
@@ -897,6 +945,14 @@ body {
   }
 }
 
+.font-marcellus {
+  font-family: "Marcellus", sans-serif;
+}
+
+.font-poppins {
+  font-family: "Poppins", sans-serif;
+}
+
 /* Scrollbar Styling */
 ::-webkit-scrollbar {
   width: 8px;
@@ -916,3 +972,4 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
