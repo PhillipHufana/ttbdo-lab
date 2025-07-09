@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Search,
   Plus,
@@ -21,51 +21,60 @@ const Instruments = () => {
   const [detailItem, setDetailItem] = useState(null);
   const [editingRowId, setEditingRowId] = useState(null);
   const [editingData, setEditingData] = useState({});
-  const [showStatusFilter, setShowStatusFilter] = useState(false);
-  const [showConditionFilter, setShowConditionFilter] = useState(false);
-  const [showLocationFilter, setShowLocationFilter] = useState(false);
+  const [showFilters, setShowFilters] = useState({
+    location: false,
+    status: false,
+    condition: false,
+  });
   const [instruments, setInstruments] = useState([
     {
       id: 1,
-      instrument: "Digital Balance",
+      instrument: "1000 mL Rotary Flask",
       description: "Glassware",
-      location: "Lab Room 1",
-      quantity: 2,
-      status: "Active",
-      condition: "Excellent",
-      image: "/placeholder.svg?height=200&width=200",
-    },
-    {
-      id: 2,
-      instrument: "Spectrophotometer",
-      description: "Glassware",
-      location: "Instrument Room",
-      quantity: 1,
-      status: "Active",
-      condition: "Good",
-      image: "/placeholder.svg?height=200&width=200",
-    },
-    {
-      id: 3,
-      instrument: "Thermometer",
-      description: "Glassware",
-      location: "Lab Room 2",
-      quantity: 5,
-      status: "Inactive",
-      condition: "Fair",
-      image: "/placeholder.svg?height=200&width=200",
+      location: "Table 2, Cabinet 2",
+      quantity: "1 pc",
+      capacity: "1000 mL",
+      status: "Broken",
+      condition: "Poor",
+      remarks: "For Disposal",
     },
   ]);
 
-  const statuses = ["Active", "Inactive", "Under Calibration", "Retired"];
-  const conditions = ["Excellent", "Good", "Fair", "Poor", "Needs Repair"];
+  const statuses = [
+    "Opened",
+    "Unused",
+    "Sealed",
+    "Tip Chipped",
+    "Unopened",
+    "Broken",
+  ];
+  const conditions = ["Good", "Poor"];
   const locations = [
     "Lab Room 1",
     "Lab Room 2",
     "Instrument Room",
     "Storage",
     "Calibration Lab",
+    "Table 2, Cabinet 2",
   ];
+
+  const filterRefs = {
+    location: useRef(null),
+    status: useRef(null),
+    condition: useRef(null),
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      Object.entries(filterRefs).forEach(([key, ref]) => {
+        if (ref.current && !ref.current.contains(event.target)) {
+          setShowFilters((prev) => ({ ...prev, [key]: false }));
+        }
+      });
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const filteredInstruments = instruments.filter((item) => {
     const matchesSearch =
@@ -84,6 +93,58 @@ const Instruments = () => {
       matchesSearch && matchesStatus && matchesCondition && matchesLocation
     );
   });
+
+  const handleFilterChange = (filterType, value, checked) => {
+    switch (filterType) {
+      case "status":
+        setFilterStatus((prev) =>
+          checked ? [...prev, value] : prev.filter((v) => v !== value)
+        );
+        break;
+      case "condition":
+        setFilterCondition((prev) =>
+          checked ? [...prev, value] : prev.filter((v) => v !== value)
+        );
+        break;
+      case "location":
+        setFilterLocation((prev) =>
+          checked ? [...prev, value] : prev.filter((v) => v !== value)
+        );
+        break;
+      default:
+        break;
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "Opened":
+        return "status-opened";
+      case "Unused":
+        return "status-expired-sealed";
+      case "Sealed":
+        return "status-unopened";
+      case "Tip Chipped":
+        return "status-expired-opened";
+      case "Unopened":
+        return "status-unopened";
+      case "Broken":
+        return "status-expired-unopened";
+      default:
+        return "";
+    }
+  };
+
+  const getConditionColor = (condition) => {
+    switch (condition) {
+      case "Good":
+        return "status-opened";
+      case "Poor":
+        return "status-expired-unopened";
+      default:
+        return "";
+    }
+  };
 
   const handleAdd = () => {
     setEditingItem(null);
@@ -131,13 +192,6 @@ const Instruments = () => {
           item.id === editingItem.id ? { ...item, ...formData } : item
         )
       );
-    } else {
-      const newItem = {
-        id: Date.now(),
-        image: "/placeholder.svg?height=200&width=200",
-        ...formData,
-      };
-      setInstruments([...instruments, newItem]);
     }
     setShowForm(false);
     setEditingItem(null);
@@ -146,58 +200,6 @@ const Instruments = () => {
   const handleCancel = () => {
     setShowForm(false);
     setEditingItem(null);
-  };
-
-  const handleFilterChange = (filterType, value, checked) => {
-    switch (filterType) {
-      case "status":
-        setFilterStatus((prev) =>
-          checked ? [...prev, value] : prev.filter((item) => item !== value)
-        );
-        break;
-      case "condition":
-        setFilterCondition((prev) =>
-          checked ? [...prev, value] : prev.filter((item) => item !== value)
-        );
-        break;
-      case "location":
-        setFilterLocation((prev) =>
-          checked ? [...prev, value] : prev.filter((item) => item !== value)
-        );
-        break;
-    }
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "Active":
-        return "status-available";
-      case "Inactive":
-        return "status-low-stock";
-      case "Under Calibration":
-        return "status-in-use";
-      case "Retired":
-        return "status-disposed";
-      default:
-        return "";
-    }
-  };
-
-  const getConditionColor = (condition) => {
-    switch (condition) {
-      case "Excellent":
-        return "status-available";
-      case "Good":
-        return "status-in-use";
-      case "Fair":
-        return "status-low-stock";
-      case "Poor":
-        return "status-expired";
-      case "Needs Repair":
-        return "status-disposed";
-      default:
-        return "";
-    }
   };
 
   return (
@@ -241,7 +243,7 @@ const Instruments = () => {
               <div className="header-cell">
                 <span>Instrument</span>
               </div>
-               <div className="header-cell">
+              <div className="header-cell">
                 <span>Quantity</span>
               </div>
               <div className="header-cell">
@@ -249,49 +251,61 @@ const Instruments = () => {
               </div>
               <div
                 className="header-cell filter-header"
-                onClick={() => setShowLocationFilter(!showLocationFilter)}
+                ref={filterRefs.location}
+                onClick={() =>
+                  setShowFilters((prev) => ({
+                    ...prev,
+                    location: !prev.location,
+                  }))
+                }
               >
                 <span>Location</span>
                 <ChevronDown
                   size={16}
                   className={`filter-arrow ${
-                    showLocationFilter ? "rotated" : ""
+                    showFilters.location ? "rotated" : ""
                   }`}
                 />
-                {showLocationFilter && (
+                {showFilters.location && (
                   <div className="filter-dropdown">
-                    {locations.map((location) => (
-                      <label key={location} className="filter-option">
+                    {locations.map((loc) => (
+                      <label key={loc} className="filter-option">
                         <input
                           type="checkbox"
-                          checked={filterLocation.includes(location)}
+                          checked={filterLocation.includes(loc)}
                           onChange={(e) =>
                             handleFilterChange(
                               "location",
-                              location,
+                              loc,
                               e.target.checked
                             )
                           }
                         />
-                        <span>{location}</span>
+                        <span>{loc}</span>
                       </label>
                     ))}
                   </div>
                 )}
               </div>
-             
+
               <div
                 className="header-cell filter-header"
-                onClick={() => setShowStatusFilter(!showStatusFilter)}
+                ref={filterRefs.status}
+                onClick={() =>
+                  setShowFilters((prev) => ({
+                    ...prev,
+                    status: !prev.status,
+                  }))
+                }
               >
                 <span>Status</span>
                 <ChevronDown
                   size={16}
                   className={`filter-arrow ${
-                    showStatusFilter ? "rotated" : ""
+                    showFilters.status ? "rotated" : ""
                   }`}
                 />
-                {showStatusFilter && (
+                {showFilters.status && (
                   <div className="filter-dropdown">
                     {statuses.map((status) => (
                       <label key={status} className="filter-option">
@@ -314,31 +328,37 @@ const Instruments = () => {
               </div>
               <div
                 className="header-cell filter-header"
-                onClick={() => setShowConditionFilter(!showConditionFilter)}
+                ref={filterRefs.condition}
+                onClick={() =>
+                  setShowFilters((prev) => ({
+                    ...prev,
+                    condition: !prev.condition,
+                  }))
+                }
               >
                 <span>Condition</span>
                 <ChevronDown
                   size={16}
                   className={`filter-arrow ${
-                    showConditionFilter ? "rotated" : ""
+                    showFilters.condition ? "rotated" : ""
                   }`}
                 />
-                {showConditionFilter && (
+                {showFilters.condition && (
                   <div className="filter-dropdown">
-                    {conditions.map((condition) => (
-                      <label key={condition} className="filter-option">
+                    {conditions.map((cond) => (
+                      <label key={cond} className="filter-option">
                         <input
                           type="checkbox"
-                          checked={filterCondition.includes(condition)}
+                          checked={filterCondition.includes(cond)}
                           onChange={(e) =>
                             handleFilterChange(
                               "condition",
-                              condition,
+                              cond,
                               e.target.checked
                             )
                           }
                         />
-                        <span>{condition}</span>
+                        <span>{cond}</span>
                       </label>
                     ))}
                   </div>
@@ -401,7 +421,7 @@ const Instruments = () => {
                       item.location
                     )}
                   </div>
-                  
+
                   <div className="row-cell">
                     {editingRowId === item.id ? (
                       <select
@@ -501,13 +521,20 @@ const Instruments = () => {
             onClose={() => setDetailItem(null)}
             title="Instrument Details"
             fields={[
-              { label: "Instrument", value: detailItem.instrument },
+              // Identification
               { label: "Description", value: detailItem.description },
-              { label: "Location", value: detailItem.location },
-              { label: "Quantity", value: detailItem.quantity },
+
+              // Specifications
               { label: "Capacity", value: detailItem.capacity },
+              { label: "Quantity", value: detailItem.quantity },
+
+              // Status & Condition
               { label: "Status", value: detailItem.status },
               { label: "Condition", value: detailItem.condition },
+
+              // Location & Notes
+              { label: "Location", value: detailItem.location },
+              { label: "Remarks", value: detailItem.remarks },
             ]}
           />
         )}

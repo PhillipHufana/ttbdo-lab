@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Search,
   Plus,
@@ -16,6 +16,8 @@ const ChemicalReagents = () => {
   const [filterCategory, setFilterCategory] = useState([]);
   const [filterStatus, setFilterStatus] = useState([]);
   const [filterLocation, setFilterLocation] = useState([]);
+  const [filterExpirationMonth, setFilterExpirationMonth] = useState("");
+  const [showExpirationFilter, setShowExpirationFilter] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [detailItem, setDetailItem] = useState(null);
@@ -27,75 +29,43 @@ const ChemicalReagents = () => {
   const [reagents, setReagents] = useState([
     {
       id: 1,
-      chemicalName: "Sodium Chloride",
-      category: "Salt",
-      brand: "Sigma-Aldrich",
-      quantity: "500g",
-      containerType: "Bottle",
-      containerSize: "500ml",
-      form: "Solid",
-      dateReceived: "2024-01-15",
-      expirationDate: "2025-01-15",
-      dateOpened: "2024-02-01",
-      location: "Cabinet A1",
-      msds: "MSDS-001",
-      hazardLevel: "Low",
-      disposalMethod: "Standard waste",
-      status: "In Use",
-      image: "/placeholder.svg?height=200&width=200",
-    },
-    {
-      id: 2,
-      chemicalName: "Hydrochloric Acid",
-      category: "Acid",
-      brand: "Fisher Scientific",
-      quantity: "1L",
-      containerType: "Bottle",
-      containerSize: "1L",
+      chemicalName: "Lactic Acid 88% AR",
+      itemcode: "LA-2025-001",
+      category: "Lactic Acid",
+      brand: "Loba Chemie Pvt.Ltd",
+      quantity: "1",
+      containerType: "Plastic Jar",
+      containerSize: "500mL",
       form: "Liquid",
-      dateReceived: "2024-01-10",
-      expirationDate: "2024-12-10",
-      dateOpened: null,
-      location: "Fume Hood B",
-      msds: "MSDS-002",
-      hazardLevel: "High",
-      disposalMethod: "Acid neutralization",
-      status: "Available",
-      image: "/placeholder.svg?height=200&width=200",
-    },
-    {
-      id: 3,
-      chemicalName: "Ethanol",
-      category: "Solvent",
-      brand: "Merck",
-      quantity: "2.5L",
-      containerType: "Bottle",
-      containerSize: "2.5L",
-      form: "Liquid",
-      dateReceived: "2024-02-01",
-      expirationDate: "2025-02-01",
-      dateOpened: "2024-02-15",
-      location: "Cabinet C2",
-      msds: "MSDS-003",
-      hazardLevel: "Medium",
-      disposalMethod: "Solvent recovery",
-      status: "Low Stock",
-      image: "/placeholder.svg?height=200&width=200",
+      dateReceived: "2024-02-23",
+      dateOpened: "n.d.",
+      expirationDate: "2028-12",
+      location: "Table 2, Cabinet 4",
+      status: "Unopened",
+      remarks: "",
+      msds: "",
+      disposalMethod: "",
     },
   ]);
 
-  const categories = ["Salt", "Acid", "Base", "Solvent", "Indicator", "Buffer"];
-  const statuses = ["Available", "In Use", "Low Stock", "Expired", "Disposed"];
-  const locations = [
-    "Cabinet A1",
-    "Cabinet A2",
-    "Cabinet B1",
-    "Cabinet B2",
-    "Cabinet C1",
-    "Cabinet C2",
-    "Fume Hood A",
-    "Fume Hood B",
+  const categories = [
+    "Lactic Acid",
+    "Lactic Acid Fermentation",
+    "Polymerization",
+    "Filtration and Purification",
+    "Sugar Analysis",
+    "Others",
   ];
+
+  const statuses = [
+    "Opened",
+    "Unopened",
+    "Expired Opened",
+    "Expired Unopened",
+    "Expired Sealed",
+  ];
+
+  const locations = ["Table 2, Cabinet 4", "Shelf 2b", "Shelf 1d"];
 
   const filteredReagents = reagents.filter((reagent) => {
     const matchesSearch =
@@ -110,8 +80,44 @@ const ChemicalReagents = () => {
     const matchesLocation =
       filterLocation.length === 0 || filterLocation.includes(reagent.location);
 
-    return matchesSearch && matchesCategory && matchesStatus && matchesLocation;
+    const matchesExpiration =
+      !filterExpirationMonth ||
+      (reagent.expirationDate &&
+        reagent.expirationDate.startsWith(filterExpirationMonth));
+
+    return (
+      matchesSearch &&
+      matchesCategory &&
+      matchesStatus &&
+      matchesLocation &&
+      matchesExpiration
+    );
   });
+
+  const handleFilterChange = (filterType, value, checked) => {
+    switch (filterType) {
+      case "category":
+        setFilterCategory((prev) =>
+          checked ? [...prev, value] : prev.filter((item) => item !== value)
+        );
+        setShowCategoryFilter(false); 
+        break;
+      case "status":
+        setFilterStatus((prev) =>
+          checked ? [...prev, value] : prev.filter((item) => item !== value)
+        );
+        setShowStatusFilter(false); 
+        break;
+      case "location":
+        setFilterLocation((prev) =>
+          checked ? [...prev, value] : prev.filter((item) => item !== value)
+        );
+        setShowLocationFilter(false); 
+        break;
+      default:
+        break;
+    }
+  };
 
   const handleAdd = () => {
     setEditingItem(null);
@@ -161,13 +167,6 @@ const ChemicalReagents = () => {
           reagent.id === editingItem.id ? { ...reagent, ...formData } : reagent
         )
       );
-    } else {
-      const newReagent = {
-        id: Date.now(),
-        image: "/placeholder.svg?height=200&width=200",
-        ...formData,
-      };
-      setReagents([...reagents, newReagent]);
     }
     setShowForm(false);
     setEditingItem(null);
@@ -178,42 +177,52 @@ const ChemicalReagents = () => {
     setEditingItem(null);
   };
 
-  const handleFilterChange = (filterType, value, checked) => {
-    switch (filterType) {
-      case "category":
-        setFilterCategory((prev) =>
-          checked ? [...prev, value] : prev.filter((item) => item !== value)
-        );
-        break;
-      case "status":
-        setFilterStatus((prev) =>
-          checked ? [...prev, value] : prev.filter((item) => item !== value)
-        );
-        break;
-      case "location":
-        setFilterLocation((prev) =>
-          checked ? [...prev, value] : prev.filter((item) => item !== value)
-        );
-        break;
-    }
-  };
-
   const getStatusColor = (status) => {
     switch (status) {
-      case "Available":
-        return "status-available";
-      case "In Use":
-        return "status-in-use";
-      case "Low Stock":
-        return "status-low-stock";
-      case "Expired":
-        return "status-expired";
-      case "Disposed":
-        return "status-disposed";
+      case "Opened":
+        return "status-opened";
+      case "Unopened":
+        return "status-unopened";
+      case "Expired Opened":
+        return "status-expired-opened";
+      case "Expired Unopened":
+        return "status-expired-unopened";
+      case "Expired Sealed":
+        return "status-expired-sealed";
       default:
         return "";
     }
   };
+
+  const categoryRef = useRef(null);
+  const statusRef = useRef(null);
+  const locationRef = useRef(null);
+  const expirationRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (categoryRef.current && !categoryRef.current.contains(event.target)) {
+        setShowCategoryFilter(false);
+      }
+      if (statusRef.current && !statusRef.current.contains(event.target)) {
+        setShowStatusFilter(false);
+      }
+      if (locationRef.current && !locationRef.current.contains(event.target)) {
+        setShowLocationFilter(false);
+      }
+      if (
+        expirationRef.current &&
+        !expirationRef.current.contains(event.target)
+      ) {
+        setShowExpirationFilter(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   return (
     <div className="reagents">
@@ -234,6 +243,7 @@ const ChemicalReagents = () => {
                 className="search-input"
               />
             </div>
+
             <button className="btn-primary" onClick={handleAdd}>
               <Plus size={20} />
               Add Chemical Reagent
@@ -256,27 +266,29 @@ const ChemicalReagents = () => {
               />
             </div>
           ) : (
-            // ✅ FULL CODE (with new columns added)
-
             <div className="modern-table">
               <div className="table-header">
                 {/* Existing Headers */}
                 <div className="header-cell">
                   <span className="text-center">Chemical Name</span>
                 </div>
-                <div
-                  className="header-cell filter-header"
-                  onClick={() => setShowCategoryFilter(!showCategoryFilter)}
-                >
-                  <span className="text-center">Category</span>
-                  <ChevronDown
-                    size={16}
-                    className={`filter-arrow ${
-                      showCategoryFilter ? "rotated" : ""
-                    }`}
-                  />
+                <div className="header-cell filter-header" ref={categoryRef}>
+                  <div
+                    onClick={() => setShowCategoryFilter(!showCategoryFilter)}
+                  >
+                    <span className="text-center">Category</span>
+                    <ChevronDown
+                      size={16}
+                      className={`filter-arrow ${
+                        showCategoryFilter ? "rotated" : ""
+                      }`}
+                    />
+                  </div>
                   {showCategoryFilter && (
-                    <div className="filter-dropdown">
+                    <div
+                      className="filter-dropdown"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       {categories.map((category) => (
                         <label key={category} className="filter-option">
                           <input
@@ -299,25 +311,58 @@ const ChemicalReagents = () => {
                 <div className="header-cell">
                   <span className="text-center">Date Opened</span>
                 </div>
-                <div className="header-cell">
-                  <span className="text-center">Expiration Date</span>
+                <div className="header-cell filter-header" ref={expirationRef}>
+                  <div
+                    onClick={() =>
+                      setShowExpirationFilter(!showExpirationFilter)
+                    }
+                  >
+                    <span className="text-center">Expiration Date</span>
+                    <ChevronDown
+                      size={16}
+                      className={`filter-arrow ${
+                        showExpirationFilter ? "rotated" : ""
+                      }`}
+                    />
+                  </div>
+                  {showExpirationFilter && (
+                    <div
+                      className="filter-dropdown"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        type="month"
+                        value={filterExpirationMonth}
+                        onChange={(e) => {
+                          setFilterExpirationMonth(e.target.value);
+                          setShowExpirationFilter(false); 
+                        }}
+                        className="month-input"
+                      />
+                    </div>
+                  )}
                 </div>
+
                 <div className="header-cell">
                   <span className="text-center">Container Size</span>
                 </div>
-                <div
-                  className="header-cell filter-header"
-                  onClick={() => setShowLocationFilter(!showLocationFilter)}
-                >
-                  <span className="text-center">Location</span>
-                  <ChevronDown
-                    size={16}
-                    className={`filter-arrow ${
-                      showLocationFilter ? "rotated" : ""
-                    }`}
-                  />
+                <div className="header-cell filter-header" ref={locationRef}>
+                  <div
+                    onClick={() => setShowLocationFilter(!showLocationFilter)}
+                  >
+                    <span className="text-center">Location</span>
+                    <ChevronDown
+                      size={16}
+                      className={`filter-arrow ${
+                        showLocationFilter ? "rotated" : ""
+                      }`}
+                    />
+                  </div>
                   {showLocationFilter && (
-                    <div className="filter-dropdown">
+                    <div
+                      className="filter-dropdown"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       {locations.map((location) => (
                         <label key={location} className="filter-option">
                           <input
@@ -337,19 +382,21 @@ const ChemicalReagents = () => {
                     </div>
                   )}
                 </div>
-                <div
-                  className="header-cell filter-header"
-                  onClick={() => setShowStatusFilter(!showStatusFilter)}
-                >
-                  <span className="text-center">Status</span>
-                  <ChevronDown
-                    size={16}
-                    className={`filter-arrow ${
-                      showStatusFilter ? "rotated" : ""
-                    }`}
-                  />
+                <div className="header-cell filter-header" ref={statusRef}>
+                  <div onClick={() => setShowStatusFilter(!showStatusFilter)}>
+                    <span className="text-center">Status</span>
+                    <ChevronDown
+                      size={16}
+                      className={`filter-arrow ${
+                        showStatusFilter ? "rotated" : ""
+                      }`}
+                    />
+                  </div>
                   {showStatusFilter && (
-                    <div className="filter-dropdown">
+                    <div
+                      className="filter-dropdown"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       {statuses.map((status) => (
                         <label key={status} className="filter-option">
                           <input
@@ -568,24 +615,33 @@ const ChemicalReagents = () => {
               onClose={() => setDetailItem(null)}
               title="Chemical Reagent Details"
               fields={[
-                { label: "Chemical Name", value: detailItem.chemicalName },
+                // Identification
+                { label: "Item Code", value: detailItem.itemcode },
                 { label: "Category", value: detailItem.category },
                 { label: "Brand", value: detailItem.brand },
-                { label: "Quantity", value: detailItem.quantity },
+
+                // Physical Properties
+                { label: "Form", value: detailItem.form },
                 { label: "Container Type", value: detailItem.containerType },
                 { label: "Container Size", value: detailItem.containerSize },
-                { label: "Form", value: detailItem.form },
+                { label: "Quantity", value: detailItem.quantity },
+
+                // racking & Inventory
                 { label: "Date Received", value: detailItem.dateReceived },
-                { label: "Expiration Date", value: detailItem.expirationDate },
                 {
                   label: "Date Opened",
                   value: detailItem.dateOpened || "Not opened",
                 },
-                { label: "Location", value: detailItem.location },
-                { label: "MSDS", value: detailItem.msds },
-                { label: "Hazard Level", value: detailItem.hazardLevel },
-                { label: "Disposal Method", value: detailItem.disposalMethod },
+                { label: "Expiration Date", value: detailItem.expirationDate },
                 { label: "Status", value: detailItem.status },
+                { label: "Location", value: detailItem.location },
+
+                // Safety & Compliance
+                { label: "MSDS", value: detailItem.msds },
+                { label: "Disposal Method", value: detailItem.disposalMethod },
+
+                // Notes
+                { label: "Remarks", value: detailItem.remarks },
               ]}
             />
           )}
