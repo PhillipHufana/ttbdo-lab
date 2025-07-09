@@ -13,13 +13,11 @@ body {
   min-height: 100vh;
 }
 
-
 .app {
   display: flex;
   min-height: 100vh;
 }
 
-/* Beautiful Curved Sidebar */
 .sidebar {
   width: 280px;
   background: linear-gradient(180deg, #1e40af 0%, #1e3a8a 100%);
@@ -208,6 +206,73 @@ body {
   box-shadow: 0 4px 20px rgba(59, 130, 246, 0.15);
 }
 
+.equipment-page .table-row {
+  display: grid;
+  grid-template-columns: 1.9fr 1.2fr 1fr 1.5fr 1.2fr 1.2fr 1.2fr 1.2fr 1.8fr 60px;
+  gap: 1rem;
+}
+
+
+.equipment-page .table-header,
+.equipment-page .table-body {
+  font-size: 0.85rem;
+  padding: 4px 9px;
+  grid-template-columns: 1.5fr 1fr 1fr 1.2fr 1.2fr 1.2fr 1.2fr 1.2fr 1.2fr 1fr;
+  gap: 4px;
+  font-size: 0.85px;
+}
+
+.equipment-page .header-cell,
+.equipment-page .row-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* or flex-start if you prefer */
+  text-align: center;
+}
+
+.equipment-page .item-details {
+  justify-content: flex-start;
+  flex-direction: column;
+}
+
+
+.equipment-page .btn-icon {
+  padding: 2px;
+}
+
+
+.reagents .table-header,
+.reagents .table-body {
+  font-size: 0.85rem;
+  padding: 8px 10px;
+  grid-template-columns: 1.5fr 1fr 1fr 1.2fr 1.2fr 1.2fr 1.2fr 1.2fr 1.2fr 1fr;
+  gap: 6px;
+}
+
+.reagents .table-row {
+  display: grid;
+  grid-template-columns: 2fr 1.2fr 1.2fr 1.2fr 1.2fr 1.2fr 1.2fr 1fr; /* 8 cols */
+  gap: 1rem;
+}
+
+.reagents .header-cell,
+.reagents .row-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; /* or use flex-start for left-align */
+  text-align: center;
+  white-space: nowrap;
+}
+
+.reagents .row-cell.item-details {
+  justify-content: flex-start;
+  flex-direction: column;
+}
+
+.reagents .btn-icon {
+  padding: 2px;
+}
+
 /* Modern Card-Based Table */
 .modern-table {
   background: transparent;
@@ -224,13 +289,6 @@ body {
   margin-bottom: 0.5rem;
 }
 
-/* Instruments table specific grid */
-.instruments-table .table-header,
-.instruments-table .table-row {
-  grid-template-columns: 2fr 2fr 1.2fr 0.8fr 1fr 1fr 1fr 80px;
-  gap: 0.75rem;
-}
-
 .header-cell {
   padding: 0.5rem 0.3rem;
   font-weight: 600;
@@ -244,10 +302,12 @@ body {
   text-align: left;
 }
 
-
-.header-cell, .row-cell {
-  word-wrap: break-word;
-  flex: 1 1 0;
+.row-cell,
+.header-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* You can change to `flex-start` or `center` */
+  text-align: center;
 }
 
 .filter-header {
@@ -310,7 +370,7 @@ body {
 
 /* Card-Style Table Rows */
 .table-row {
-  display: flex;
+  display: grid;
   grid-template-columns: 2.5fr 1.2fr 1.2fr 1.2fr 1.2fr 1fr 80px;
   gap: 1rem;
   padding: 1.5rem;
@@ -821,22 +881,8 @@ body {
   padding-top: 2rem;
 }
 
-/* Responsive Grid Adjustments */
-@media (max-width: 1400px) {
-  .table-header,
-  .table-row {
-    grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 80px;
-    gap: 0.75rem;
-  }
-
-  .instruments-table .table-header,
-  .instruments-table .table-row {
-    grid-template-columns: 1.8fr 1.8fr 1fr 0.7fr 0.9fr 0.9fr 0.9fr 80px;
-    gap: 0.5rem;
-  }
-}
-
 @media (max-width: 1200px) {
+
   .table-header,
   .table-row {
     grid-template-columns: 2fr 1fr 1fr 1fr 80px;
@@ -846,12 +892,6 @@ body {
   .table-row {
     padding: 1rem;
   }
-
-  .instruments-table .table-header,
-  .instruments-table .table-row {
-    grid-template-columns: 2fr 2fr 1fr 1fr 80px;
-    gap: 0.5rem;
-  }
 }
 
 /* Animations */
@@ -859,6 +899,7 @@ body {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -868,6 +909,7 @@ body {
   from {
     transform: translateX(100%);
   }
+
   to {
     transform: translateX(0);
   }
@@ -972,4 +1014,3 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
-

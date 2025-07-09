@@ -200,6 +200,7 @@ const Equipment = () => {
   };
 
   return (
+    <div className="equipment-page">
     <div className="content-section">
       <div className="content-card">
         <div className="section-header">
@@ -277,9 +278,6 @@ const Equipment = () => {
                     ))}
                   </div>
                 )}
-              </div>
-              <div className="header-cell">
-                <span>Date Received</span>
               </div>
               <div className="header-cell">Last Maint.</div>
               <div className="header-cell">Next Maint.</div>
@@ -379,45 +377,6 @@ const Equipment = () => {
                     {editingRowId === item.id ? (
                       <input
                         type="date"
-                        value={editingData.dateReceived}
-                        onChange={(e) =>
-                          handleInputChange("dateReceived", e.target.value)
-                        }
-                        className="inline-edit-input"
-                      />
-                    ) : (
-                      item.dateReceived
-                    )}
-                  </div>
-                  <div className="row-cell">
-                    {editingRowId === item.id ? (
-                      <select
-                        value={editingData.status}
-                        onChange={(e) =>
-                          handleInputChange("status", e.target.value)
-                        }
-                        className="inline-edit-select"
-                      >
-                        {statuses.map((status) => (
-                          <option key={status} value={status}>
-                            {status}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span
-                        className={`status-badge ${getStatusColor(
-                          item.status
-                        )}`}
-                      >
-                        {item.status}
-                      </span>
-                    )}
-                  </div>
-                  <div className="row-cell">
-                    {editingRowId === item.id ? (
-                      <input
-                        type="date"
                         value={editingData.lastMaintenanceDate}
                         onChange={(e) =>
                           handleInputChange(
@@ -471,6 +430,31 @@ const Equipment = () => {
                       />
                     ) : (
                       item.nextCalibrationDate
+                    )}
+                  </div>
+                  <div className="row-cell">
+                    {editingRowId === item.id ? (
+                      <select
+                        value={editingData.status}
+                        onChange={(e) =>
+                          handleInputChange("status", e.target.value)
+                        }
+                        className="inline-edit-select"
+                      >
+                        {statuses.map((status) => (
+                          <option key={status} value={status}>
+                            {status}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span
+                        className={`status-badge ${getStatusColor(
+                          item.status
+                        )}`}
+                      >
+                        {item.status}
+                      </span>
                     )}
                   </div>
                   <div className="row-cell">
@@ -566,6 +550,7 @@ const Equipment = () => {
           />
         )}
       </div>
+    </div>
     </div>
   );
 };
