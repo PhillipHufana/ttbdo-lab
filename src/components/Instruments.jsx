@@ -37,7 +37,6 @@ const Instruments = () => {
       status: "Broken",
       condition: "Poor",
       remarks: "For Disposal",
-      image: "/placeholder.svg?height=200&width=200",
     },
   ]);
 
@@ -193,13 +192,6 @@ const Instruments = () => {
           item.id === editingItem.id ? { ...item, ...formData } : item
         )
       );
-    } else {
-      const newItem = {
-        id: Date.now(),
-        image: "/placeholder.svg?height=200&width=200",
-        ...formData,
-      };
-      setInstruments([...instruments, newItem]);
     }
     setShowForm(false);
     setEditingItem(null);
@@ -529,13 +521,19 @@ const Instruments = () => {
             onClose={() => setDetailItem(null)}
             title="Instrument Details"
             fields={[
-              { label: "Instrument", value: detailItem.instrument },
+              // Identification
               { label: "Description", value: detailItem.description },
-              { label: "Location", value: detailItem.location },
-              { label: "Quantity", value: detailItem.quantity },
+
+              // Specifications
               { label: "Capacity", value: detailItem.capacity },
+              { label: "Quantity", value: detailItem.quantity },
+
+              // Status & Condition
               { label: "Status", value: detailItem.status },
               { label: "Condition", value: detailItem.condition },
+
+              // Location & Notes
+              { label: "Location", value: detailItem.location },
               { label: "Remarks", value: detailItem.remarks },
             ]}
           />

@@ -40,7 +40,6 @@ const Consumables = () => {
       totalPrice: "",
       supplier: "",
       location: "Table 3, Drawer 4",
-      image: "/placeholder.svg?height=200&width=200",
     },
   ]);
 
@@ -108,13 +107,6 @@ const Consumables = () => {
           item.id === editingItem.id ? { ...item, ...formData } : item
         )
       );
-    } else {
-      const newItem = {
-        id: Date.now(),
-        image: "/placeholder.svg?height=200&width=200",
-        ...formData,
-      };
-      setConsumables([...consumables, newItem]);
     }
     setShowForm(false);
     setEditingItem(null);
@@ -229,7 +221,7 @@ const Consumables = () => {
                       value={filterExpirationMonth}
                       onChange={(e) => {
                         setFilterExpirationMonth(e.target.value);
-                        setShowExpirationFilter(false); // Auto-close after picking month
+                        setShowExpirationFilter(false); 
                       }}
                       className="month-input"
                     />
@@ -420,22 +412,40 @@ const Consumables = () => {
             onClose={() => setDetailItem(null)}
             title="Consumable Details"
             fields={[
-              { label: "Supply Item", value: detailItem.supplyItem },
+              // Identification
               { label: "Brand", value: detailItem.brand },
               { label: "Description", value: detailItem.description },
+
+              // Quantity Tracking
               { label: "Quantity", value: detailItem.quantity },
               {
                 label: "Remaining Quantity",
                 value: detailItem.remainingQuantity,
               },
+
+              // Dates & Tracking
               { label: "Date Received", value: detailItem.dateReceived },
-              { label: "Date Opened", value: detailItem.dateOpened },
+              {
+                label: "Date Opened",
+                value: detailItem.dateOpened || "Not opened",
+              },
               { label: "Expiration Date", value: detailItem.expirationDate },
-              { label: "Received By", value: detailItem.receivedBy },
+
+              // Procurement Details
               { label: "PO No.", value: detailItem.poNo },
-              { label: "Price", value: `$${detailItem.price}` },
-              { label: "Total Price", value: `$${detailItem.totalPrice}` },
+              {
+                label: "Price",
+                value: `₱${Number(detailItem.price || 0).toFixed(2)}`,
+              },
+              {
+                label: "Total Price",
+                value: `₱${Number(detailItem.totalPrice || 0).toFixed(2)}`,
+              },
+
+              { label: "Received By", value: detailItem.receivedBy },
               { label: "Supplier", value: detailItem.supplier },
+
+              // Location
               { label: "Location", value: detailItem.location },
             ]}
           />

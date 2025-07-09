@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect } from "react";
 
 const EquipmentForm = ({ initialData, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -12,7 +12,10 @@ const EquipmentForm = ({ initialData, onSave, onCancel }) => {
     otherDetails: "",
     dateReceived: "",
     status: "Operational",
-    maintenanceSchedule: "",
+    lastMaintenance: "",
+    nextMaintenance: "",
+    lastCalib: "",
+    nextCalib: "",
     remarks: "",
     equipmentManual: "",
     poNo: "",
@@ -20,76 +23,137 @@ const EquipmentForm = ({ initialData, onSave, onCancel }) => {
     fundSource: "",
     supplier: "",
     supplierContactDetails: "",
-    calibrationDate: "",
-  })
+  });
 
   useEffect(() => {
     if (initialData) {
-      setFormData({ ...initialData })
+      setFormData({ ...initialData });
     }
-  }, [initialData])
+  }, [initialData]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-    }))
-  }
+    }));
+  };
 
   const handleSubmit = (e) => {
-    e.preventDefault()
-    onSave(formData)
-  }
+    e.preventDefault();
+    onSave(formData);
+  };
 
-  const statuses = ["Operational", "Under Maintenance", "Out of Order", "Retired"]
+  const statuses = ["Working", "To be Fixed"];
+
+  const locations = [
+    "Left Side Table 2, Countertop",
+    "Storage Room",
+    "Main Laboratory",
+    "Warehouse",
+  ];
 
   return (
     <form onSubmit={handleSubmit} className="form">
       <div className="form-grid">
         <div className="form-group">
-          <label>Equipment *</label>
-          <input type="text" name="equipment" value={formData.equipment} onChange={handleChange} required />
+          <label>
+            Equipment <span className="required">*</span>
+          </label>
+          <input
+            type="text"
+            name="equipment"
+            value={formData.equipment}
+            onChange={handleChange}
+            required
+          />
         </div>
 
         <div className="form-group">
-          <label>Equipment Code *</label>
-          <input type="text" name="equipmentCode" value={formData.equipmentCode} onChange={handleChange} required />
+          <label>
+            Equipment Code <span className="required">*</span>
+          </label>
+          <input
+            type="text"
+            name="equipmentCode"
+            value={formData.equipmentCode}
+            onChange={handleChange}
+            required
+          />
         </div>
 
         <div className="form-group">
           <label>Other Names</label>
-          <input type="text" name="otherNames" value={formData.otherNames} onChange={handleChange} />
-        </div>
-
-        <div className="form-group">
-          <label>Location *</label>
-          <input type="text" name="location" value={formData.location} onChange={handleChange} required />
+          <input
+            type="text"
+            name="otherNames"
+            value={formData.otherNames}
+            onChange={handleChange}
+          />
         </div>
 
         <div className="form-group">
           <label>Brand</label>
-          <input type="text" name="brand" value={formData.brand} onChange={handleChange} />
+          <input
+            type="text"
+            name="brand"
+            value={formData.brand}
+            onChange={handleChange}
+          />
         </div>
 
         <div className="form-group">
           <label>Model</label>
-          <input type="text" name="model" value={formData.model} onChange={handleChange} />
+          <input
+            type="text"
+            name="model"
+            value={formData.model}
+            onChange={handleChange}
+          />
         </div>
 
         <div className="form-group">
-          <label>Serial No.</label>
-          <input type="text" name="serialNo" value={formData.serialNo} onChange={handleChange} />
+          <label>
+            Serial No. <span className="required">*</span>
+          </label>
+          <input
+            type="text"
+            name="serialNo"
+            value={formData.serialNo}
+            onChange={handleChange}
+            required
+          />
         </div>
 
         <div className="form-group">
-          <label>Other Details</label>
-          <textarea name="otherDetails" value={formData.otherDetails} onChange={handleChange} rows="3" />
+          <label>Equipment Manual</label>
+          <input
+            type="text"
+            name="equipmentManual"
+            value={formData.equipmentManual}
+            onChange={handleChange}
+          />
         </div>
 
         <div className="form-group">
-          <label>Date Received</label>
-          <input type="date" name="dateReceived" value={formData.dateReceived} onChange={handleChange} />
+          <label>
+            Location <span className="required">*</span>
+          </label>
+          <select
+            name="location"
+            value={formData.location}
+            onChange={handleChange}
+            required
+          >
+            <option value="" disabled>
+              Select Location
+            </option>
+            {locations.map((location) => (
+              <option key={location} value={location}>
+                {location}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="form-group">
@@ -102,25 +166,27 @@ const EquipmentForm = ({ initialData, onSave, onCancel }) => {
             ))}
           </select>
         </div>
-
         <div className="form-group">
-          <label>Maintenance Schedule</label>
-          <input type="date" name="maintenanceSchedule" value={formData.maintenanceSchedule} onChange={handleChange} />
-        </div>
-
-        <div className="form-group">
-          <label>Remarks</label>
-          <textarea name="remarks" value={formData.remarks} onChange={handleChange} rows="3" />
-        </div>
-
-        <div className="form-group">
-          <label>Equipment Manual</label>
-          <input type="text" name="equipmentManual" value={formData.equipmentManual} onChange={handleChange} />
+          <label>
+            Date Received <span className="required">*</span>
+          </label>
+          <input
+            type="date"
+            name="dateReceived"
+            value={formData.dateReceived}
+            onChange={handleChange}
+            required
+          />
         </div>
 
         <div className="form-group">
           <label>PO No.</label>
-          <input type="text" name="poNo" value={formData.poNo} onChange={handleChange} />
+          <input
+            type="text"
+            name="poNo"
+            value={formData.poNo}
+            onChange={handleChange}
+          />
         </div>
 
         <div className="form-group">
@@ -136,12 +202,22 @@ const EquipmentForm = ({ initialData, onSave, onCancel }) => {
 
         <div className="form-group">
           <label>Fund Source</label>
-          <input type="text" name="fundSource" value={formData.fundSource} onChange={handleChange} />
+          <input
+            type="text"
+            name="fundSource"
+            value={formData.fundSource}
+            onChange={handleChange}
+          />
         </div>
 
         <div className="form-group">
           <label>Supplier</label>
-          <input type="text" name="supplier" value={formData.supplier} onChange={handleChange} />
+          <input
+            type="text"
+            name="supplier"
+            value={formData.supplier}
+            onChange={handleChange}
+          />
         </div>
 
         <div className="form-group">
@@ -155,8 +231,69 @@ const EquipmentForm = ({ initialData, onSave, onCancel }) => {
         </div>
 
         <div className="form-group">
-          <label>Calibration Date</label>
-          <input type="date" name="calibrationDate" value={formData.calibrationDate} onChange={handleChange} />
+          <label>Other Details</label>
+          <textarea
+            name="otherDetails"
+            value={formData.otherDetails}
+            onChange={handleChange}
+            rows="3"
+          />
+        </div>
+
+        <div className="form-group">
+          <label>
+            Last Maintenance Schedule <span className="required">*</span>
+          </label>
+          <input
+            type="date"
+            name="lastMaintenance"
+            value={formData.lastMaintenance}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Next Maintenance Schedule</label>
+          <input
+            type="date"
+            name="nextMaintenance"
+            value={formData.nextMaintenance}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div className="form-group">
+          <label>
+            Last Calibration Schedule <span className="required">*</span>
+          </label>
+          <input
+            type="date"
+            name="lastCalib"
+            value={formData.lastCalib}
+            onChange={handleChange}
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Next Calibration Schedule</label>
+          <input
+            type="date"
+            name="nextCalib"
+            value={formData.nextCalib}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Remarks</label>
+          <textarea
+            name="remarks"
+            value={formData.remarks}
+            onChange={handleChange}
+            rows="3"
+          />
         </div>
       </div>
 
@@ -169,7 +306,7 @@ const EquipmentForm = ({ initialData, onSave, onCancel }) => {
         </button>
       </div>
     </form>
-  )
-}
+  );
+};
 
-export default EquipmentForm
+export default EquipmentForm;

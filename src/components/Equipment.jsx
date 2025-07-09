@@ -28,6 +28,15 @@ const Equipment = () => {
   const [showLocationFilter, setShowLocationFilter] = useState(false);
   const [showScheduleFilter, setShowScheduleFilter] = useState(null);
 
+  const locations = [
+    "Left Side Table 2, Countertop",
+    "Storage Room",
+    "Main Laboratory",
+    "Warehouse",
+  ];
+
+  const statuses = ["Working", "To be Fixed"];
+
   const locationRef = useRef(null);
   const statusRef = useRef(null);
   const lastMaintRef = useRef(null);
@@ -78,7 +87,6 @@ const Equipment = () => {
       nextMaintenanceDate: "2025-12-13",
       lastCalibrationDate: "2019-07-27",
       nextCalibrationDate: "2025-07-27",
-      image: "/placeholder.svg?height=200&width=200",
     },
   ]);
 
@@ -94,36 +102,34 @@ const Equipment = () => {
     const matchesLocation =
       filterLocation.length === 0 || filterLocation.includes(item.location);
 
-    const matchesLastMaintenance =
-      !filterLastMaintenance ||
-      (item.lastMaintenanceDate &&
-        item.lastMaintenanceDate.startsWith(filterLastMaintenance));
-
-    const matchesNextMaintenance =
-      !filterNextMaintenance ||
-      (item.nextMaintenanceDate &&
-        item.nextMaintenanceDate.startsWith(filterNextMaintenance));
-
-    const matchesLastCalibration =
-      !filterLastCalibration ||
-      (item.lastCalibrationDate &&
-        item.lastCalibrationDate.startsWith(filterLastCalibration));
-
-    const matchesNextCalibration =
-      !filterNextCalibration ||
-      (item.nextCalibrationDate &&
-        item.nextCalibrationDate.startsWith(filterNextCalibration));
+    const dateFilter = (filter, date) =>
+      !filter || (date && date.startsWith(filter));
 
     return (
       matchesSearch &&
       matchesStatus &&
       matchesLocation &&
-      matchesLastMaintenance &&
-      matchesNextMaintenance &&
-      matchesLastCalibration &&
-      matchesNextCalibration
+      dateFilter(filterLastMaintenance, item.lastMaintenanceDate) &&
+      dateFilter(filterNextMaintenance, item.nextMaintenanceDate) &&
+      dateFilter(filterLastCalibration, item.lastCalibrationDate) &&
+      dateFilter(filterNextCalibration, item.nextCalibrationDate)
     );
   });
+
+  const handleFilterChange = (type, value, checked) => {
+    const updater = (prev) =>
+      checked ? [...prev, value] : prev.filter((i) => i !== value);
+    if (type === "status") setFilterStatus(updater);
+    if (type === "location") setFilterLocation(updater);
+  };
+
+  const getStatusColor = (status) => {
+    return status === "Working"
+      ? "status-working"
+      : status === "To be Fixed"
+      ? "status-tobefixed"
+      : "";
+  };
 
   const handleAdd = () => {
     setEditingItem(null);
@@ -172,13 +178,6 @@ const Equipment = () => {
         return prevEquipment.map((item) =>
           item.id === editingItem.id ? { ...item, ...formData } : item
         );
-      } else {
-        const newItem = {
-          id: Date.now(),
-          image: "/placeholder.svg?height=200&width=200",
-          ...formData,
-        };
-        return [...prevEquipment, newItem];
       }
     });
     setShowForm(false);
@@ -190,53 +189,11 @@ const Equipment = () => {
     setEditingItem(null);
   };
 
-  const handleFilterChange = (filterType, value, checked) => {
-    switch (filterType) {
-      case "status":
-        setFilterStatus((prev) =>
-          checked ? [...prev, value] : prev.filter((i) => i !== value)
-        );
-        break;
-      case "location":
-        setFilterLocation((prev) =>
-          checked ? [...prev, value] : prev.filter((i) => i !== value)
-        );
-        break;
-    }
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "Working":
-        return "status-working";
-      case "To be Fixed":
-        return "status-tobefixed";
-      default:
-        return "";
-    }
-  };
-
   const closeAllFilters = () => {
     setShowStatusFilter(false);
     setShowLocationFilter(false);
     setShowScheduleFilter(null);
   };
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (locationRef.current && !locationRef.current.contains(event.target)) {
-        setShowLocationFilter(false);
-      }
-      if (statusRef.current && !statusRef.current.contains(event.target)) {
-        setShowStatusFilter(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
 
   return (
     <div className="equipment-page">
@@ -286,32 +243,40 @@ const Equipment = () => {
                 <div className="header-cell">
                   <span>Model</span>
                 </div>
-                <div
-                  className="header-cell filter-header"
-                  ref={locationRef}
-                  onClick={() => setShowLocationFilter(!showLocationFilter)}
-                >
-                  <span>Location</span>
-                  <ChevronDown
-                    size={16}
-                    className={`filter-arrow ${
-                      showLocationFilter ? "rotated" : ""
-                    }`}
-                  />
+                <div className="header-cell filter-header" ref={locationRef}>
+                  <div
+                    onClick={() => {
+                      setShowStatusFilter(false);
+                      setShowScheduleFilter(null);
+                      setShowLocationFilter((prev) => !prev);
+                    }}
+                  >
+                    <span className="text-center">Location</span>
+                    <ChevronDown
+                      size={16}
+                      className={`filter-arrow ${
+                        showLocationFilter ? "rotated" : ""
+                      }`}
+                    />
+                  </div>
                   {showLocationFilter && (
-                    <div className="filter-dropdown">
+                    <div
+                      className="filter-dropdown"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       {locations.map((location) => (
                         <label key={location} className="filter-option">
                           <input
                             type="checkbox"
                             checked={filterLocation.includes(location)}
-                            onChange={(e) =>
+                            onChange={(e) => {
                               handleFilterChange(
                                 "location",
                                 location,
                                 e.target.checked
-                              )
-                            }
+                              );
+                              closeAllFilters();
+                            }}
                           />
                           <span>{location}</span>
                         </label>
@@ -381,12 +346,11 @@ const Equipment = () => {
                     >
                       <input
                         type="month"
-                        value={filterLastMaintenance}
+                        value={filterNextMaintenance} 
                         onChange={(e) => {
-                          setFilterLastMaintenance(e.target.value);
+                          setFilterNextMaintenance(e.target.value);
                           setShowScheduleFilter(null);
                         }}
-                        className="month-input"
                       />
                     </div>
                   )}
@@ -417,9 +381,9 @@ const Equipment = () => {
                     >
                       <input
                         type="month"
-                        value={filterLastMaintenance}
+                        value={filterLastCalibration}
                         onChange={(e) => {
-                          setFilterLastMaintenance(e.target.value);
+                          setFilterLastCalibration(e.target.value);
                           setShowScheduleFilter(null);
                         }}
                         className="month-input"
@@ -453,9 +417,9 @@ const Equipment = () => {
                     >
                       <input
                         type="month"
-                        value={filterLastMaintenance}
+                        value={filterNextCalibration}
                         onChange={(e) => {
-                          setFilterLastMaintenance(e.target.value);
+                          setFilterNextCalibration(e.target.value);
                           setShowScheduleFilter(null);
                         }}
                         className="month-input"
@@ -467,7 +431,11 @@ const Equipment = () => {
                 <div
                   className="header-cell filter-header"
                   ref={statusRef}
-                  onClick={() => setShowStatusFilter(!showStatusFilter)}
+                  onClick={() => {
+                    setShowStatusFilter((prev) => !prev);
+                    setShowLocationFilter(false);
+                    setShowScheduleFilter(null);
+                  }}
                 >
                   <span>Status</span>
                   <ChevronDown
@@ -477,19 +445,23 @@ const Equipment = () => {
                     }`}
                   />
                   {showStatusFilter && (
-                    <div className="filter-dropdown">
+                    <div
+                      className="filter-dropdown"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       {statuses.map((status) => (
                         <label key={status} className="filter-option">
                           <input
                             type="checkbox"
                             checked={filterStatus.includes(status)}
-                            onChange={(e) =>
+                            onChange={(e) => {
                               handleFilterChange(
                                 "status",
                                 status,
                                 e.target.checked
-                              )
-                            }
+                              );
+                              closeAllFilters(); 
+                            }}
                           />
                           <span>{status}</span>
                         </label>
@@ -497,6 +469,7 @@ const Equipment = () => {
                     </div>
                   )}
                 </div>
+
                 <div className="header-cell">
                   <span>Actions</span>
                 </div>
@@ -687,16 +660,23 @@ const Equipment = () => {
               onClose={() => setDetailItem(null)}
               title="Equipment Details"
               fields={[
-                { label: "Equipment", value: detailItem.equipment },
+                // Basic Identification
                 { label: "Equipment Code", value: detailItem.equipmentCode },
                 { label: "Other Names", value: detailItem.otherNames },
-                { label: "Location", value: detailItem.location },
                 { label: "Brand", value: detailItem.brand },
                 { label: "Model", value: detailItem.model },
                 { label: "Serial No.", value: detailItem.serialNo },
+
+                // Classification / Description
                 { label: "Other Details", value: detailItem.otherDetails },
-                { label: "Date Received", value: detailItem.dateReceived },
                 { label: "Status", value: detailItem.status },
+                { label: "Remarks", value: detailItem.remarks },
+
+                // Location & Tracking
+                { label: "Location", value: detailItem.location },
+                { label: "Date Received", value: detailItem.dateReceived },
+
+                // Maintenance & Calibration
                 {
                   label: "Last Maintenance",
                   value: detailItem.lastMaintenanceDate,
@@ -714,21 +694,23 @@ const Equipment = () => {
                   value: detailItem.nextCalibrationDate,
                 },
 
-                { label: "Remarks", value: detailItem.remarks },
-                {
-                  label: "Equipment Manual",
-                  value: detailItem.equipmentManual,
-                },
+                // Procurement Info
                 { label: "PO No.", value: detailItem.poNo },
                 {
                   label: "Purchase Price",
-                  value: `$${detailItem.purchasePrice}`,
+                  value: `₱${detailItem.purchasePrice?.toFixed(2)}`,
                 },
                 { label: "Fund Source", value: detailItem.fundSource },
                 { label: "Supplier", value: detailItem.supplier },
                 {
                   label: "Supplier Contact",
                   value: detailItem.supplierContactDetails,
+                },
+
+                // Attachments / References
+                {
+                  label: "Equipment Manual",
+                  value: detailItem.equipmentManual,
                 },
               ]}
             />

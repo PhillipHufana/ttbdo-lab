@@ -45,7 +45,6 @@ const ChemicalReagents = () => {
       remarks: "",
       msds: "",
       disposalMethod: "",
-      image: "/placeholder.svg?height=200&width=200",
     },
   ]);
 
@@ -101,19 +100,19 @@ const ChemicalReagents = () => {
         setFilterCategory((prev) =>
           checked ? [...prev, value] : prev.filter((item) => item !== value)
         );
-        setShowCategoryFilter(false); // Auto-close after selection
+        setShowCategoryFilter(false); 
         break;
       case "status":
         setFilterStatus((prev) =>
           checked ? [...prev, value] : prev.filter((item) => item !== value)
         );
-        setShowStatusFilter(false); // Auto-close after selection
+        setShowStatusFilter(false); 
         break;
       case "location":
         setFilterLocation((prev) =>
           checked ? [...prev, value] : prev.filter((item) => item !== value)
         );
-        setShowLocationFilter(false); // Auto-close after selection
+        setShowLocationFilter(false); 
         break;
       default:
         break;
@@ -168,13 +167,6 @@ const ChemicalReagents = () => {
           reagent.id === editingItem.id ? { ...reagent, ...formData } : reagent
         )
       );
-    } else {
-      const newReagent = {
-        id: Date.now(),
-        image: "/placeholder.svg?height=200&width=200",
-        ...formData,
-      };
-      setReagents([...reagents, newReagent]);
     }
     setShowForm(false);
     setEditingItem(null);
@@ -280,7 +272,6 @@ const ChemicalReagents = () => {
                 <div className="header-cell">
                   <span className="text-center">Chemical Name</span>
                 </div>
-                {/* Category Filter */}
                 <div className="header-cell filter-header" ref={categoryRef}>
                   <div
                     onClick={() => setShowCategoryFilter(!showCategoryFilter)}
@@ -344,7 +335,7 @@ const ChemicalReagents = () => {
                         value={filterExpirationMonth}
                         onChange={(e) => {
                           setFilterExpirationMonth(e.target.value);
-                          setShowExpirationFilter(false); // Auto-close after picking month
+                          setShowExpirationFilter(false); 
                         }}
                         className="month-input"
                       />
@@ -355,7 +346,6 @@ const ChemicalReagents = () => {
                 <div className="header-cell">
                   <span className="text-center">Container Size</span>
                 </div>
-                {/* Location Filter */}
                 <div className="header-cell filter-header" ref={locationRef}>
                   <div
                     onClick={() => setShowLocationFilter(!showLocationFilter)}
@@ -625,24 +615,33 @@ const ChemicalReagents = () => {
               onClose={() => setDetailItem(null)}
               title="Chemical Reagent Details"
               fields={[
-                { label: "Chemical Name", value: detailItem.chemicalName },
+                // Identification
+                { label: "Item Code", value: detailItem.itemcode },
                 { label: "Category", value: detailItem.category },
                 { label: "Brand", value: detailItem.brand },
-                { label: "Quantity", value: detailItem.quantity },
+
+                // Physical Properties
+                { label: "Form", value: detailItem.form },
                 { label: "Container Type", value: detailItem.containerType },
                 { label: "Container Size", value: detailItem.containerSize },
-                { label: "Form", value: detailItem.form },
+                { label: "Quantity", value: detailItem.quantity },
+
+                // racking & Inventory
                 { label: "Date Received", value: detailItem.dateReceived },
-                { label: "Expiration Date", value: detailItem.expirationDate },
                 {
                   label: "Date Opened",
                   value: detailItem.dateOpened || "Not opened",
                 },
-                { label: "Location", value: detailItem.location },
-                { label: "MSDS", value: detailItem.msds },
-                { label: "Hazard Level", value: detailItem.hazardLevel },
-                { label: "Disposal Method", value: detailItem.disposalMethod },
+                { label: "Expiration Date", value: detailItem.expirationDate },
                 { label: "Status", value: detailItem.status },
+                { label: "Location", value: detailItem.location },
+
+                // Safety & Compliance
+                { label: "MSDS", value: detailItem.msds },
+                { label: "Disposal Method", value: detailItem.disposalMethod },
+
+                // Notes
+                { label: "Remarks", value: detailItem.remarks },
               ]}
             />
           )}
