@@ -208,13 +208,13 @@ body {
 
 .equipment-page .table-row {
   display: grid;
-  grid-template-columns: 1.83fr 1.1fr 0.9fr 1.6fr 1.2fr 1.2fr 1.2fr 1.2fr 2fr 1.2fr;
+  grid-template-columns: 1.83fr 1.1fr 0.9fr 1.9fr 1.2fr 1.2fr 1.2fr 1.2fr 2fr 1.2fr;
   gap: 4px;
 }
 
 .equipment-page .table-header {
   display: grid;
-  grid-template-columns: 1.5fr 1.3fr 1.2fr 1.6fr 1fr 1fr 1fr 1fr 1.8fr 1fr;
+  grid-template-columns: 1.5fr 1fr 1fr 1.3fr 1fr 1fr 1fr 1fr 1.8fr 1fr;
   gap: 4px;
 }
 
