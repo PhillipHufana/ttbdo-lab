@@ -206,67 +206,37 @@ body {
   box-shadow: 0 4px 20px rgba(59, 130, 246, 0.15);
 }
 
+.equipment-page .table-header,
 .equipment-page .table-row {
   display: grid;
-  grid-template-columns: 1.9fr 1.2fr 1fr 1.5fr 1.2fr 1.2fr 1.2fr 1.2fr 1.8fr 60px;
-  gap: 1rem;
-}
-
-
-.equipment-page .table-header,
-.equipment-page .table-body {
-  font-size: 0.85rem;
-  padding: 4px 9px;
-  grid-template-columns: 1.5fr 1fr 1fr 1.2fr 1.2fr 1.2fr 1.2fr 1.2fr 1.2fr 1fr;
+  grid-template-columns: 1.3fr 1fr 1fr 1.2fr 1.2fr 1.2fr 1.2fr 1.2fr 1.2fr 1fr;
   gap: 4px;
-  font-size: 0.85px;
 }
 
-.equipment-page .header-cell,
-.equipment-page .row-cell {
+.equipment-page .table-body {
   display: flex;
-  align-items: center;
-  justify-content: center; /* or flex-start if you prefer */
-  text-align: center;
-}
-
-.equipment-page .item-details {
-  justify-content: flex-start;
   flex-direction: column;
+  align-items: center;
+  text-align: center;
+  font-size: 0.85rem;
+  gap: 4px;
 }
-
 
 .equipment-page .btn-icon {
   padding: 2px;
 }
 
-
 .reagents .table-header,
-.reagents .table-body {
-  font-size: 0.85rem;
-  padding: 8px 10px;
-  grid-template-columns: 1.5fr 1fr 1fr 1.2fr 1.2fr 1.2fr 1.2fr 1.2fr 1.2fr 1fr;
-  gap: 6px;
-}
-
 .reagents .table-row {
   display: grid;
-  grid-template-columns: 2fr 1.2fr 1.2fr 1.2fr 1.2fr 1.2fr 1.2fr 1fr; /* 8 cols */
-  gap: 1rem;
+  grid-template-columns: 1.5fr 1fr 1.4fr 1.4fr 1.6fr 1.4fr 1.7fr 1fr;
+  gap: 8px;
 }
 
-.reagents .header-cell,
-.reagents .row-cell {
+.reagents .table-body {
   display: flex;
-  align-items: center;
-  justify-content: flex-start; /* or use flex-start for left-align */
-  text-align: center;
-  white-space: nowrap;
-}
-
-.reagents .row-cell.item-details {
-  justify-content: flex-start;
   flex-direction: column;
+  gap: 0.75rem;
 }
 
 .reagents .btn-icon {
@@ -283,7 +253,7 @@ body {
 
 .table-header {
   display: grid;
-  grid-template-columns: 2.5fr 1.2fr 1.2fr 1.2fr 1.2fr 1fr 80px;
+  grid-template-columns: 1.8fr 0.6fr 1.3fr 1.2fr 1.2fr 1.3fr 80px;
   gap: 1rem;
   padding: 0 1rem 1rem 1rem;
   margin-bottom: 0.5rem;
@@ -306,7 +276,8 @@ body {
 .header-cell {
   display: flex;
   align-items: center;
-  justify-content: center; /* You can change to `flex-start` or `center` */
+  justify-content: center;
+  /* You can change to `flex-start` or `center` */
   text-align: center;
 }
 
@@ -371,7 +342,7 @@ body {
 /* Card-Style Table Rows */
 .table-row {
   display: grid;
-  grid-template-columns: 2.5fr 1.2fr 1.2fr 1.2fr 1.2fr 1fr 80px;
+  grid-template-columns: 2fr 0.6fr 1.3fr 1.2fr 1.2fr 1.3fr 80px;
   gap: 1rem;
   padding: 1.5rem;
   background: white;
