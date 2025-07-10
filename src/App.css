@@ -8,7 +8,7 @@ body {
   font-family: 'Poppins', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #ffffff;
+  background: linear-gradient(to bottom right, #f8fafc, #e2e8f0);
   color: #334155;
   min-height: 100vh;
 }
@@ -141,17 +141,18 @@ body {
 }
 
 .content-card {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(248, 250, 252, 0.9);
   backdrop-filter: blur(20px);
   border-radius: 24px;
   padding: 2rem;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
 }
 
 .section-header {
   display: flex;
   justify-content: flex-start;
+  border-radius: 16px;
   align-items: center;
   margin-bottom: 2rem;
   gap: 1rem;
@@ -267,8 +268,8 @@ body {
 .header-cell {
   padding: 0.5rem 0.3rem;
   font-weight: 600;
-  color: #64748b;
-  font-size: 0.85rem;
+  color: #464f5d;
+  font-size: 0.9rem;
   letter-spacing: 0.05em;
   position: relative;
   display: block;
@@ -283,7 +284,7 @@ body {
   grid-template-columns: 1.8fr 0.8fr 1.3fr 1.4fr 1.2fr 1.3fr 80px;
   gap: 1rem;
   padding: 1.5rem;
-  background: white;
+  background: #f9fafb;
   border-radius: 16px;
   border: 2px solid transparent;
   transition: all 0.2s ease;
@@ -293,6 +294,7 @@ body {
 
 .table-row:hover {
   border-color: #3b82f6;
+  background: #f0f9ff;
   box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
   transform: translateY(-1px);
 }
@@ -381,7 +383,7 @@ body {
 .table-body {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 .item-name {
@@ -996,16 +998,6 @@ body {
   .content-card {
     padding: 1.5rem;
     border-radius: 16px;
-  }
-
-  .section-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 1rem;
-  }
-
-  .section-header h1 {
-    font-size: 1.75rem;
   }
 
   .search-container {
