@@ -1,3 +1,4 @@
+// src/components/Instruments.js
 import { useState, useRef, useEffect } from "react";
 import {
   Search,
@@ -10,6 +11,8 @@ import {
 } from "lucide-react";
 import InstrumentForm from "./forms/InstrumentForm";
 import DetailPopup from "./DetailPopup";
+
+const API_URL = "http://localhost:5000/api/instrument";
 
 const Instruments = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -26,19 +29,7 @@ const Instruments = () => {
     status: false,
     condition: false,
   });
-  const [instruments, setInstruments] = useState([
-    {
-      id: 1,
-      instrument: "1000 mL Rotary Flask",
-      description: "Glassware",
-      location: "Table 2, Cabinet 2",
-      quantity: "1 pc",
-      capacity: "1000 mL",
-      status: "Broken",
-      condition: "Poor",
-      remarks: "For Disposal",
-    },
-  ]);
+  const [instruments, setInstruments] = useState([]);
 
   const statuses = [
     "Opened",
@@ -49,14 +40,6 @@ const Instruments = () => {
     "Broken",
   ];
   const conditions = ["Good", "Poor"];
-  const locations = [
-    "Lab Room 1",
-    "Lab Room 2",
-    "Instrument Room",
-    "Storage",
-    "Calibration Lab",
-    "Table 2, Cabinet 2",
-  ];
 
   const filterRefs = {
     location: useRef(null),
@@ -64,7 +47,31 @@ const Instruments = () => {
     condition: useRef(null),
   };
 
+  const fetchInstruments = async () => {
+    try {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      const formatted = data.map((item) => ({
+        id: item.instrument_id,
+        instrument: item.name,
+        description: item.description,
+        location: item.location,
+        quantity: item.quantity,
+        unit: item.unit,
+        capacity: item.capacity,
+        status: item.status,
+        condition: item.condition,
+        remarks: item.remarks,
+      }));
+      setInstruments(formatted);
+    } catch (err) {
+      console.error("Fetch error:", err);
+    }
+  };
+
   useEffect(() => {
+    fetchInstruments();
+
     const handleClickOutside = (event) => {
       Object.entries(filterRefs).forEach(([key, ref]) => {
         if (ref.current && !ref.current.contains(event.target)) {
@@ -75,6 +82,8 @@ const Instruments = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const locations = [...new Set(instruments.map((item) => item.location))];
 
   const filteredInstruments = instruments.filter((item) => {
     const matchesSearch =
@@ -151,20 +160,80 @@ const Instruments = () => {
     setShowForm(true);
   };
 
+const handleSave = async (formData) => {
+  const method = editingItem ? "PUT" : "POST";
+  const url = editingItem ? `${API_URL}/${editingItem.id}` : API_URL;
+
+  const payload = {
+    name: formData.instrument,
+    description: formData.description,
+    location: formData.location,
+    quantity: parseInt(formData.quantity),
+    unit: formData.unit || "pcs", // fallback if unit is missing
+    capacity: formData.capacity,
+    status: formData.status,
+    condition: formData.condition,
+    remarks: formData.remarks,
+  };
+
+  console.log("Saving payload:", payload);
+
+  const res = await fetch(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (res.ok) {
+    await fetchInstruments();
+    setShowForm(false);
+    setEditingItem(null);
+  } else {
+    console.error("Save failed", await res.text());
+  }
+};
+
+
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to delete this instrument?")) {
+      const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+      if (res.ok) fetchInstruments();
+    }
+  };
+
   const handleInlineEdit = (item) => {
     setEditingRowId(item.id);
     setEditingData({ ...item });
   };
 
-  const handleSaveInlineEdit = () => {
-    setInstruments(
-      instruments.map((item) =>
-        item.id === editingRowId ? { ...editingData } : item
-      )
-    );
+const handleSaveInlineEdit = async () => {
+  const payload = {
+    name: editingData.instrument,
+    description: editingData.description,
+    location: editingData.location,
+    quantity: parseInt(editingData.quantity),
+    unit: editingData.unit || "pcs", // fallback
+    capacity: editingData.capacity,
+    status: editingData.status,
+    condition: editingData.condition,
+    remarks: editingData.remarks,
+  };
+
+  const res = await fetch(`${API_URL}/${editingRowId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (res.ok) {
+    await fetchInstruments();
     setEditingRowId(null);
     setEditingData({});
-  };
+  } else {
+    console.error("Update failed", await res.text());
+  }
+};
+
 
   const handleCancelInlineEdit = () => {
     setEditingRowId(null);
@@ -179,24 +248,6 @@ const Instruments = () => {
     setDetailItem(item);
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this instrument?")) {
-      setInstruments(instruments.filter((item) => item.id !== id));
-    }
-  };
-
-  const handleSave = (formData) => {
-    if (editingItem) {
-      setInstruments(
-        instruments.map((item) =>
-          item.id === editingItem.id ? { ...item, ...formData } : item
-        )
-      );
-    }
-    setShowForm(false);
-    setEditingItem(null);
-  };
-
   const handleCancel = () => {
     setShowForm(false);
     setEditingItem(null);
@@ -208,7 +259,6 @@ const Instruments = () => {
         <div className="section-header">
           <h1 className="font-marcellus">Instruments Inventory</h1>
         </div>
-
         <div className="controls-section">
           <div className="search-container">
             <Search size={20} className="search-icon" />
@@ -221,8 +271,7 @@ const Instruments = () => {
             />
           </div>
           <button className="btn-primary" onClick={handleAdd}>
-            <Plus size={20} />
-            Add Instrument
+            <Plus size={20} /> Add Instrument
           </button>
         </div>
 
