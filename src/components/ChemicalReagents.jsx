@@ -100,19 +100,19 @@ const ChemicalReagents = () => {
         setFilterCategory((prev) =>
           checked ? [...prev, value] : prev.filter((item) => item !== value)
         );
-        setShowCategoryFilter(false); 
+        setShowCategoryFilter(false);
         break;
       case "status":
         setFilterStatus((prev) =>
           checked ? [...prev, value] : prev.filter((item) => item !== value)
         );
-        setShowStatusFilter(false); 
+        setShowStatusFilter(false);
         break;
       case "location":
         setFilterLocation((prev) =>
           checked ? [...prev, value] : prev.filter((item) => item !== value)
         );
-        setShowLocationFilter(false); 
+        setShowLocationFilter(false);
         break;
       default:
         break;
@@ -335,7 +335,7 @@ const ChemicalReagents = () => {
                         value={filterExpirationMonth}
                         onChange={(e) => {
                           setFilterExpirationMonth(e.target.value);
-                          setShowExpirationFilter(false); 
+                          setShowExpirationFilter(false);
                         }}
                         className="month-input"
                       />
@@ -615,18 +615,13 @@ const ChemicalReagents = () => {
               onClose={() => setDetailItem(null)}
               title="Chemical Reagent Details"
               fields={[
-                // Identification
                 { label: "Item Code", value: detailItem.itemcode },
                 { label: "Category", value: detailItem.category },
                 { label: "Brand", value: detailItem.brand },
-
-                // Physical Properties
                 { label: "Form", value: detailItem.form },
                 { label: "Container Type", value: detailItem.containerType },
                 { label: "Container Size", value: detailItem.containerSize },
                 { label: "Quantity", value: detailItem.quantity },
-
-                // racking & Inventory
                 { label: "Date Received", value: detailItem.dateReceived },
                 {
                   label: "Date Opened",
@@ -635,14 +630,14 @@ const ChemicalReagents = () => {
                 { label: "Expiration Date", value: detailItem.expirationDate },
                 { label: "Status", value: detailItem.status },
                 { label: "Location", value: detailItem.location },
-
-                // Safety & Compliance
                 { label: "MSDS", value: detailItem.msds },
                 { label: "Disposal Method", value: detailItem.disposalMethod },
-
-                // Notes
                 { label: "Remarks", value: detailItem.remarks },
               ]}
+              onSave={(updatedFields) => {
+                console.log("Updated fields:", updatedFields);
+                // Save logic here 
+              }}
             />
           )}
         </div>

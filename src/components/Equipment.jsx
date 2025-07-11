@@ -346,7 +346,7 @@ const Equipment = () => {
                     >
                       <input
                         type="month"
-                        value={filterNextMaintenance} 
+                        value={filterNextMaintenance}
                         onChange={(e) => {
                           setFilterNextMaintenance(e.target.value);
                           setShowScheduleFilter(null);
@@ -460,7 +460,7 @@ const Equipment = () => {
                                 status,
                                 e.target.checked
                               );
-                              closeAllFilters(); 
+                              closeAllFilters();
                             }}
                           />
                           <span>{status}</span>
@@ -698,7 +698,7 @@ const Equipment = () => {
                 { label: "PO No.", value: detailItem.poNo },
                 {
                   label: "Purchase Price",
-                  value: `₱${detailItem.purchasePrice?.toFixed(2)}`,
+                  value: `₱${Number(detailItem.purchasePrice || 0).toFixed(2)}`,
                 },
                 { label: "Fund Source", value: detailItem.fundSource },
                 { label: "Supplier", value: detailItem.supplier },
@@ -713,6 +713,10 @@ const Equipment = () => {
                   value: detailItem.equipmentManual,
                 },
               ]}
+              onSave={(updatedFields) => {
+                console.log("Updated fields:", updatedFields);
+                // Save logic here 
+              }}
             />
           )}
         </div>
