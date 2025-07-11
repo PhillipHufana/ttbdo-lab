@@ -474,7 +474,7 @@ const Equipment = () => {
                   <span>Actions</span>
                 </div>
               </div>
-
+              <div className="table-scroll-body">
               <div className="table-body">
                 {filteredEquipment.map((item) => (
                   <div
@@ -650,6 +650,7 @@ const Equipment = () => {
                     </div>
                   </div>
                 ))}
+              </div>
               </div>
             </div>
           )}

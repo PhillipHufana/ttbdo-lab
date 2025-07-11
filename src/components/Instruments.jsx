@@ -415,7 +415,7 @@ const Instruments = () => {
                 <span>Actions</span>
               </div>
             </div>
-
+            <div className="table-scroll-body">
             <div className="table-body">
               {filteredInstruments.map((item) => (
                 <div
@@ -558,6 +558,7 @@ const Instruments = () => {
                   </div>
                 </div>
               ))}
+            </div>
             </div>
           </div>
         )}

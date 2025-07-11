@@ -421,6 +421,7 @@ const ChemicalReagents = () => {
                 </div>
               </div>
               {/* Table Body */}
+              <div className="table-scroll-body">
               <div className="table-body">
                 {filteredReagents.map((reagent) => (
                   <div
@@ -605,6 +606,7 @@ const ChemicalReagents = () => {
                     </div>
                   </div>
                 ))}
+              </div>
               </div>
             </div>
           )}

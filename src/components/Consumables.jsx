@@ -338,7 +338,7 @@ const Consumables = () => {
                 <span>Actions</span>
               </div>
             </div>
-
+            <div className="table-scroll-body">
             <div className="table-body">
               {filteredConsumables.map((item) => (
                 <div
@@ -478,6 +478,7 @@ const Consumables = () => {
                   </div>
                 </div>
               ))}
+            </div>
             </div>
           </div>
         )}
