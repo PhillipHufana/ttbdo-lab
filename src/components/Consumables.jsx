@@ -1,3 +1,4 @@
+// src/components/Consumables.jsx
 import { useState, useRef, useEffect } from "react";
 import {
   Search,
@@ -11,6 +12,22 @@ import {
 import ConsumableForm from "./forms/ConsumableForm";
 import DetailPopup from "./DetailPopup";
 
+const API_URL = "http://localhost:5000/api/consumable";
+
+const formatDateInput = (dateStr) =>
+  typeof dateStr === "string" ? dateStr.slice(0, 10) : "";
+
+const formatDateReadable = (dateStr) => {
+  if (!dateStr) return "";
+  const [year, month, day] = dateStr.slice(0, 10).split("-");
+  const date = new Date(`${year}-${month}-${day}T00:00:00`);
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
+
 const Consumables = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterLocation, setFilterLocation] = useState([]);
@@ -23,31 +40,61 @@ const Consumables = () => {
   const [editingData, setEditingData] = useState({});
   const [showLocationFilter, setShowLocationFilter] = useState(false);
 
-  const [consumables, setConsumables] = useState([
-    {
-      id: 1,
-      supplyItem: "Sterilized Membrane Filters",
-      brand: "Pall",
-      description: "Diameter: 47mm, FR: 0.45 micrometer, 200 per box",
-      quantity: 500,
-      remainingQuantity: "1 (box)",
-      dateReceived: "2023-09-26",
-      dateOpened: "",
-      expirationDate: "2025-02",
-      receivedBy: "",
-      poNo: "",
-      price: "",
-      totalPrice: "",
-      supplier: "",
-      location: "Table 3, Drawer 4",
-    },
-  ]);
+  const [consumables, setConsumables] = useState([]);
 
-  const locations = ["Table 3, Drawer 4", "Shelf 2b", "Shelf 1d"];
+  const fetchConsumables = async () => {
+    try {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      const formatted = data.map((item) => ({
+        id: item.supply_id,
+        supplyItem: item.name,
+        category: item.category,
+        brand: item.brand,
+        description: item.description,
+        remainingQuantity: item.remaining_qty,
+        unit: item.unit,
+        dateReceived: item.date_received,
+        dateOpened: item.date_opened,
+        expirationDate: item.expiration_date,
+        receivedBy: item.received_by,
+        poNo: item.po_no,
+        price: item.unit_price,
+        quantity: item.quantity,
+        totalPrice: item.total_price,
+        supplier: item.supplier,
+        location: item.location,
+      }));
+      setConsumables(formatted);
+    } catch (err) {
+      console.error("Fetch error:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchConsumables();
+    const handleClickOutside = (event) => {
+      if (locationRef.current && !locationRef.current.contains(event.target)) {
+        setShowLocationFilter(false);
+      }
+      if (
+        expirationRef.current &&
+        !expirationRef.current.contains(event.target)
+      ) {
+        setShowExpirationFilter(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const locations = [...new Set(consumables.map((item) => item.location))];
 
   const filteredConsumables = consumables.filter((item) => {
     const matchesSearch =
-      item.supplyItem.toLowerCase() ||
+      item.supplyItem.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.location.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesLocation =
@@ -66,19 +113,74 @@ const Consumables = () => {
     setShowForm(true);
   };
 
-  const handleInlineEdit = (item) => {
-    setEditingRowId(item.id);
-    setEditingData({ ...item });
+  const handleSave = async (formData) => {
+    const method = editingItem ? "PUT" : "POST";
+    const url = editingItem ? `${API_URL}/${editingItem.id}` : API_URL;
+    const payload = {
+      name: formData.supplyItem,
+      category: formData.category || "Consumable",
+      brand: formData.brand,
+      description: formData.description,
+      remaining_qty: formData.remainingQuantity,
+      unit: formData.unit || "pcs",
+      date_received: formatDateInput(formData.dateReceived),
+      date_opened: formatDateInput(formData.dateOpened),
+      expiration_date: formatDateInput(formData.expirationDate),
+      received_by: formData.receivedBy,
+      po_no: formData.poNo,
+      unit_price: formData.price,
+      quantity: parseInt(formData.quantity),
+      total_price: formData.totalPrice,
+      supplier: formData.supplier,
+      location: formData.location,
+    };
+
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      await fetchConsumables();
+      setShowForm(false);
+      setEditingItem(null);
+    } else {
+      console.error("Save failed", await res.text());
+    }
   };
 
-  const handleSaveInlineEdit = () => {
-    setConsumables(
-      consumables.map((item) =>
-        item.id === editingRowId ? { ...editingData } : item
-      )
-    );
-    setEditingRowId(null);
-    setEditingData({});
+  const handleInlineEdit = (item) => {
+    setEditingRowId(item.id);
+    setEditingData({
+      ...item,
+      dateOpened: formatDateInput(item.dateOpened),
+      expirationDate: formatDateInput(item.expirationDate),
+      dateReceived: formatDateInput(item.dateReceived),
+    });
+  };
+
+  const handleSaveInlineEdit = async () => {
+    const payload = {
+      name: editingData.supplyItem,
+      brand: editingData.brand,
+      description: editingData.description,
+      remaining_qty: editingData.remainingQuantity,
+      quantity: parseInt(editingData.quantity),
+      expiration_date: formatDateInput(editingData.expirationDate),
+      date_opened: formatDateInput(editingData.dateOpened),
+      location: editingData.location,
+    };
+    const res = await fetch(`${API_URL}/${editingRowId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (res.ok) {
+      await fetchConsumables();
+      setEditingRowId(null);
+      setEditingData({});
+    }
   };
 
   const handleCancelInlineEdit = () => {
@@ -94,22 +196,11 @@ const Consumables = () => {
     setDetailItem(item);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this consumable?")) {
-      setConsumables(consumables.filter((item) => item.id !== id));
+      const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+      if (res.ok) fetchConsumables();
     }
-  };
-
-  const handleSave = (formData) => {
-    if (editingItem) {
-      setConsumables(
-        consumables.map((item) =>
-          item.id === editingItem.id ? { ...item, ...formData } : item
-        )
-      );
-    }
-    setShowForm(false);
-    setEditingItem(null);
   };
 
   const handleCancel = () => {
@@ -118,37 +209,16 @@ const Consumables = () => {
   };
 
   const handleFilterChange = (filterType, value, checked) => {
-    switch (filterType) {
-      case "location":
-        setFilterLocation((prev) =>
-          checked ? [...prev, value] : prev.filter((item) => item !== value)
-        );
-        break;
+    if (filterType === "location") {
+      setFilterLocation((prev) =>
+        checked ? [...prev, value] : prev.filter((item) => item !== value)
+      );
     }
   };
 
   const locationRef = useRef(null);
   const expirationRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (locationRef.current && !locationRef.current.contains(event.target)) {
-        setShowLocationFilter(false);
-      }
-      if (
-        expirationRef.current &&
-        !expirationRef.current.contains(event.target)
-      ) {
-        setShowExpirationFilter(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
+  
   return (
     <div className="content-section">
       <div className="content-card">
@@ -317,33 +387,35 @@ const Consumables = () => {
                     )}
                   </div>
                   <div className="row-cell">
-                    {editingRowId === item.id ? (
-                      <input
-                        type="date"
-                        value={editingData.dateOpened || ""}
-                        onChange={(e) =>
-                          handleInputChange("dateOpened", e.target.value)
-                        }
-                        className="inline-edit-input"
-                      />
-                    ) : (
-                      item.dateOpened || "Not opened"
-                    )}
-                  </div>
-                  <div className="row-cell">
-                    {editingRowId === item.id ? (
-                      <input
-                        type="date"
-                        value={editingData.expirationDate}
-                        onChange={(e) =>
-                          handleInputChange("expirationDate", e.target.value)
-                        }
-                        className="inline-edit-input"
-                      />
-                    ) : (
-                      <span className="text-left">{item.expirationDate}</span>
-                    )}
-                  </div>
+                  {editingRowId === item.id ? (
+                    <input
+                      type="date"
+                      value={formatDateInput(editingData.dateOpened)}
+                      onChange={(e) =>
+                        handleInputChange("dateOpened", e.target.value)
+                      }
+                      className="inline-edit-input"
+                    />
+                  ) : (
+                    <span>{formatDateReadable(item.dateOpened) || "Not opened"}</span>
+                  )}
+                </div>
+
+                <div className="row-cell">
+                  {editingRowId === item.id ? (
+                    <input
+                      type="date"
+                      value={formatDateInput(editingData.expirationDate)}
+                      onChange={(e) =>
+                        handleInputChange("expirationDate", e.target.value)
+                      }
+                      className="inline-edit-input"
+                    />
+                  ) : (
+                    <span className="text-left">{formatDateReadable(item.expirationDate)}</span>
+                  )}
+                </div>
+
                   <div className="row-cell">
                     {editingRowId === item.id ? (
                       <select
