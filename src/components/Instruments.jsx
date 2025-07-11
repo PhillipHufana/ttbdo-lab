@@ -127,27 +127,27 @@ const Instruments = () => {
   };
 
   const getStatusColor = (status) => {
-  switch (status) {
-    case "Opened":
-      return "status-opened";
-    case "Unused":
-      return "status-unused";
-    case "Used":
-      return "status-used";
-    case "Opened, unused":
-      return "status-opened-unused";
-    case "Sealed":
-      return "status-unopened";
-    case "Tip Chipped":
-      return "status-tip-chipped";
-    case "Unopened":
-      return "status-unopened";
-    case "Broken":
-      return "status-broken";
-    default:
-      return "";
-  }
-};
+    switch (status) {
+      case "Opened":
+        return "status-opened";
+      case "Unused":
+        return "status-unused";
+      case "Used":
+        return "status-used";
+      case "Opened, unused":
+        return "status-opened-unused";
+      case "Sealed":
+        return "status-unopened";
+      case "Tip Chipped":
+        return "status-tip-chipped";
+      case "Unopened":
+        return "status-unopened";
+      case "Broken":
+        return "status-broken";
+      default:
+        return "";
+    }
+  };
 
   const getConditionColor = (condition) => {
     switch (condition) {
@@ -421,149 +421,159 @@ const Instruments = () => {
               </div>
             </div>
             <div className="table-scroll-body">
-            <div className="table-body">
-              {filteredInstruments.map((item) => (
-                <div
-                  key={item.id}
-                  className={`table-row ${
-                    editingRowId === item.id ? "editing-row" : ""
-                  }`}
-                >
-                  <div className="row-cell">
-                    <div className="item-details">
-                      <button
-                        className="item-name"
-                        onClick={() => handleViewDetails(item)}
-                      >
-                        {item.instrument}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="row-cell">
-                    {editingRowId === item.id ? (
-                      <input
-                        type="number"
-                        value={editingData.quantity}
-                        onChange={(e) =>
-                          handleInputChange("quantity", e.target.value)
-                        }
-                        className="inline-edit-input"
-                      />
-                    ) : (
-                      item.quantity
-                    )}
-                  </div>
-                  <div className="row-cell">{item.description}</div>
-                  <div className="row-cell">
-                    {editingRowId === item.id ? (
-                      <select
-                        value={editingData.location}
-                        onChange={(e) =>
-                          handleInputChange("location", e.target.value)
-                        }
-                        className="inline-edit-select"
-                      >
-                        {locations.map((loc) => (
-                          <option key={loc} value={loc}>
-                            {loc}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      item.location
-                    )}
-                  </div>
+              <div className="table-body">
+                {filteredInstruments
+                  .sort((a, b) => {
+                    const aName = a.instrument?.trim() || "";
+                    const bName = b.instrument?.trim() || "";
+                    if (!aName && !bName) return 0;
+                    if (!aName) return 1;
+                    if (!bName) return -1;
+                    return aName.localeCompare(bName);
+                  })
 
-                  <div className="row-cell">
-                    {editingRowId === item.id ? (
-                      <select
-                        value={editingData.status}
-                        onChange={(e) =>
-                          handleInputChange("status", e.target.value)
-                        }
-                        className="inline-edit-select"
-                      >
-                        {statuses.map((status) => (
-                          <option key={status} value={status}>
-                            {status}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span
-                        className={`status-badge ${getStatusColor(
-                          item.status
-                        )}`}
-                      >
-                        {item.status}
-                      </span>
-                    )}
-                  </div>
-                  <div className="row-cell">
-                    {editingRowId === item.id ? (
-                      <select
-                        value={editingData.condition}
-                        onChange={(e) =>
-                          handleInputChange("condition", e.target.value)
-                        }
-                        className="inline-edit-select"
-                      >
-                        {conditions.map((condition) => (
-                          <option key={condition} value={condition}>
-                            {condition}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span
-                        className={`status-badge ${getConditionColor(
-                          item.condition
-                        )}`}
-                      >
-                        {item.condition}
-                      </span>
-                    )}
-                  </div>
-                  <div className="row-cell">
-                    {editingRowId === item.id ? (
-                      <div className="editing-actions">
-                        <button
-                          className="btn-icon btn-save"
-                          onClick={handleSaveInlineEdit}
-                          title="Save"
-                        >
-                          <Check size={16} />
-                        </button>
-                        <button
-                          className="btn-icon btn-cancel"
-                          onClick={handleCancelInlineEdit}
-                          title="Cancel"
-                        >
-                          <X size={16} />
-                        </button>
+                  .map((item) => (
+                    <div
+                      key={item.id}
+                      className={`table-row ${
+                        editingRowId === item.id ? "editing-row" : ""
+                      }`}
+                    >
+                      <div className="row-cell">
+                        <div className="item-details">
+                          <button
+                            className="item-name"
+                            onClick={() => handleViewDetails(item)}
+                          >
+                            {item.instrument}
+                          </button>
+                        </div>
                       </div>
-                    ) : (
-                      <div className="action-buttons">
-                        <button
-                          className="btn-icon"
-                          onClick={() => handleInlineEdit(item)}
-                          title="Edit"
-                        >
-                          <Edit size={16} />
-                        </button>
-                        <button
-                          className="btn-icon delete"
-                          onClick={() => handleDelete(item.id)}
-                          title="Delete"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                      <div className="row-cell">
+                        {editingRowId === item.id ? (
+                          <input
+                            type="number"
+                            value={editingData.quantity}
+                            onChange={(e) =>
+                              handleInputChange("quantity", e.target.value)
+                            }
+                            className="inline-edit-input"
+                          />
+                        ) : (
+                          item.quantity
+                        )}
                       </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+                      <div className="row-cell">{item.description}</div>
+                      <div className="row-cell">
+                        {editingRowId === item.id ? (
+                          <select
+                            value={editingData.location}
+                            onChange={(e) =>
+                              handleInputChange("location", e.target.value)
+                            }
+                            className="inline-edit-select"
+                          >
+                            {locations.map((loc) => (
+                              <option key={loc} value={loc}>
+                                {loc}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          item.location
+                        )}
+                      </div>
+
+                      <div className="row-cell">
+                        {editingRowId === item.id ? (
+                          <select
+                            value={editingData.status}
+                            onChange={(e) =>
+                              handleInputChange("status", e.target.value)
+                            }
+                            className="inline-edit-select"
+                          >
+                            {statuses.map((status) => (
+                              <option key={status} value={status}>
+                                {status}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span
+                            className={`status-badge ${getStatusColor(
+                              item.status
+                            )}`}
+                          >
+                            {item.status}
+                          </span>
+                        )}
+                      </div>
+                      <div className="row-cell">
+                        {editingRowId === item.id ? (
+                          <select
+                            value={editingData.condition}
+                            onChange={(e) =>
+                              handleInputChange("condition", e.target.value)
+                            }
+                            className="inline-edit-select"
+                          >
+                            {conditions.map((condition) => (
+                              <option key={condition} value={condition}>
+                                {condition}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span
+                            className={`status-badge ${getConditionColor(
+                              item.condition
+                            )}`}
+                          >
+                            {item.condition}
+                          </span>
+                        )}
+                      </div>
+                      <div className="row-cell">
+                        {editingRowId === item.id ? (
+                          <div className="editing-actions">
+                            <button
+                              className="btn-icon btn-save"
+                              onClick={handleSaveInlineEdit}
+                              title="Save"
+                            >
+                              <Check size={16} />
+                            </button>
+                            <button
+                              className="btn-icon btn-cancel"
+                              onClick={handleCancelInlineEdit}
+                              title="Cancel"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="action-buttons">
+                            <button
+                              className="btn-icon"
+                              onClick={() => handleInlineEdit(item)}
+                              title="Edit"
+                            >
+                              <Edit size={16} />
+                            </button>
+                            <button
+                              className="btn-icon delete"
+                              onClick={() => handleDelete(item.id)}
+                              title="Delete"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+              </div>
             </div>
           </div>
         )}
@@ -591,7 +601,7 @@ const Instruments = () => {
             ]}
             onSave={(updatedFields) => {
               console.log("Updated fields:", updatedFields);
-              // Save logic here 
+              // Save logic here
             }}
           />
         )}

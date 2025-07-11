@@ -339,7 +339,9 @@ const Consumables = () => {
             </div>
             <div className="table-scroll-body">
             <div className="table-body">
-              {filteredConsumables.map((item) => (
+              {filteredConsumables
+              .sort((a, b) => a.supplyItem.localeCompare(b.supplyItem))
+              .map((item) => (
                 <div
                   key={item.id}
                   className={`table-row ${

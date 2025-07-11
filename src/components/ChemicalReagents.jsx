@@ -72,21 +72,24 @@ const ChemicalReagents = () => {
     if (locationRef.current && !locationRef.current.contains(event.target)) {
       setShowLocationFilter(false);
     }
-    if (expirationRef.current && !expirationRef.current.contains(event.target)) {
+    if (
+      expirationRef.current &&
+      !expirationRef.current.contains(event.target)
+    ) {
       setShowExpirationFilter(false);
     }
   };
 
   const fetchReagents = async () => {
-  try {
-    const res = await fetch(API_URL);
-    const data = await res.json();
-    console.log("Fetched data:", data); // Check structure here
-    setReagents(data);
-  } catch (err) {
-    console.error("Fetch failed:", err);
-  }
-};
+    try {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      console.log("Fetched data:", data); // Check structure here
+      setReagents(data);
+    } catch (err) {
+      console.error("Fetch failed:", err);
+    }
+  };
 
   // const handleFilterChange = (type, value, checked) => {
   //   if (type === "category") {
@@ -162,32 +165,29 @@ const ChemicalReagents = () => {
     setEditingItem(reagent);
     setShowForm(true);
   };
-const handleSave = async (formData) => {
-  const payload = {
-    ...formData,
-    msds_available: formData.msds_available ? 1 : 0,
+  const handleSave = async (formData) => {
+    const payload = {
+      ...formData,
+      msds_available: formData.msds_available ? 1 : 0,
+    };
+
+    const method = editingItem ? "PUT" : "POST";
+    const url = editingItem ? `${API_URL}/${editingItem.chemical_id}` : API_URL;
+
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      await fetchReagents();
+      setShowForm(false);
+      setEditingItem(null);
+    } else {
+      console.error(await res.text());
+    }
   };
-
-  const method = editingItem ? "PUT" : "POST";
-  const url = editingItem
-    ? `${API_URL}/${editingItem.chemical_id}`
-    : API_URL;
-
-  const res = await fetch(url, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  if (res.ok) {
-    await fetchReagents();
-    setShowForm(false);
-    setEditingItem(null);
-  } else {
-    console.error(await res.text());
-  }
-};
-
 
   const handleDelete = async (id) => {
     if (window.confirm("Delete?")) {
@@ -243,7 +243,7 @@ const handleSave = async (formData) => {
     }
   };
 
-   const formatDatePretty = (isoDateStr) => {
+  const formatDatePretty = (isoDateStr) => {
     if (!isoDateStr) return "N/A";
     const date = new Date(isoDateStr);
     return date.toLocaleDateString("en-US", {
@@ -253,8 +253,7 @@ const handleSave = async (formData) => {
     });
   };
 
-
-    return (
+  return (
     <div className="reagents">
       <div className="content-section">
         <div className="content-card">
@@ -283,7 +282,11 @@ const handleSave = async (formData) => {
           {showForm ? (
             <div className="form-container">
               <div className="form-header">
-                <h2>{editingItem ? "Edit Chemical Reagent" : "Add Chemical Reagent"}</h2>
+                <h2>
+                  {editingItem
+                    ? "Edit Chemical Reagent"
+                    : "Add Chemical Reagent"}
+                </h2>
               </div>
               <ChemicalReagentForm
                 initialData={editingItem}
@@ -448,174 +451,208 @@ const handleSave = async (formData) => {
               </div>
               {/* Table Body */}
               <div className="table-scroll-body">
-              <div className="table-body">
-                {filteredReagents.map((reagent) => (
-                  <div
-                    key={reagent.chemical_id}
-                    className={`table-row ${editingRowId === reagent.chemical_id ? "editing-row" : ""}`}
-                  >
-                    {/* Chemical Name */}
-                    <div className="row-cell flex-[2]">
-                      <div className="item-details">
-                        <button
-                          className="item-name"
-                          onClick={() => handleViewDetails(reagent)}
-                        >
-                          {reagent.name}
-                        </button>
-                        <div className="item-brand">{reagent.brand}</div>
+                <div className="table-body">
+                  {filteredReagents
+                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .map((reagent) => (
+                      <div
+                        key={reagent.chemical_id}
+                        className={`table-row ${
+                          editingRowId === reagent.chemical_id
+                            ? "editing-row"
+                            : ""
+                        }`}
+                      >
+                        {/* Chemical Name */}
+                        <div className="row-cell flex-[2]">
+                          <div className="item-details">
+                            <button
+                              className="item-name"
+                              onClick={() => handleViewDetails(reagent)}
+                            >
+                              {reagent.name}
+                            </button>
+                            <div className="item-brand">{reagent.brand}</div>
+                          </div>
+                        </div>
+
+                        {/* Category */}
+                        <div className="row-cell flex-[1.2]">
+                          {editingRowId === reagent.chemical_id ? (
+                            <select
+                              value={editingData.category}
+                              onChange={(e) =>
+                                handleInputChange("category", e.target.value)
+                              }
+                              className="inline-edit-select"
+                            >
+                              {categories.map((cat) => (
+                                <option key={cat} value={cat}>
+                                  {cat}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span className="text-left">
+                              {reagent.category}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Date Opened */}
+                        <div className="row-cell flex-[1]">
+                          {editingRowId === reagent.chemical_id ? (
+                            <input
+                              type="date"
+                              value={editingData.date_opened || ""}
+                              onChange={(e) =>
+                                handleInputChange("date_opened", e.target.value)
+                              }
+                              className="inline-edit-input"
+                            />
+                          ) : (
+                            <span className="text-left">
+                              {formatDatePretty(reagent.date_opened) ||
+                                "Not opened"}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Expiration Date */}
+                        <div className="row-cell flex-[1]">
+                          {editingRowId === reagent.chemical_id ? (
+                            <input
+                              type="date"
+                              value={editingData.expiration_date || ""}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  "expiration_date",
+                                  e.target.value
+                                )
+                              }
+                              className="inline-edit-input"
+                            />
+                          ) : (
+                            <span className="text-left">
+                              {formatDatePretty(reagent.expiration_date)}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Container Size */}
+                        <div className="row-cell flex-[0.8]">
+                          {editingRowId === reagent.chemical_id ? (
+                            <input
+                              type="text"
+                              value={editingData.container_size || ""}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  "container_size",
+                                  e.target.value
+                                )
+                              }
+                              className="inline-edit-input"
+                            />
+                          ) : (
+                            <span className="text-left">
+                              {reagent.container_size}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Location */}
+                        <div className="row-cell flex-[1]">
+                          {editingRowId === reagent.chemical_id ? (
+                            <select
+                              value={editingData.location}
+                              onChange={(e) =>
+                                handleInputChange("location", e.target.value)
+                              }
+                              className="inline-edit-select"
+                            >
+                              {locations.map((loc) => (
+                                <option key={loc} value={loc}>
+                                  {loc}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span className="text-left">
+                              {reagent.location}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Status */}
+                        <div className="row-cell flex-[1]">
+                          {editingRowId === reagent.chemical_id ? (
+                            <select
+                              value={editingData.status}
+                              onChange={(e) =>
+                                handleInputChange("status", e.target.value)
+                              }
+                              className="inline-edit-select"
+                            >
+                              {statuses.map((status) => (
+                                <option key={status} value={status}>
+                                  {status}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span
+                              className={`status-badge ${getStatusColor(
+                                reagent.status
+                              )}`}
+                            >
+                              {reagent.status}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="row-cell flex-[1]">
+                          {editingRowId === reagent.chemical_id ? (
+                            <div className="action-buttons">
+                              <button
+                                className="btn-icon btn-save"
+                                onClick={handleSaveInlineEdit}
+                                title="Save"
+                              >
+                                <Check size={16} />
+                              </button>
+                              <button
+                                className="btn-icon btn-cancel"
+                                onClick={handleCancelInlineEdit}
+                                title="Cancel"
+                              >
+                                <X size={16} />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="action-buttons">
+                              <button
+                                className="btn-icon btn-edit"
+                                onClick={() => handleInlineEdit(reagent)}
+                                title="Edit"
+                              >
+                                <Edit size={16} />
+                              </button>
+                              <button
+                                className="btn-icon btn-delete"
+                                onClick={() =>
+                                  handleDelete(reagent.chemical_id)
+                                }
+                                title="Delete"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-
-                    {/* Category */}
-                    <div className="row-cell flex-[1.2]">
-                      {editingRowId === reagent.chemical_id ? (
-                        <select
-                          value={editingData.category}
-                          onChange={(e) => handleInputChange("category", e.target.value)}
-                          className="inline-edit-select"
-                        >
-                          {categories.map((cat) => (
-                            <option key={cat} value={cat}>
-                              {cat}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <span className="text-left">{reagent.category}</span>
-                      )}
-                    </div>
-
-                    {/* Date Opened */}
-                    <div className="row-cell flex-[1]">
-                      {editingRowId === reagent.chemical_id ? (
-                        <input
-                          type="date"
-                          value={editingData.date_opened || ""}
-                          onChange={(e) => handleInputChange("date_opened", e.target.value)}
-                          className="inline-edit-input"
-                        />
-                      ) : (
-                        <span className="text-left">
-                          {formatDatePretty(reagent.date_opened) || "Not opened"}
-                        </span>
-
-                      )}
-                    </div>
-
-                    {/* Expiration Date */}
-                    <div className="row-cell flex-[1]">
-                      {editingRowId === reagent.chemical_id ? (
-                        <input
-                          type="date"
-                          value={editingData.expiration_date || ""}
-                          onChange={(e) =>
-                            handleInputChange("expiration_date", e.target.value)
-                          }
-                          className="inline-edit-input"
-                        />
-                      ) : (
-                        <span className="text-left">{formatDatePretty(reagent.expiration_date)}</span>
-                      )}
-                    </div>
-
-                    {/* Container Size */}
-                    <div className="row-cell flex-[0.8]">
-                      {editingRowId === reagent.chemical_id ? (
-                        <input
-                          type="text"
-                          value={editingData.container_size || ""}
-                          onChange={(e) =>
-                            handleInputChange("container_size", e.target.value)
-                          }
-                          className="inline-edit-input"
-                        />
-                      ) : (
-                        <span className="text-left">{reagent.container_size}</span>
-                      )}
-                    </div>
-
-                    {/* Location */}
-                    <div className="row-cell flex-[1]">
-                      {editingRowId === reagent.chemical_id ? (
-                        <select
-                          value={editingData.location}
-                          onChange={(e) => handleInputChange("location", e.target.value)}
-                          className="inline-edit-select"
-                        >
-                          {locations.map((loc) => (
-                            <option key={loc} value={loc}>
-                              {loc}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <span className="text-left">{reagent.location}</span>
-                      )}
-                    </div>
-
-                    {/* Status */}
-                    <div className="row-cell flex-[1]">
-                      {editingRowId === reagent.chemical_id ? (
-                        <select
-                          value={editingData.status}
-                          onChange={(e) => handleInputChange("status", e.target.value)}
-                          className="inline-edit-select"
-                        >
-                          {statuses.map((status) => (
-                            <option key={status} value={status}>
-                              {status}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <span className={`status-badge ${getStatusColor(reagent.status)}`}>
-                          {reagent.status}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="row-cell flex-[1]">
-                      {editingRowId === reagent.chemical_id ? (
-                        <div className="action-buttons">
-                          <button
-                            className="btn-icon btn-save"
-                            onClick={handleSaveInlineEdit}
-                            title="Save"
-                          >
-                            <Check size={16} />
-                          </button>
-                          <button
-                            className="btn-icon btn-cancel"
-                            onClick={handleCancelInlineEdit}
-                            title="Cancel"
-                          >
-                            <X size={16} />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="action-buttons">
-                          <button
-                            className="btn-icon btn-edit"
-                            onClick={() => handleInlineEdit(reagent)}
-                            title="Edit"
-                          >
-                            <Edit size={16} />
-                          </button>
-                          <button
-                            className="btn-icon btn-delete"
-                            onClick={() => handleDelete(reagent.chemical_id)}
-                            title="Delete"
-                          >
-                            <Trash2 size={16} />
-                          </button> 
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    ))}
+                </div>
               </div>
             </div>
           )}
@@ -637,19 +674,28 @@ const handleSave = async (formData) => {
                 { label: "Quantity", value: detailItem.quantity },
 
                 // Inventory
-                { label: "Date Received", value: formatDatePretty(detailItem.date_received) },
+                {
+                  label: "Date Received",
+                  value: formatDatePretty(detailItem.date_received),
+                },
                 {
                   label: "Date Opened",
-                  value: formatDatePretty(detailItem.date_opened) || "Not opened",
+                  value:
+                    formatDatePretty(detailItem.date_opened) || "Not opened",
                 },
-                { label: "Expiration Date", value: formatDatePretty(detailItem.expiration_date) },
+                {
+                  label: "Expiration Date",
+                  value: formatDatePretty(detailItem.expiration_date),
+                },
                 { label: "Status", value: detailItem.status },
                 { label: "Location", value: detailItem.location },
 
                 // Safety & Compliance
                 {
                   label: "MSDS",
-                  value: detailItem.msds_available ? "Available" : "Not Available",
+                  value: detailItem.msds_available
+                    ? "Available"
+                    : "Not Available",
                 },
                 { label: "Disposal Method", value: detailItem.disposal_method },
 
@@ -658,7 +704,7 @@ const handleSave = async (formData) => {
               ]}
               onSave={(updatedFields) => {
                 console.log("Updated fields:", updatedFields);
-                // Save logic here 
+                // Save logic here
               }}
             />
           )}

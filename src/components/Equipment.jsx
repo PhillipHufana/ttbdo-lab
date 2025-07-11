@@ -31,14 +31,14 @@ const Equipment = () => {
   const [showLocationFilter, setShowLocationFilter] = useState(false);
   const [showScheduleFilter, setShowScheduleFilter] = useState(null);
 
-const formatDatePretty = (iso) => {
-  if (!iso) return "N/A";
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-};
+  const formatDatePretty = (iso) => {
+    if (!iso) return "N/A";
+    return new Date(iso).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
 
   const locations = [
     "Left Side Table 2, Countertop",
@@ -86,10 +86,12 @@ const formatDatePretty = (iso) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-    const filteredEquipment = equipment.filter((item) => {
+  const filteredEquipment = equipment.filter((item) => {
     const matchesSearch =
       (item.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.equipment_code || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.equipment_code || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
       (item.location || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       (item.model || "").toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -111,7 +113,6 @@ const formatDatePretty = (iso) => {
       dateFilter(filterNextCalibration, item.next_calibration_date)
     );
   });
-
 
   const handleFilterChange = (type, value, checked) => {
     const updater = (prev) =>
@@ -491,263 +492,292 @@ const formatDatePretty = (iso) => {
                 </div>
               </div>
               <div className="table-scroll-body">
-              <div className="table-body">
-              {filteredEquipment.map((item) => (
-                <div
-                  key={item.equipment_id}
-                  className={`table-row ${
-                    editingRowId === item.equipment_id ? "editing-row" : ""
-                  }`}
-                >
-                  {/* Equipment Name */}
-                  <div className="row-cell">
-                    <div className="item-details">
-                      <button
-                        className="item-name"
-                        onClick={() => handleViewDetails(item)}
+                <div className="table-body">
+                  {filteredEquipment
+                    .sort((a, b) => {
+                      const aName = a.name?.trim() || "";
+                      const bName = b.name?.trim() || "";
+                      if (!aName && !bName) return 0;
+                      if (!aName) return 1;
+                      if (!bName) return -1;
+                      return aName.localeCompare(bName);
+                    })
+                    .map((item) => (
+                      <div
+                        key={item.equipment_id}
+                        className={`table-row ${
+                          editingRowId === item.equipment_id
+                            ? "editing-row"
+                            : ""
+                        }`}
                       >
-                        {item.name}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Code */}
-                  <div className="row-cell">{item.equipment_code}</div>
-
-                  {/* Model */}
-                  <div className="row-cell">
-                    {editingRowId === item.equipment_id ? (
-                      <input
-                        type="text"
-                        value={editingData.model}
-                        onChange={(e) =>
-                          handleInputChange("model", e.target.value)
-                        }
-                        className="inline-edit-input"
-                      />
-                    ) : (
-                      item.model
-                    )}
-                  </div>
-
-                  {/* Location */}
-                  <div className="row-cell">
-                    {editingRowId === item.equipment_id ? (
-                      <select
-                        value={editingData.location}
-                        onChange={(e) =>
-                          handleInputChange("location", e.target.value)
-                        }
-                        className="inline-edit-select"
-                      >
-                        {locations.map((loc) => (
-                          <option key={loc} value={loc}>
-                            {loc}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      item.location
-                    )}
-                  </div>
-
-                  {/* Last Maintenance */}
-                  <div className="row-cell">
-                    {editingRowId === item.equipment_id ? (
-                      <input
-                        type="date"
-                        value={editingData.last_updated || ""}
-                        onChange={(e) =>
-                          handleInputChange("last_updated", e.target.value)
-                        }
-                        className="inline-edit-input"
-                      />
-                    ) : (
-                      formatDatePretty(item.last_updated)
-                    )}
-                  </div>
-
-                  {/* Next Maintenance */}
-                  <div className="row-cell">
-                    {editingRowId === item.equipment_id ? (
-                      <input
-                        type="date"
-                        value={editingData.maintenance_schedule || ""}
-                        onChange={(e) =>
-                          handleInputChange("maintenance_schedule", e.target.value)
-                        }
-                        className="inline-edit-input"
-                      />
-                    ) : (
-                      formatDatePretty(item.maintenance_schedule)
-                    )}
-                  </div>
-
-                  {/* Last Calibration */}
-                  <div className="row-cell">
-                    {editingRowId === item.equipment_id ? (
-                      <input
-                        type="date"
-                        value={editingData.last_calibration_date || ""}
-                        onChange={(e) =>
-                          handleInputChange("last_calibration_date", e.target.value)
-                        }
-                        className="inline-edit-input"
-                      />
-                    ) : (
-                      formatDatePretty(item.last_calibration_date)
-                    )}
-                  </div>
-
-                  {/* Next Calibration */}
-                  <div className="row-cell">
-                    {editingRowId === item.equipment_id ? (
-                      <input
-                        type="date"
-                        value={editingData.next_calibration_date || ""}
-                        onChange={(e) =>
-                          handleInputChange("next_calibration_date", e.target.value)
-                        }
-                        className="inline-edit-input"
-                      />
-                    ) : (
-                      formatDatePretty(item.next_calibration_date)
-                    )}
-                  </div>
-
-                  {/* Status */}
-                  <div className="row-cell">
-                    {editingRowId === item.equipment_id ? (
-                      <select
-                        value={editingData.status}
-                        onChange={(e) =>
-                          handleInputChange("status", e.target.value)
-                        }
-                        className="inline-edit-select"
-                      >
-                        {statuses.map((status) => (
-                          <option key={status} value={status}>
-                            {status}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span className={`status-badge ${getStatusColor(item.status)}`}>
-                        {item.status}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="row-cell">
-                    {editingRowId === item.equipment_id ? (
-                      <div className="editing-actions">
-                        <button
-                          className="btn-icon btn-save"
-                          onClick={handleSaveInlineEdit}
-                          title="Save"
-                        >
-                          <Check size={16} />
-                        </button>
-                        <button
-                          className="btn-icon btn-cancel"
-                          onClick={handleCancelInlineEdit}
-                          title="Cancel"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="action-buttons">
-                        <button
-                          className="btn-icon"
-                          onClick={() => handleInlineEdit(item)}
-                          title="Edit"
-                        >
-                          <Edit size={16} />
-                        </button>
-                        <button
-                          className="btn-icon delete"
-                          onClick={() => handleDelete(item.equipment_id)}
-                          title="Delete"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        {/* Equipment Name */}
+                        <div className="row-cell">
+                          <div className="item-details">
+                            <button
+                              className="item-name"
+                              onClick={() => handleViewDetails(item)}
+                            >
+                              {item.name}
+                            </button>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+
+                        {/* Code */}
+                        <div className="row-cell">{item.equipment_code}</div>
+
+                        {/* Model */}
+                        <div className="row-cell">
+                          {editingRowId === item.equipment_id ? (
+                            <input
+                              type="text"
+                              value={editingData.model}
+                              onChange={(e) =>
+                                handleInputChange("model", e.target.value)
+                              }
+                              className="inline-edit-input"
+                            />
+                          ) : (
+                            item.model
+                          )}
+                        </div>
+
+                        {/* Location */}
+                        <div className="row-cell">
+                          {editingRowId === item.equipment_id ? (
+                            <select
+                              value={editingData.location}
+                              onChange={(e) =>
+                                handleInputChange("location", e.target.value)
+                              }
+                              className="inline-edit-select"
+                            >
+                              {locations.map((loc) => (
+                                <option key={loc} value={loc}>
+                                  {loc}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            item.location
+                          )}
+                        </div>
+
+                        {/* Last Maintenance */}
+                        <div className="row-cell">
+                          {editingRowId === item.equipment_id ? (
+                            <input
+                              type="date"
+                              value={editingData.last_updated || ""}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  "last_updated",
+                                  e.target.value
+                                )
+                              }
+                              className="inline-edit-input"
+                            />
+                          ) : (
+                            formatDatePretty(item.last_updated)
+                          )}
+                        </div>
+
+                        {/* Next Maintenance */}
+                        <div className="row-cell">
+                          {editingRowId === item.equipment_id ? (
+                            <input
+                              type="date"
+                              value={editingData.maintenance_schedule || ""}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  "maintenance_schedule",
+                                  e.target.value
+                                )
+                              }
+                              className="inline-edit-input"
+                            />
+                          ) : (
+                            formatDatePretty(item.maintenance_schedule)
+                          )}
+                        </div>
+
+                        {/* Last Calibration */}
+                        <div className="row-cell">
+                          {editingRowId === item.equipment_id ? (
+                            <input
+                              type="date"
+                              value={editingData.last_calibration_date || ""}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  "last_calibration_date",
+                                  e.target.value
+                                )
+                              }
+                              className="inline-edit-input"
+                            />
+                          ) : (
+                            formatDatePretty(item.last_calibration_date)
+                          )}
+                        </div>
+
+                        {/* Next Calibration */}
+                        <div className="row-cell">
+                          {editingRowId === item.equipment_id ? (
+                            <input
+                              type="date"
+                              value={editingData.next_calibration_date || ""}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  "next_calibration_date",
+                                  e.target.value
+                                )
+                              }
+                              className="inline-edit-input"
+                            />
+                          ) : (
+                            formatDatePretty(item.next_calibration_date)
+                          )}
+                        </div>
+
+                        {/* Status */}
+                        <div className="row-cell">
+                          {editingRowId === item.equipment_id ? (
+                            <select
+                              value={editingData.status}
+                              onChange={(e) =>
+                                handleInputChange("status", e.target.value)
+                              }
+                              className="inline-edit-select"
+                            >
+                              {statuses.map((status) => (
+                                <option key={status} value={status}>
+                                  {status}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span
+                              className={`status-badge ${getStatusColor(
+                                item.status
+                              )}`}
+                            >
+                              {item.status}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="row-cell">
+                          {editingRowId === item.equipment_id ? (
+                            <div className="editing-actions">
+                              <button
+                                className="btn-icon btn-save"
+                                onClick={handleSaveInlineEdit}
+                                title="Save"
+                              >
+                                <Check size={16} />
+                              </button>
+                              <button
+                                className="btn-icon btn-cancel"
+                                onClick={handleCancelInlineEdit}
+                                title="Cancel"
+                              >
+                                <X size={16} />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="action-buttons">
+                              <button
+                                className="btn-icon"
+                                onClick={() => handleInlineEdit(item)}
+                                title="Edit"
+                              >
+                                <Edit size={16} />
+                              </button>
+                              <button
+                                className="btn-icon delete"
+                                onClick={() => handleDelete(item.equipment_id)}
+                                title="Delete"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                </div>
               </div>
             </div>
           )}
 
           {detailItem && (
-          <DetailPopup
-            item={detailItem}
-            onClose={() => setDetailItem(null)}
-            title="Equipment Details"
-            fields={[
-              // Identification
-              { label: "Equipment Code", value: detailItem.equipment_code },
-              { label: "Name", value: detailItem.name },
-              { label: "Other Name", value: detailItem.other_name },
-              { label: "Brand", value: detailItem.brand },
-              { label: "Model", value: detailItem.model },
-              { label: "Serial No.", value: detailItem.serial_no },
+            <DetailPopup
+              item={detailItem}
+              onClose={() => setDetailItem(null)}
+              title="Equipment Details"
+              fields={[
+                // Identification
+                { label: "Equipment Code", value: detailItem.equipment_code },
+                { label: "Name", value: detailItem.name },
+                { label: "Other Name", value: detailItem.other_name },
+                { label: "Brand", value: detailItem.brand },
+                { label: "Model", value: detailItem.model },
+                { label: "Serial No.", value: detailItem.serial_no },
 
-              // Classification
-              { label: "Other Details", value: detailItem.other_details },
-              { label: "Status", value: detailItem.status },
-              { label: "Remarks", value: detailItem.remarks },
+                // Classification
+                { label: "Other Details", value: detailItem.other_details },
+                { label: "Status", value: detailItem.status },
+                { label: "Remarks", value: detailItem.remarks },
 
-              // Location & Tracking
-              { label: "Location", value: detailItem.location },
-              {
-                label: "Date Received",
-                value: formatDatePretty(detailItem.date_received),
-              },
+                // Location & Tracking
+                { label: "Location", value: detailItem.location },
+                {
+                  label: "Date Received",
+                  value: formatDatePretty(detailItem.date_received),
+                },
 
-              // Maintenance & Calibration
-              {
-                label: "Last Maintenance",
-                value: formatDatePretty(detailItem.last_updated),
-              },
-              {
-                label: "Next Maintenance",
-                value: formatDatePretty(detailItem.maintenance_schedule),
-              },
-              {
-                label: "Last Calibration",
-                value: formatDatePretty(detailItem.last_calibration_date),
-              },
-              {
-                label: "Next Calibration",
-                value: formatDatePretty(detailItem.next_calibration_date),
-              },
+                // Maintenance & Calibration
+                {
+                  label: "Last Maintenance",
+                  value: formatDatePretty(detailItem.last_updated),
+                },
+                {
+                  label: "Next Maintenance",
+                  value: formatDatePretty(detailItem.maintenance_schedule),
+                },
+                {
+                  label: "Last Calibration",
+                  value: formatDatePretty(detailItem.last_calibration_date),
+                },
+                {
+                  label: "Next Calibration",
+                  value: formatDatePretty(detailItem.next_calibration_date),
+                },
 
-              // Procurement
-              { label: "PO No.", value: detailItem.po_no },
-              {
-                label: "Purchase Price",
-                value: `₱${Number(detailItem.purchase_price || 0).toFixed(2)}`,
-              },
-              { label: "Fund Source", value: detailItem.fund_source },
-              { label: "Supplier", value: detailItem.supplier },
-              {
-                label: "Supplier Contact",
-                value: detailItem.supplier_contact,
-              },
+                // Procurement
+                { label: "PO No.", value: detailItem.po_no },
+                {
+                  label: "Purchase Price",
+                  value: `₱${Number(detailItem.purchase_price || 0).toFixed(
+                    2
+                  )}`,
+                },
+                { label: "Fund Source", value: detailItem.fund_source },
+                { label: "Supplier", value: detailItem.supplier },
+                {
+                  label: "Supplier Contact",
+                  value: detailItem.supplier_contact,
+                },
 
-              // Attachment
-              {
-                label: "Manual Available",
-                value: detailItem.manual_available ? "Yes" : "No",
-              },
-            ]}
-          />
-        )}
+                // Attachment
+                {
+                  label: "Manual Available",
+                  value: detailItem.manual_available ? "Yes" : "No",
+                },
+              ]}
+            />
+          )}
         </div>
       </div>
     </div>
