@@ -11,7 +11,10 @@ import {
 import EquipmentForm from "./forms/EquipmentForm";
 import DetailPopup from "./DetailPopup";
 
+const API_URL = "http://localhost:5000/api/equipment";
+
 const Equipment = () => {
+  const [equipment, setEquipment] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState([]);
   const [filterLocation, setFilterLocation] = useState([]);
@@ -27,6 +30,15 @@ const Equipment = () => {
   const [showStatusFilter, setShowStatusFilter] = useState(false);
   const [showLocationFilter, setShowLocationFilter] = useState(false);
   const [showScheduleFilter, setShowScheduleFilter] = useState(null);
+
+const formatDatePretty = (iso) => {
+  if (!iso) return "N/A";
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+};
 
   const locations = [
     "Left Side Table 2, Countertop",
@@ -44,7 +56,19 @@ const Equipment = () => {
   const lastCalibRef = useRef(null);
   const nextCalibRef = useRef(null);
 
+  const fetchEquipment = async () => {
+    try {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      setEquipment(data);
+    } catch (err) {
+      console.error("Fetch equipment error:", err);
+    }
+  };
+
   useEffect(() => {
+    fetchEquipment();
+
     const handleClickOutside = (event) => {
       if (
         !locationRef.current?.contains(event.target) &&
@@ -54,7 +78,6 @@ const Equipment = () => {
         !lastCalibRef.current?.contains(event.target) &&
         !nextCalibRef.current?.contains(event.target)
       ) {
-        setShowScheduleFilter(null);
         setShowLocationFilter(false);
         setShowStatusFilter(false);
       }
@@ -63,39 +86,12 @@ const Equipment = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const [equipment, setEquipment] = useState([
-    {
-      id: 1,
-      equipment: "Convection Oven",
-      equipmentCode: "LA-MNC-UP-014",
-      otherNames: "Mechanical convection oven",
-      location: "Left Side Table 2, Countertop",
-      brand: "Memmert",
-      model: "UN55",
-      serialNo: "B219.0896",
-      dateReceived: "2019-10-08",
-      otherDetails: "",
-      poNo: "4900044032",
-      equipmentManual: "LA-MNC-UP-014 - Memmert Oven.pdf",
-      status: "Working",
-      remarks: "",
-      purchasePrice: 86800.0,
-      fundSource: "Monde Nissin Corporation",
-      supplier: "Yana Chemodities Inc.",
-      supplierContactDetails: "",
-      lastMaintenanceDate: "2025-06-13",
-      nextMaintenanceDate: "2025-12-13",
-      lastCalibrationDate: "2019-07-27",
-      nextCalibrationDate: "2025-07-27",
-    },
-  ]);
-
-  const filteredEquipment = equipment.filter((item) => {
+    const filteredEquipment = equipment.filter((item) => {
     const matchesSearch =
-      item.equipment.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.equipmentCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.model.toLowerCase().includes(searchTerm.toLowerCase());
+      (item.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.equipment_code || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.location || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.model || "").toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus =
       filterStatus.length === 0 || filterStatus.includes(item.status);
@@ -109,12 +105,13 @@ const Equipment = () => {
       matchesSearch &&
       matchesStatus &&
       matchesLocation &&
-      dateFilter(filterLastMaintenance, item.lastMaintenanceDate) &&
-      dateFilter(filterNextMaintenance, item.nextMaintenanceDate) &&
-      dateFilter(filterLastCalibration, item.lastCalibrationDate) &&
-      dateFilter(filterNextCalibration, item.nextCalibrationDate)
+      dateFilter(filterLastMaintenance, item.last_updated) &&
+      dateFilter(filterNextMaintenance, item.maintenance_schedule) &&
+      dateFilter(filterLastCalibration, item.last_calibration_date) &&
+      dateFilter(filterNextCalibration, item.next_calibration_date)
     );
   });
+
 
   const handleFilterChange = (type, value, checked) => {
     const updater = (prev) =>
@@ -137,18 +134,29 @@ const Equipment = () => {
   };
 
   const handleInlineEdit = (item) => {
-    setEditingRowId(item.id);
+    setEditingRowId(item.equipment_id);
     setEditingData({ ...item });
   };
 
-  const handleSaveInlineEdit = () => {
-    setEquipment((prevEquipment) =>
-      prevEquipment.map((item) =>
-        item.id === editingRowId ? { ...item, ...editingData } : item
-      )
-    );
-    setEditingRowId(null);
-    setEditingData({});
+  const handleSaveInlineEdit = async () => {
+    const payload = {
+      ...editingData,
+      manual_available: editingData.manual_available ? 1 : 0,
+    };
+
+    const res = await fetch(`${API_URL}/${editingRowId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      await fetchEquipment();
+      setEditingRowId(null);
+      setEditingData({});
+    } else {
+      console.error("Update failed", await res.text());
+    }
   };
 
   const handleCancelInlineEdit = () => {
@@ -164,35 +172,43 @@ const Equipment = () => {
     setDetailItem(item);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this equipment?")) {
-      setEquipment((prevEquipment) =>
-        prevEquipment.filter((item) => item.id !== id)
-      );
+      const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+      if (res.ok) fetchEquipment();
+      else console.error(await res.text());
     }
   };
 
-  const handleSave = (formData) => {
-    setEquipment((prevEquipment) => {
-      if (editingItem) {
-        return prevEquipment.map((item) =>
-          item.id === editingItem.id ? { ...item, ...formData } : item
-        );
-      }
+  const handleSave = async (formData) => {
+    const payload = {
+      ...formData,
+      manual_available: formData.manual_available ? 1 : 0,
+    };
+
+    const method = editingItem ? "PUT" : "POST";
+    const url = editingItem
+      ? `${API_URL}/${editingItem.equipment_id}`
+      : API_URL;
+
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     });
-    setShowForm(false);
-    setEditingItem(null);
+
+    if (res.ok) {
+      await fetchEquipment();
+      setShowForm(false);
+      setEditingItem(null);
+    } else {
+      console.error("Save failed", await res.text());
+    }
   };
 
   const handleCancel = () => {
     setShowForm(false);
     setEditingItem(null);
-  };
-
-  const closeAllFilters = () => {
-    setShowStatusFilter(false);
-    setShowLocationFilter(false);
-    setShowScheduleFilter(null);
   };
 
   return (
@@ -476,175 +492,187 @@ const Equipment = () => {
               </div>
               <div className="table-scroll-body">
               <div className="table-body">
-                {filteredEquipment.map((item) => (
-                  <div
-                    key={item.id}
-                    className={`table-row ${
-                      editingRowId === item.id ? "editing-row" : ""
-                    }`}
-                  >
-                    <div className="row-cell">
-                      <div className="item-details">
+              {filteredEquipment.map((item) => (
+                <div
+                  key={item.equipment_id}
+                  className={`table-row ${
+                    editingRowId === item.equipment_id ? "editing-row" : ""
+                  }`}
+                >
+                  {/* Equipment Name */}
+                  <div className="row-cell">
+                    <div className="item-details">
+                      <button
+                        className="item-name"
+                        onClick={() => handleViewDetails(item)}
+                      >
+                        {item.name}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Code */}
+                  <div className="row-cell">{item.equipment_code}</div>
+
+                  {/* Model */}
+                  <div className="row-cell">
+                    {editingRowId === item.equipment_id ? (
+                      <input
+                        type="text"
+                        value={editingData.model}
+                        onChange={(e) =>
+                          handleInputChange("model", e.target.value)
+                        }
+                        className="inline-edit-input"
+                      />
+                    ) : (
+                      item.model
+                    )}
+                  </div>
+
+                  {/* Location */}
+                  <div className="row-cell">
+                    {editingRowId === item.equipment_id ? (
+                      <select
+                        value={editingData.location}
+                        onChange={(e) =>
+                          handleInputChange("location", e.target.value)
+                        }
+                        className="inline-edit-select"
+                      >
+                        {locations.map((loc) => (
+                          <option key={loc} value={loc}>
+                            {loc}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      item.location
+                    )}
+                  </div>
+
+                  {/* Last Maintenance */}
+                  <div className="row-cell">
+                    {editingRowId === item.equipment_id ? (
+                      <input
+                        type="date"
+                        value={editingData.last_updated || ""}
+                        onChange={(e) =>
+                          handleInputChange("last_updated", e.target.value)
+                        }
+                        className="inline-edit-input"
+                      />
+                    ) : (
+                      formatDatePretty(item.last_updated)
+                    )}
+                  </div>
+
+                  {/* Next Maintenance */}
+                  <div className="row-cell">
+                    {editingRowId === item.equipment_id ? (
+                      <input
+                        type="date"
+                        value={editingData.maintenance_schedule || ""}
+                        onChange={(e) =>
+                          handleInputChange("maintenance_schedule", e.target.value)
+                        }
+                        className="inline-edit-input"
+                      />
+                    ) : (
+                      formatDatePretty(item.maintenance_schedule)
+                    )}
+                  </div>
+
+                  {/* Last Calibration */}
+                  <div className="row-cell">
+                    {editingRowId === item.equipment_id ? (
+                      <input
+                        type="date"
+                        value={editingData.last_calibration_date || ""}
+                        onChange={(e) =>
+                          handleInputChange("last_calibration_date", e.target.value)
+                        }
+                        className="inline-edit-input"
+                      />
+                    ) : (
+                      formatDatePretty(item.last_calibration_date)
+                    )}
+                  </div>
+
+                  {/* Next Calibration */}
+                  <div className="row-cell">
+                    {editingRowId === item.equipment_id ? (
+                      <input
+                        type="date"
+                        value={editingData.next_calibration_date || ""}
+                        onChange={(e) =>
+                          handleInputChange("next_calibration_date", e.target.value)
+                        }
+                        className="inline-edit-input"
+                      />
+                    ) : (
+                      formatDatePretty(item.next_calibration_date)
+                    )}
+                  </div>
+
+                  {/* Status */}
+                  <div className="row-cell">
+                    {editingRowId === item.equipment_id ? (
+                      <select
+                        value={editingData.status}
+                        onChange={(e) =>
+                          handleInputChange("status", e.target.value)
+                        }
+                        className="inline-edit-select"
+                      >
+                        {statuses.map((status) => (
+                          <option key={status} value={status}>
+                            {status}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className={`status-badge ${getStatusColor(item.status)}`}>
+                        {item.status}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="row-cell">
+                    {editingRowId === item.equipment_id ? (
+                      <div className="editing-actions">
                         <button
-                          className="item-name"
-                          onClick={() => handleViewDetails(item)}
+                          className="btn-icon btn-save"
+                          onClick={handleSaveInlineEdit}
+                          title="Save"
                         >
-                          {item.equipment}
+                          <Check size={16} />
+                        </button>
+                        <button
+                          className="btn-icon btn-cancel"
+                          onClick={handleCancelInlineEdit}
+                          title="Cancel"
+                        >
+                          <X size={16} />
                         </button>
                       </div>
-                    </div>
-                    <div className="row-cell">{item.equipmentCode}</div>
-                    <div className="row-cell">
-                      {editingRowId === item.id ? (
-                        <input
-                          type="text"
-                          value={editingData.model}
-                          onChange={(e) =>
-                            handleInputChange("model", e.target.value)
-                          }
-                          className="inline-edit-input"
-                        />
-                      ) : (
-                        item.model
-                      )}
-                    </div>
-                    <div className="row-cell">
-                      {editingRowId === item.id ? (
-                        <select
-                          value={editingData.location}
-                          onChange={(e) =>
-                            handleInputChange("location", e.target.value)
-                          }
-                          className="inline-edit-select"
+                    ) : (
+                      <div className="action-buttons">
+                        <button
+                          className="btn-icon"
+                          onClick={() => handleInlineEdit(item)}
+                          title="Edit"
                         >
-                          {locations.map((loc) => (
-                            <option key={loc} value={loc}>
-                              {loc}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        item.location
-                      )}
-                    </div>
-                    <div className="row-cell">
-                      {editingRowId === item.id ? (
-                        <input
-                          type="date"
-                          value={editingData.lastMaintenanceDate}
-                          onChange={(e) =>
-                            handleInputChange(
-                              "lastMaintenanceDate",
-                              e.target.value
-                            )
-                          }
-                          className="inline-edit-input"
-                        />
-                      ) : (
-                        item.lastMaintenanceDate
-                      )}
-                    </div>
-                    <div className="row-cell">
-                      {editingRowId === item.id ? (
-                        <input
-                          type="date"
-                          value={editingData.nextMaintenanceDate}
-                          onChange={(e) =>
-                            handleInputChange("nextMaintenance", e.target.value)
-                          }
-                          className="inline-edit-input"
-                        />
-                      ) : (
-                        item.nextMaintenanceDate
-                      )}
-                    </div>
-                    <div className="row-cell">
-                      {editingRowId === item.id ? (
-                        <input
-                          type="date"
-                          value={editingData.lastCalibrationDate}
-                          onChange={(e) =>
-                            handleInputChange("lastCalibration", e.target.value)
-                          }
-                          className="inline-edit-input"
-                        />
-                      ) : (
-                        item.lastCalibrationDate
-                      )}
-                    </div>
-                    <div className="row-cell">
-                      {editingRowId === item.id ? (
-                        <input
-                          type="date"
-                          value={editingData.nextCalibrationDate}
-                          onChange={(e) =>
-                            handleInputChange("nextCalibration", e.target.value)
-                          }
-                          className="inline-edit-input"
-                        />
-                      ) : (
-                        item.nextCalibrationDate
-                      )}
-                    </div>
-                    <div className="row-cell">
-                      {editingRowId === item.id ? (
-                        <select
-                          value={editingData.status}
-                          onChange={(e) =>
-                            handleInputChange("status", e.target.value)
-                          }
-                          className="inline-edit-select"
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          className="btn-icon delete"
+                          onClick={() => handleDelete(item.equipment_id)}
+                          title="Delete"
                         >
-                          {statuses.map((status) => (
-                            <option key={status} value={status}>
-                              {status}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <span
-                          className={`status-badge ${getStatusColor(
-                            item.status
-                          )}`}
-                        >
-                          {item.status}
-                        </span>
-                      )}
-                    </div>
-                    <div className="row-cell">
-                      {editingRowId === item.id ? (
-                        <div className="editing-actions">
-                          <button
-                            className="btn-icon btn-save"
-                            onClick={handleSaveInlineEdit}
-                            title="Save"
-                          >
-                            <Check size={16} />
-                          </button>
-                          <button
-                            className="btn-icon btn-cancel"
-                            onClick={handleCancelInlineEdit}
-                            title="Cancel"
-                          >
-                            <X size={16} />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="action-buttons">
-                          <button
-                            className="btn-icon"
-                            onClick={() => handleInlineEdit(item)}
-                            title="Edit"
-                          >
-                            <Edit size={16} />
-                          </button>
-                          <button
-                            className="btn-icon delete"
-                            onClick={() => handleDelete(item.id)}
-                            title="Delete"
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                          <Trash2 size={16} />
+                        </button>
                         </div>
                       )}
                     </div>
@@ -656,70 +684,70 @@ const Equipment = () => {
           )}
 
           {detailItem && (
-            <DetailPopup
-              item={detailItem}
-              onClose={() => setDetailItem(null)}
-              title="Equipment Details"
-              fields={[
-                // Basic Identification
-                { label: "Equipment Code", value: detailItem.equipmentCode },
-                { label: "Other Names", value: detailItem.otherNames },
-                { label: "Brand", value: detailItem.brand },
-                { label: "Model", value: detailItem.model },
-                { label: "Serial No.", value: detailItem.serialNo },
+          <DetailPopup
+            item={detailItem}
+            onClose={() => setDetailItem(null)}
+            title="Equipment Details"
+            fields={[
+              // Identification
+              { label: "Equipment Code", value: detailItem.equipment_code },
+              { label: "Name", value: detailItem.name },
+              { label: "Other Name", value: detailItem.other_name },
+              { label: "Brand", value: detailItem.brand },
+              { label: "Model", value: detailItem.model },
+              { label: "Serial No.", value: detailItem.serial_no },
 
-                // Classification / Description
-                { label: "Other Details", value: detailItem.otherDetails },
-                { label: "Status", value: detailItem.status },
-                { label: "Remarks", value: detailItem.remarks },
+              // Classification
+              { label: "Other Details", value: detailItem.other_details },
+              { label: "Status", value: detailItem.status },
+              { label: "Remarks", value: detailItem.remarks },
 
-                // Location & Tracking
-                { label: "Location", value: detailItem.location },
-                { label: "Date Received", value: detailItem.dateReceived },
+              // Location & Tracking
+              { label: "Location", value: detailItem.location },
+              {
+                label: "Date Received",
+                value: formatDatePretty(detailItem.date_received),
+              },
 
-                // Maintenance & Calibration
-                {
-                  label: "Last Maintenance",
-                  value: detailItem.lastMaintenanceDate,
-                },
-                {
-                  label: "Next Maintenance",
-                  value: detailItem.nextMaintenanceDate,
-                },
-                {
-                  label: "Last Calibration",
-                  value: detailItem.lastCalibrationDate,
-                },
-                {
-                  label: "Next Calibration",
-                  value: detailItem.nextCalibrationDate,
-                },
+              // Maintenance & Calibration
+              {
+                label: "Last Maintenance",
+                value: formatDatePretty(detailItem.last_updated),
+              },
+              {
+                label: "Next Maintenance",
+                value: formatDatePretty(detailItem.maintenance_schedule),
+              },
+              {
+                label: "Last Calibration",
+                value: formatDatePretty(detailItem.last_calibration_date),
+              },
+              {
+                label: "Next Calibration",
+                value: formatDatePretty(detailItem.next_calibration_date),
+              },
 
-                // Procurement Info
-                { label: "PO No.", value: detailItem.poNo },
-                {
-                  label: "Purchase Price",
-                  value: `₱${Number(detailItem.purchasePrice || 0).toFixed(2)}`,
-                },
-                { label: "Fund Source", value: detailItem.fundSource },
-                { label: "Supplier", value: detailItem.supplier },
-                {
-                  label: "Supplier Contact",
-                  value: detailItem.supplierContactDetails,
-                },
+              // Procurement
+              { label: "PO No.", value: detailItem.po_no },
+              {
+                label: "Purchase Price",
+                value: `₱${Number(detailItem.purchase_price || 0).toFixed(2)}`,
+              },
+              { label: "Fund Source", value: detailItem.fund_source },
+              { label: "Supplier", value: detailItem.supplier },
+              {
+                label: "Supplier Contact",
+                value: detailItem.supplier_contact,
+              },
 
-                // Attachments / References
-                {
-                  label: "Equipment Manual",
-                  value: detailItem.equipmentManual,
-                },
-              ]}
-              onSave={(updatedFields) => {
-                console.log("Updated fields:", updatedFields);
-                // Save logic here 
-              }}
-            />
-          )}
+              // Attachment
+              {
+                label: "Manual Available",
+                value: detailItem.manual_available ? "Yes" : "No",
+              },
+            ]}
+          />
+        )}
         </div>
       </div>
     </div>
