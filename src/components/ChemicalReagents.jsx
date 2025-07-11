@@ -49,9 +49,9 @@ const ChemicalReagents = () => {
   const statuses = [
     "Opened",
     "Unopened",
-    "Expired Opened",
-    "Expired Unopened",
-    "Expired Sealed",
+    "EXPIRED: Opened",
+    "EXPIRED: Unopened",
+    "EXPIRED: Sealed",
   ];
 
   const locations = ["Table 2, Cabinet 4", "Shelf 2b", "Shelf 1d"];
@@ -233,15 +233,22 @@ const ChemicalReagents = () => {
   };
 
   const getStatusColor = (s) => {
-    switch (s) {
-      case "Opened":
-        return "status-opened";
-      case "Unopened":
-        return "status-unopened";
-      default:
-        return "";
-    }
-  };
+  switch (s) {
+    case "Opened":
+      return "status-opened";
+    case "Unopened":
+      return "status-unopened";
+    case "EXPIRED: Opened":
+      return "status-expired-opened";
+    case "EXPIRED: Unopened":
+      return "status-expired-unopened";
+    case "EXPIRED: Sealed":
+      return "status-expired-sealed";
+    default:
+      return "";
+  }
+};
+
 
   const formatDatePretty = (isoDateStr) => {
     if (!isoDateStr) return "N/A";

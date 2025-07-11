@@ -47,7 +47,7 @@ const Equipment = () => {
     "Warehouse",
   ];
 
-  const statuses = ["Working", "To be Fixed"];
+  const statuses = ["Working", "To be fixed"];
 
   const locationRef = useRef(null);
   const statusRef = useRef(null);
@@ -124,7 +124,7 @@ const Equipment = () => {
   const getStatusColor = (status) => {
     return status === "Working"
       ? "status-working"
-      : status === "To be Fixed"
+      : status === "To be fixed"
       ? "status-tobefixed"
       : "";
   };
