@@ -1,3 +1,5 @@
+// src/components/ChemicalReagents.jsx
+
 import { useState, useRef, useEffect } from "react";
 import {
   Search,
@@ -11,7 +13,10 @@ import {
 import ChemicalReagentForm from "./forms/ChemicalReagentForm";
 import DetailPopup from "./DetailPopup";
 
+const API_URL = "http://localhost:5000/api/chemical";
+
 const ChemicalReagents = () => {
+  const [reagents, setReagents] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState([]);
   const [filterStatus, setFilterStatus] = useState([]);
@@ -26,27 +31,11 @@ const ChemicalReagents = () => {
   const [showCategoryFilter, setShowCategoryFilter] = useState(false);
   const [showStatusFilter, setShowStatusFilter] = useState(false);
   const [showLocationFilter, setShowLocationFilter] = useState(false);
-  const [reagents, setReagents] = useState([
-    {
-      id: 1,
-      chemicalName: "Lactic Acid 88% AR",
-      itemcode: "LA-2025-001",
-      category: "Lactic Acid",
-      brand: "Loba Chemie Pvt.Ltd",
-      quantity: "1",
-      containerType: "Plastic Jar",
-      containerSize: "500mL",
-      form: "Liquid",
-      dateReceived: "2024-02-23",
-      dateOpened: "n.d.",
-      expirationDate: "2028-12",
-      location: "Table 2, Cabinet 4",
-      status: "Unopened",
-      remarks: "",
-      msds: "",
-      disposalMethod: "",
-    },
-  ]);
+
+  const categoryRef = useRef(null);
+  const statusRef = useRef(null);
+  const locationRef = useRef(null);
+  const expirationRef = useRef(null);
 
   const categories = [
     "Lactic Acid",
@@ -67,24 +56,68 @@ const ChemicalReagents = () => {
 
   const locations = ["Table 2, Cabinet 4", "Shelf 2b", "Shelf 1d"];
 
-  const filteredReagents = reagents.filter((reagent) => {
+  useEffect(() => {
+    fetchReagents();
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleClickOutside = (event) => {
+    if (categoryRef.current && !categoryRef.current.contains(event.target)) {
+      setShowCategoryFilter(false);
+    }
+    if (statusRef.current && !statusRef.current.contains(event.target)) {
+      setShowStatusFilter(false);
+    }
+    if (locationRef.current && !locationRef.current.contains(event.target)) {
+      setShowLocationFilter(false);
+    }
+    if (expirationRef.current && !expirationRef.current.contains(event.target)) {
+      setShowExpirationFilter(false);
+    }
+  };
+
+  const fetchReagents = async () => {
+    try {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      setReagents(data);
+    } catch (err) {
+      console.error("Fetch failed:", err);
+    }
+  };
+
+  const handleFilterChange = (type, value, checked) => {
+    if (type === "category") {
+      setFilterCategory((prev) =>
+        checked ? [...prev, value] : prev.filter((v) => v !== value)
+      );
+    } else if (type === "status") {
+      setFilterStatus((prev) =>
+        checked ? [...prev, value] : prev.filter((v) => v !== value)
+      );
+    } else if (type === "location") {
+      setFilterLocation((prev) =>
+        checked ? [...prev, value] : prev.filter((v) => v !== value)
+      );
+    }
+  };
+
+  const filteredReagents = reagents.filter((r) => {
     const matchesSearch =
-      reagent.chemicalName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      reagent.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      reagent.location.toLowerCase().includes(searchTerm.toLowerCase());
-
+      r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.location.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory =
-      filterCategory.length === 0 || filterCategory.includes(reagent.category);
+      filterCategory.length === 0 || filterCategory.includes(r.category);
     const matchesStatus =
-      filterStatus.length === 0 || filterStatus.includes(reagent.status);
+      filterStatus.length === 0 || filterStatus.includes(r.status);
     const matchesLocation =
-      filterLocation.length === 0 || filterLocation.includes(reagent.location);
-
+      filterLocation.length === 0 || filterLocation.includes(r.location);
     const matchesExpiration =
       !filterExpirationMonth ||
-      (reagent.expirationDate &&
-        reagent.expirationDate.startsWith(filterExpirationMonth));
-
+      (r.expiration_date &&
+        r.expiration_date.startsWith(filterExpirationMonth));
     return (
       matchesSearch &&
       matchesCategory &&
@@ -94,49 +127,65 @@ const ChemicalReagents = () => {
     );
   });
 
-  const handleFilterChange = (filterType, value, checked) => {
-    switch (filterType) {
-      case "category":
-        setFilterCategory((prev) =>
-          checked ? [...prev, value] : prev.filter((item) => item !== value)
-        );
-        setShowCategoryFilter(false); 
-        break;
-      case "status":
-        setFilterStatus((prev) =>
-          checked ? [...prev, value] : prev.filter((item) => item !== value)
-        );
-        setShowStatusFilter(false); 
-        break;
-      case "location":
-        setFilterLocation((prev) =>
-          checked ? [...prev, value] : prev.filter((item) => item !== value)
-        );
-        setShowLocationFilter(false); 
-        break;
-      default:
-        break;
-    }
-  };
-
   const handleAdd = () => {
     setEditingItem(null);
     setShowForm(true);
   };
 
-  const handleInlineEdit = (reagent) => {
-    setEditingRowId(reagent.id);
-    setEditingData({ ...reagent });
+  const handleEdit = (reagent) => {
+    setEditingItem(reagent);
+    setShowForm(true);
+  };
+const handleSave = async (formData) => {
+  const payload = {
+    ...formData,
+    msds_available: formData.msds_available ? 1 : 0,
   };
 
-  const handleSaveInlineEdit = () => {
-    setReagents(
-      reagents.map((reagent) =>
-        reagent.id === editingRowId ? { ...editingData } : reagent
-      )
-    );
-    setEditingRowId(null);
-    setEditingData({});
+  const method = editingItem ? "PUT" : "POST";
+  const url = editingItem
+    ? `${API_URL}/${editingItem.chemical_id}`
+    : API_URL;
+
+  const res = await fetch(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (res.ok) {
+    await fetchReagents();
+    setShowForm(false);
+    setEditingItem(null);
+  } else {
+    console.error(await res.text());
+  }
+};
+
+
+  const handleDelete = async (id) => {
+    if (window.confirm("Delete?")) {
+      const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+      if (res.ok) fetchReagents();
+    }
+  };
+
+  const handleInlineEdit = (r) => {
+    setEditingRowId(r.chemical_id);
+    setEditingData({ ...r });
+  };
+
+  const handleSaveInlineEdit = async () => {
+    const res = await fetch(`${API_URL}/${editingRowId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(editingData),
+    });
+    if (res.ok) {
+      await fetchReagents();
+      setEditingRowId(null);
+      setEditingData({});
+    }
   };
 
   const handleCancelInlineEdit = () => {
@@ -148,28 +197,8 @@ const ChemicalReagents = () => {
     setEditingData({ ...editingData, [field]: value });
   };
 
-  const handleViewDetails = (reagent) => {
-    setDetailItem(reagent);
-  };
-
-  const handleDelete = (id) => {
-    if (
-      window.confirm("Are you sure you want to delete this chemical reagent?")
-    ) {
-      setReagents(reagents.filter((reagent) => reagent.id !== id));
-    }
-  };
-
-  const handleSave = (formData) => {
-    if (editingItem) {
-      setReagents(
-        reagents.map((reagent) =>
-          reagent.id === editingItem.id ? { ...reagent, ...formData } : reagent
-        )
-      );
-    }
-    setShowForm(false);
-    setEditingItem(null);
+  const handleViewDetails = (r) => {
+    setDetailItem(r);
   };
 
   const handleCancel = () => {
@@ -177,54 +206,29 @@ const ChemicalReagents = () => {
     setEditingItem(null);
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
+  const getStatusColor = (s) => {
+    switch (s) {
       case "Opened":
         return "status-opened";
       case "Unopened":
         return "status-unopened";
-      case "Expired Opened":
-        return "status-expired-opened";
-      case "Expired Unopened":
-        return "status-expired-unopened";
-      case "Expired Sealed":
-        return "status-expired-sealed";
       default:
         return "";
     }
   };
 
-  const categoryRef = useRef(null);
-  const statusRef = useRef(null);
-  const locationRef = useRef(null);
-  const expirationRef = useRef(null);
+   const formatDatePretty = (isoDateStr) => {
+    if (!isoDateStr) return "N/A";
+    const date = new Date(isoDateStr);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (categoryRef.current && !categoryRef.current.contains(event.target)) {
-        setShowCategoryFilter(false);
-      }
-      if (statusRef.current && !statusRef.current.contains(event.target)) {
-        setShowStatusFilter(false);
-      }
-      if (locationRef.current && !locationRef.current.contains(event.target)) {
-        setShowLocationFilter(false);
-      }
-      if (
-        expirationRef.current &&
-        !expirationRef.current.contains(event.target)
-      ) {
-        setShowExpirationFilter(false);
-      }
-    };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-  return (
+    return (
     <div className="reagents">
       <div className="content-section">
         <div className="content-card">
@@ -253,11 +257,7 @@ const ChemicalReagents = () => {
           {showForm ? (
             <div className="form-container">
               <div className="form-header">
-                <h2>
-                  {editingItem
-                    ? "Edit Chemical Reagent"
-                    : "Add Chemical Reagent"}
-                </h2>
+                <h2>{editingItem ? "Edit Chemical Reagent" : "Add Chemical Reagent"}</h2>
               </div>
               <ChemicalReagentForm
                 initialData={editingItem}
@@ -424,10 +424,8 @@ const ChemicalReagents = () => {
               <div className="table-body">
                 {filteredReagents.map((reagent) => (
                   <div
-                    key={reagent.id}
-                    className={`table-row ${
-                      editingRowId === reagent.id ? "editing-row" : ""
-                    }`}
+                    key={reagent.chemical_id}
+                    className={`table-row ${editingRowId === reagent.chemical_id ? "editing-row" : ""}`}
                   >
                     {/* Chemical Name */}
                     <div className="row-cell flex-[2]">
@@ -436,7 +434,7 @@ const ChemicalReagents = () => {
                           className="item-name"
                           onClick={() => handleViewDetails(reagent)}
                         >
-                          {reagent.chemicalName}
+                          {reagent.name}
                         </button>
                         <div className="item-brand">{reagent.brand}</div>
                       </div>
@@ -444,12 +442,10 @@ const ChemicalReagents = () => {
 
                     {/* Category */}
                     <div className="row-cell flex-[1.2]">
-                      {editingRowId === reagent.id ? (
+                      {editingRowId === reagent.chemical_id ? (
                         <select
                           value={editingData.category}
-                          onChange={(e) =>
-                            handleInputChange("category", e.target.value)
-                          }
+                          onChange={(e) => handleInputChange("category", e.target.value)}
                           className="inline-edit-select"
                         >
                           {categories.map((cat) => (
@@ -465,66 +461,59 @@ const ChemicalReagents = () => {
 
                     {/* Date Opened */}
                     <div className="row-cell flex-[1]">
-                      {editingRowId === reagent.id ? (
+                      {editingRowId === reagent.chemical_id ? (
                         <input
                           type="date"
-                          value={editingData.dateOpened || ""}
-                          onChange={(e) =>
-                            handleInputChange("dateOpened", e.target.value)
-                          }
+                          value={editingData.date_opened || ""}
+                          onChange={(e) => handleInputChange("date_opened", e.target.value)}
                           className="inline-edit-input"
                         />
                       ) : (
                         <span className="text-left">
-                          {reagent.dateOpened || "Not opened"}
+                          {formatDatePretty(reagent.date_opened) || "Not opened"}
                         </span>
+
                       )}
                     </div>
 
                     {/* Expiration Date */}
                     <div className="row-cell flex-[1]">
-                      {editingRowId === reagent.id ? (
+                      {editingRowId === reagent.chemical_id ? (
                         <input
                           type="date"
-                          value={editingData.expirationDate}
+                          value={editingData.expiration_date || ""}
                           onChange={(e) =>
-                            handleInputChange("expirationDate", e.target.value)
+                            handleInputChange("expiration_date", e.target.value)
                           }
                           className="inline-edit-input"
                         />
                       ) : (
-                        <span className="text-left">
-                          {reagent.expirationDate}
-                        </span>
+                        <span className="text-left">{formatDatePretty(reagent.expiration_date)}</span>
                       )}
                     </div>
 
                     {/* Container Size */}
                     <div className="row-cell flex-[0.8]">
-                      {editingRowId === reagent.id ? (
+                      {editingRowId === reagent.chemical_id ? (
                         <input
                           type="text"
-                          value={editingData.containerSize}
+                          value={editingData.container_size || ""}
                           onChange={(e) =>
-                            handleInputChange("containerSize", e.target.value)
+                            handleInputChange("container_size", e.target.value)
                           }
                           className="inline-edit-input"
                         />
                       ) : (
-                        <span className="text-left">
-                          {reagent.containerSize}
-                        </span>
+                        <span className="text-left">{reagent.container_size}</span>
                       )}
                     </div>
 
                     {/* Location */}
                     <div className="row-cell flex-[1]">
-                      {editingRowId === reagent.id ? (
+                      {editingRowId === reagent.chemical_id ? (
                         <select
                           value={editingData.location}
-                          onChange={(e) =>
-                            handleInputChange("location", e.target.value)
-                          }
+                          onChange={(e) => handleInputChange("location", e.target.value)}
                           className="inline-edit-select"
                         >
                           {locations.map((loc) => (
@@ -540,12 +529,10 @@ const ChemicalReagents = () => {
 
                     {/* Status */}
                     <div className="row-cell flex-[1]">
-                      {editingRowId === reagent.id ? (
+                      {editingRowId === reagent.chemical_id ? (
                         <select
                           value={editingData.status}
-                          onChange={(e) =>
-                            handleInputChange("status", e.target.value)
-                          }
+                          onChange={(e) => handleInputChange("status", e.target.value)}
                           className="inline-edit-select"
                         >
                           {statuses.map((status) => (
@@ -555,11 +542,7 @@ const ChemicalReagents = () => {
                           ))}
                         </select>
                       ) : (
-                        <span
-                          className={`status-badge ${getStatusColor(
-                            reagent.status
-                          )}`}
-                        >
+                        <span className={`status-badge ${getStatusColor(reagent.status)}`}>
                           {reagent.status}
                         </span>
                       )}
@@ -567,7 +550,7 @@ const ChemicalReagents = () => {
 
                     {/* Actions */}
                     <div className="row-cell flex-[1]">
-                      {editingRowId === reagent.id ? (
+                      {editingRowId === reagent.chemical_id ? (
                         <div className="action-buttons">
                           <button
                             className="btn-icon btn-save"
@@ -595,11 +578,11 @@ const ChemicalReagents = () => {
                           </button>
                           <button
                             className="btn-icon btn-delete"
-                            onClick={() => handleDelete(reagent.id)}
+                            onClick={() => handleDelete(reagent.chemical_id)}
                             title="Delete"
                           >
                             <Trash2 size={16} />
-                          </button>
+                          </button> 
                         </div>
                       )}
                     </div>
@@ -616,29 +599,33 @@ const ChemicalReagents = () => {
               title="Chemical Reagent Details"
               fields={[
                 // Identification
-                { label: "Item Code", value: detailItem.itemcode },
+                { label: "Name", value: detailItem.name },
+                { label: "Item Code", value: detailItem.item_code },
                 { label: "Category", value: detailItem.category },
                 { label: "Brand", value: detailItem.brand },
 
                 // Physical Properties
                 { label: "Form", value: detailItem.form },
-                { label: "Container Type", value: detailItem.containerType },
-                { label: "Container Size", value: detailItem.containerSize },
+                { label: "Container Type", value: detailItem.container_type },
+                { label: "Container Size", value: detailItem.container_size },
                 { label: "Quantity", value: detailItem.quantity },
 
-                // racking & Inventory
-                { label: "Date Received", value: detailItem.dateReceived },
+                // Inventory
+                { label: "Date Received", value: formatDatePretty(detailItem.date_received) },
                 {
                   label: "Date Opened",
-                  value: detailItem.dateOpened || "Not opened",
+                  value: formatDatePretty(detailItem.date_opened) || "Not opened",
                 },
-                { label: "Expiration Date", value: detailItem.expirationDate },
+                { label: "Expiration Date", value: formatDatePretty(detailItem.expiration_date) },
                 { label: "Status", value: detailItem.status },
                 { label: "Location", value: detailItem.location },
 
                 // Safety & Compliance
-                { label: "MSDS", value: detailItem.msds },
-                { label: "Disposal Method", value: detailItem.disposalMethod },
+                {
+                  label: "MSDS",
+                  value: detailItem.msds_available ? "Available" : "Not Available",
+                },
+                { label: "Disposal Method", value: detailItem.disposal_method },
 
                 // Notes
                 { label: "Remarks", value: detailItem.remarks },

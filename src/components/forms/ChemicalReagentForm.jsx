@@ -2,20 +2,20 @@ import { useState, useEffect } from "react";
 
 const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
   const [formData, setFormData] = useState({
-    chemicalName: "",
-    itemCode: "",
+    name: "",
+    item_code: "",
     category: "",
     brand: "",
     quantity: "",
-    containerType: "",
-    containerSize: "",
+    container_type: "",
+    container_size: "",
     form: "",
-    dateReceived: "",
-    expirationDate: "",
-    dateOpened: "",
+    date_received: "",
+    expiration_date: "",
+    date_opened: "",
     location: "",
-    msds: "",
-    disposalMethod: "",
+    msds_available: "",
+    disposal_method: "",
     status: "Unopened",
     remarks: "",
   });
@@ -39,6 +39,7 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
     onSave(formData);
   };
 
+ 
   const categories = [
     "Lactic Acid",
     "Lactic Acid Fermentation",
@@ -57,6 +58,8 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
   ];
   const locations = ["Table 2, Cabinet 4", "Shelf 2b", "Shelf 1d"];
 
+  
+
   return (
     <form onSubmit={handleSubmit} className="form">
       <div className="form-grid">
@@ -66,8 +69,8 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
           </label>
           <input
             type="text"
-            name="chemicalName"
-            value={formData.chemicalName}
+            name="name"
+            value={formData.name || ""}
             onChange={handleChange}
             required
           />
@@ -79,8 +82,8 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
           </label>
           <input
             type="text"
-            name="itemCode"
-            value={formData.itemCode}
+            name="item_code"
+            value={formData.item_code || ""}
             onChange={handleChange}
             required
           />
@@ -92,7 +95,7 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
           </label>
           <select
             name="category"
-            value={formData.category}
+            value={formData.category || ""}
             onChange={handleChange}
             required
           >
@@ -110,7 +113,7 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
           <input
             type="text"
             name="brand"
-            value={formData.brand}
+            value={formData.brand || ""}
             onChange={handleChange}
           />
         </div>
@@ -119,7 +122,11 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
           <label>
             Form <span className="required">*</span>
           </label>
-          <select name="form" value={formData.form} onChange={handleChange}>
+          <select
+            name="form"
+            value={formData.form || ""}
+            onChange={handleChange}
+          >
             <option value="">Select Form</option>
             {forms.map((form) => (
               <option key={form} value={form}>
@@ -136,7 +143,7 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
           <input
             type="text"
             name="quantity"
-            value={formData.quantity}
+            value={formData.quantity || ""}
             onChange={handleChange}
           />
         </div>
@@ -145,8 +152,8 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
           <label>Container Type</label>
           <input
             type="text"
-            name="containerType"
-            value={formData.containerType}
+            name="container_type"
+            value={formData.container_type || ""}
             onChange={handleChange}
           />
         </div>
@@ -155,8 +162,8 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
           <label>Container Size</label>
           <input
             type="text"
-            name="containerSize"
-            value={formData.containerSize}
+            name="container_size"
+            value={formData.container_size || ""}
             onChange={handleChange}
           />
         </div>
@@ -167,8 +174,8 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
           </label>
           <input
             type="date"
-            name="dateReceived"
-            value={formData.dateReceived}
+            name="date_received"
+            value={formData.date_received || ""} 
             onChange={handleChange}
             required
           />
@@ -180,8 +187,8 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
           </label>
           <input
             type="date"
-            name="expirationDate"
-            value={formData.expirationDate}
+            name="expiration_date"
+            value={formData.expiration_date || ""}
             onChange={handleChange}
             required
           />
@@ -191,8 +198,8 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
           <label>Date Opened</label>
           <input
             type="date"
-            name="dateOpened"
-            value={formData.dateOpened}
+            name="date_opened"
+            value={formData.date_opened || ""}
             onChange={handleChange}
           />
         </div>
@@ -203,7 +210,7 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
           </label>
           <select
             name="location"
-            value={formData.location}
+            value={formData.location || ""}
             onChange={handleChange}
             required
           >
@@ -222,8 +229,8 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
           <label>MSDS</label>
           <input
             type="text"
-            name="msds"
-            value={formData.msds}
+            name="msds_available"
+            value={formData.msds_available || ""}
             onChange={handleChange}
           />
         </div>
@@ -232,15 +239,19 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
           <label>Disposal Method</label>
           <input
             type="text"
-            name="disposalMethod"
-            value={formData.disposalMethod}
+            name="disposal_method"
+            value={formData.disposal_method || ""}
             onChange={handleChange}
           />
         </div>
 
         <div className="form-group">
           <label>Status</label>
-          <select name="status" value={formData.status} onChange={handleChange}>
+          <select
+            name="status"
+            value={formData.status || ""}
+            onChange={handleChange}
+          >
             {statuses.map((status) => (
               <option key={status} value={status}>
                 {status}
@@ -253,7 +264,7 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
           <label>Remarks</label>
           <textarea
             name="remarks"
-            value={formData.remarks}
+            value={formData.remarks || ""}
             onChange={handleChange}
             rows="3"
           />
