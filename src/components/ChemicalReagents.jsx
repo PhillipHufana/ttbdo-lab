@@ -87,21 +87,21 @@ const ChemicalReagents = () => {
     }
   };
 
-  const handleFilterChange = (type, value, checked) => {
-    if (type === "category") {
-      setFilterCategory((prev) =>
-        checked ? [...prev, value] : prev.filter((v) => v !== value)
-      );
-    } else if (type === "status") {
-      setFilterStatus((prev) =>
-        checked ? [...prev, value] : prev.filter((v) => v !== value)
-      );
-    } else if (type === "location") {
-      setFilterLocation((prev) =>
-        checked ? [...prev, value] : prev.filter((v) => v !== value)
-      );
-    }
-  };
+  // const handleFilterChange = (type, value, checked) => {
+  //   if (type === "category") {
+  //     setFilterCategory((prev) =>
+  //       checked ? [...prev, value] : prev.filter((v) => v !== value)
+  //     );
+  //   } else if (type === "status") {
+  //     setFilterStatus((prev) =>
+  //       checked ? [...prev, value] : prev.filter((v) => v !== value)
+  //     );
+  //   } else if (type === "location") {
+  //     setFilterLocation((prev) =>
+  //       checked ? [...prev, value] : prev.filter((v) => v !== value)
+  //     );
+  //   }
+  // };
 
   const filteredReagents = reagents.filter((r) => {
     const matchesSearch =
@@ -626,7 +626,8 @@ const handleSave = async (formData) => {
               title="Chemical Reagent Details"
               fields={[
                 // Identification
-                { label: "Item Code", value: detailItem.itemcode },
+                { label: "Name", value: detailItem.name },
+                { label: "Item Code", value: detailItem.item_code },
                 { label: "Category", value: detailItem.category },
                 { label: "Brand", value: detailItem.brand },
                 { label: "Form", value: detailItem.form },
@@ -634,8 +635,8 @@ const handleSave = async (formData) => {
                 { label: "Container Size", value: detailItem.container_size },
                 { label: "Quantity", value: detailItem.quantity },
 
-                // racking & Inventory
-                { label: "Date Received", value: detailItem.dateReceived },
+                // Inventory
+                { label: "Date Received", value: formatDatePretty(detailItem.date_received) },
                 {
                   label: "Date Opened",
                   value: formatDatePretty(detailItem.date_opened) || "Not opened",
