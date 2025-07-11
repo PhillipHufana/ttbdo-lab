@@ -1,4 +1,3 @@
-// src/components/Consumables.jsx
 import { useState, useRef, useEffect } from "react";
 import {
   Search,
@@ -218,7 +217,7 @@ const Consumables = () => {
 
   const locationRef = useRef(null);
   const expirationRef = useRef(null);
-  
+
   return (
     <div className="content-section">
       <div className="content-card">
@@ -291,7 +290,7 @@ const Consumables = () => {
                       value={filterExpirationMonth}
                       onChange={(e) => {
                         setFilterExpirationMonth(e.target.value);
-                        setShowExpirationFilter(false); 
+                        setShowExpirationFilter(false);
                       }}
                       className="month-input"
                     />
@@ -338,7 +337,7 @@ const Consumables = () => {
                 <span>Actions</span>
               </div>
             </div>
-
+            <div className="table-scroll-body">
             <div className="table-body">
               {filteredConsumables.map((item) => (
                 <div
@@ -387,34 +386,38 @@ const Consumables = () => {
                     )}
                   </div>
                   <div className="row-cell">
-                  {editingRowId === item.id ? (
-                    <input
-                      type="date"
-                      value={formatDateInput(editingData.dateOpened)}
-                      onChange={(e) =>
-                        handleInputChange("dateOpened", e.target.value)
-                      }
-                      className="inline-edit-input"
-                    />
-                  ) : (
-                    <span>{formatDateReadable(item.dateOpened) || "Not opened"}</span>
-                  )}
-                </div>
+                    {editingRowId === item.id ? (
+                      <input
+                        type="date"
+                        value={formatDateInput(editingData.dateOpened)}
+                        onChange={(e) =>
+                          handleInputChange("dateOpened", e.target.value)
+                        }
+                        className="inline-edit-input"
+                      />
+                    ) : (
+                      <span>
+                        {formatDateReadable(item.dateOpened) || "Not opened"}
+                      </span>
+                    )}
+                  </div>
 
-                <div className="row-cell">
-                  {editingRowId === item.id ? (
-                    <input
-                      type="date"
-                      value={formatDateInput(editingData.expirationDate)}
-                      onChange={(e) =>
-                        handleInputChange("expirationDate", e.target.value)
-                      }
-                      className="inline-edit-input"
-                    />
-                  ) : (
-                    <span className="text-left">{formatDateReadable(item.expirationDate)}</span>
-                  )}
-                </div>
+                  <div className="row-cell">
+                    {editingRowId === item.id ? (
+                      <input
+                        type="date"
+                        value={formatDateInput(editingData.expirationDate)}
+                        onChange={(e) =>
+                          handleInputChange("expirationDate", e.target.value)
+                        }
+                        className="inline-edit-input"
+                      />
+                    ) : (
+                      <span className="text-left">
+                        {formatDateReadable(item.expirationDate)}
+                      </span>
+                    )}
+                  </div>
 
                   <div className="row-cell">
                     {editingRowId === item.id ? (
@@ -475,6 +478,7 @@ const Consumables = () => {
                 </div>
               ))}
             </div>
+            </div>
           </div>
         )}
 
@@ -520,6 +524,10 @@ const Consumables = () => {
               // Location
               { label: "Location", value: detailItem.location },
             ]}
+            onSave={(updatedFields) => {
+              console.log("Updated fields:", updatedFields);
+              // Save logic here 
+            }}
           />
         )}
       </div>

@@ -1,4 +1,3 @@
-// src/components/Instruments.js
 import { useState, useRef, useEffect } from "react";
 import {
   Search,
@@ -34,6 +33,8 @@ const Instruments = () => {
   const statuses = [
     "Opened",
     "Unused",
+    "Used",
+    "Opened, unused",
     "Sealed",
     "Tip Chipped",
     "Unopened",
@@ -126,23 +127,27 @@ const Instruments = () => {
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
-      case "Opened":
-        return "status-opened";
-      case "Unused":
-        return "status-expired-sealed";
-      case "Sealed":
-        return "status-unopened";
-      case "Tip Chipped":
-        return "status-expired-opened";
-      case "Unopened":
-        return "status-unopened";
-      case "Broken":
-        return "status-expired-unopened";
-      default:
-        return "";
-    }
-  };
+  switch (status) {
+    case "Opened":
+      return "status-opened";
+    case "Unused":
+      return "status-unused";
+    case "Used":
+      return "status-used";
+    case "Opened, unused":
+      return "status-opened-unused";
+    case "Sealed":
+      return "status-unopened";
+    case "Tip Chipped":
+      return "status-tip-chipped";
+    case "Unopened":
+      return "status-unopened";
+    case "Broken":
+      return "status-broken";
+    default:
+      return "";
+  }
+};
 
   const getConditionColor = (condition) => {
     switch (condition) {
@@ -160,39 +165,38 @@ const Instruments = () => {
     setShowForm(true);
   };
 
-const handleSave = async (formData) => {
-  const method = editingItem ? "PUT" : "POST";
-  const url = editingItem ? `${API_URL}/${editingItem.id}` : API_URL;
+  const handleSave = async (formData) => {
+    const method = editingItem ? "PUT" : "POST";
+    const url = editingItem ? `${API_URL}/${editingItem.id}` : API_URL;
 
-  const payload = {
-    name: formData.instrument,
-    description: formData.description,
-    location: formData.location,
-    quantity: parseInt(formData.quantity),
-    unit: formData.unit || "pcs", // fallback if unit is missing
-    capacity: formData.capacity,
-    status: formData.status,
-    condition: formData.condition,
-    remarks: formData.remarks,
+    const payload = {
+      name: formData.instrument,
+      description: formData.description,
+      location: formData.location,
+      quantity: parseInt(formData.quantity),
+      unit: formData.unit || "pcs", // fallback if unit is missing
+      capacity: formData.capacity,
+      status: formData.status,
+      condition: formData.condition,
+      remarks: formData.remarks,
+    };
+
+    console.log("Saving payload:", payload);
+
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      await fetchInstruments();
+      setShowForm(false);
+      setEditingItem(null);
+    } else {
+      console.error("Save failed", await res.text());
+    }
   };
-
-  console.log("Saving payload:", payload);
-
-  const res = await fetch(url, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  if (res.ok) {
-    await fetchInstruments();
-    setShowForm(false);
-    setEditingItem(null);
-  } else {
-    console.error("Save failed", await res.text());
-  }
-};
-
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this instrument?")) {
@@ -206,34 +210,33 @@ const handleSave = async (formData) => {
     setEditingData({ ...item });
   };
 
-const handleSaveInlineEdit = async () => {
-  const payload = {
-    name: editingData.instrument,
-    description: editingData.description,
-    location: editingData.location,
-    quantity: parseInt(editingData.quantity),
-    unit: editingData.unit || "pcs", // fallback
-    capacity: editingData.capacity,
-    status: editingData.status,
-    condition: editingData.condition,
-    remarks: editingData.remarks,
+  const handleSaveInlineEdit = async () => {
+    const payload = {
+      name: editingData.instrument,
+      description: editingData.description,
+      location: editingData.location,
+      quantity: parseInt(editingData.quantity),
+      unit: editingData.unit || "pcs", // fallback
+      capacity: editingData.capacity,
+      status: editingData.status,
+      condition: editingData.condition,
+      remarks: editingData.remarks,
+    };
+
+    const res = await fetch(`${API_URL}/${editingRowId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      await fetchInstruments();
+      setEditingRowId(null);
+      setEditingData({});
+    } else {
+      console.error("Update failed", await res.text());
+    }
   };
-
-  const res = await fetch(`${API_URL}/${editingRowId}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  if (res.ok) {
-    await fetchInstruments();
-    setEditingRowId(null);
-    setEditingData({});
-  } else {
-    console.error("Update failed", await res.text());
-  }
-};
-
 
   const handleCancelInlineEdit = () => {
     setEditingRowId(null);
@@ -417,7 +420,7 @@ const handleSaveInlineEdit = async () => {
                 <span>Actions</span>
               </div>
             </div>
-
+            <div className="table-scroll-body">
             <div className="table-body">
               {filteredInstruments.map((item) => (
                 <div
@@ -561,6 +564,7 @@ const handleSaveInlineEdit = async () => {
                 </div>
               ))}
             </div>
+            </div>
           </div>
         )}
 
@@ -585,6 +589,10 @@ const handleSaveInlineEdit = async () => {
               { label: "Location", value: detailItem.location },
               { label: "Remarks", value: detailItem.remarks },
             ]}
+            onSave={(updatedFields) => {
+              console.log("Updated fields:", updatedFields);
+              // Save logic here 
+            }}
           />
         )}
       </div>

@@ -127,6 +127,31 @@ const ChemicalReagents = () => {
     );
   });
 
+  const handleFilterChange = (filterType, value, checked) => {
+    switch (filterType) {
+      case "category":
+        setFilterCategory((prev) =>
+          checked ? [...prev, value] : prev.filter((item) => item !== value)
+        );
+        setShowCategoryFilter(false);
+        break;
+      case "status":
+        setFilterStatus((prev) =>
+          checked ? [...prev, value] : prev.filter((item) => item !== value)
+        );
+        setShowStatusFilter(false);
+        break;
+      case "location":
+        setFilterLocation((prev) =>
+          checked ? [...prev, value] : prev.filter((item) => item !== value)
+        );
+        setShowLocationFilter(false);
+        break;
+      default:
+        break;
+    }
+  };
+
   const handleAdd = () => {
     setEditingItem(null);
     setShowForm(true);
@@ -335,7 +360,7 @@ const handleSave = async (formData) => {
                         value={filterExpirationMonth}
                         onChange={(e) => {
                           setFilterExpirationMonth(e.target.value);
-                          setShowExpirationFilter(false); 
+                          setShowExpirationFilter(false);
                         }}
                         className="month-input"
                       />
@@ -421,6 +446,7 @@ const handleSave = async (formData) => {
                 </div>
               </div>
               {/* Table Body */}
+              <div className="table-scroll-body">
               <div className="table-body">
                 {filteredReagents.map((reagent) => (
                   <div
@@ -589,6 +615,7 @@ const handleSave = async (formData) => {
                   </div>
                 ))}
               </div>
+              </div>
             </div>
           )}
 
@@ -599,19 +626,16 @@ const handleSave = async (formData) => {
               title="Chemical Reagent Details"
               fields={[
                 // Identification
-                { label: "Name", value: detailItem.name },
-                { label: "Item Code", value: detailItem.item_code },
+                { label: "Item Code", value: detailItem.itemcode },
                 { label: "Category", value: detailItem.category },
                 { label: "Brand", value: detailItem.brand },
-
-                // Physical Properties
                 { label: "Form", value: detailItem.form },
                 { label: "Container Type", value: detailItem.container_type },
                 { label: "Container Size", value: detailItem.container_size },
                 { label: "Quantity", value: detailItem.quantity },
 
-                // Inventory
-                { label: "Date Received", value: formatDatePretty(detailItem.date_received) },
+                // racking & Inventory
+                { label: "Date Received", value: detailItem.dateReceived },
                 {
                   label: "Date Opened",
                   value: formatDatePretty(detailItem.date_opened) || "Not opened",
@@ -630,6 +654,10 @@ const handleSave = async (formData) => {
                 // Notes
                 { label: "Remarks", value: detailItem.remarks },
               ]}
+              onSave={(updatedFields) => {
+                console.log("Updated fields:", updatedFields);
+                // Save logic here 
+              }}
             />
           )}
         </div>
