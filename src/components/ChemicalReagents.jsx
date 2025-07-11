@@ -78,14 +78,15 @@ const ChemicalReagents = () => {
   };
 
   const fetchReagents = async () => {
-    try {
-      const res = await fetch(API_URL);
-      const data = await res.json();
-      setReagents(data);
-    } catch (err) {
-      console.error("Fetch failed:", err);
-    }
-  };
+  try {
+    const res = await fetch(API_URL);
+    const data = await res.json();
+    console.log("Fetched data:", data); // Check structure here
+    setReagents(data);
+  } catch (err) {
+    console.error("Fetch failed:", err);
+  }
+};
 
   // const handleFilterChange = (type, value, checked) => {
   //   if (type === "category") {

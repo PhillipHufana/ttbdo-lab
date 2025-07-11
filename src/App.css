@@ -124,8 +124,6 @@ body {
 .nav-item.active {
   background: rgba(255, 255, 255, 0.15);
   color: white;
-  font-weight: 600;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 /* Main Content */
@@ -235,7 +233,7 @@ body {
 .reagents .table-header,
 .reagents .table-row {
   display: grid;
-  grid-template-columns: 1.5fr 1.5fr 1.4fr 1.4fr 1.6fr 1.4fr 1.7fr 1fr;
+  grid-template-columns: 1.5fr 1.7fr 1.4fr 1.4fr 1.6fr 1.6fr 1.7fr 1fr;
   gap: 8px;
 }
 
