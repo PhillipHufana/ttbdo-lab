@@ -1,4 +1,3 @@
-// src/components/Instruments.js
 import { useState, useRef, useEffect } from "react";
 import {
   Search,
@@ -34,6 +33,8 @@ const Instruments = () => {
   const statuses = [
     "Opened",
     "Unused",
+    "Used",
+    "Opened, unused",
     "Sealed",
     "Tip Chipped",
     "Unopened",
@@ -126,23 +127,27 @@ const Instruments = () => {
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
-      case "Opened":
-        return "status-opened";
-      case "Unused":
-        return "status-expired-sealed";
-      case "Sealed":
-        return "status-unopened";
-      case "Tip Chipped":
-        return "status-expired-opened";
-      case "Unopened":
-        return "status-unopened";
-      case "Broken":
-        return "status-expired-unopened";
-      default:
-        return "";
-    }
-  };
+  switch (status) {
+    case "Opened":
+      return "status-opened";
+    case "Unused":
+      return "status-unused";
+    case "Used":
+      return "status-used";
+    case "Opened, unused":
+      return "status-opened-unused";
+    case "Sealed":
+      return "status-unopened";
+    case "Tip Chipped":
+      return "status-tip-chipped";
+    case "Unopened":
+      return "status-unopened";
+    case "Broken":
+      return "status-broken";
+    default:
+      return "";
+  }
+};
 
   const getConditionColor = (condition) => {
     switch (condition) {

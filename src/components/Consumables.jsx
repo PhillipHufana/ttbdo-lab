@@ -1,4 +1,3 @@
-// src/components/Consumables.jsx
 import { useState, useRef, useEffect } from "react";
 import {
   Search,
