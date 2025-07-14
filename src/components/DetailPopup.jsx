@@ -14,6 +14,7 @@ const DetailPopup = ({ item, onClose, fields, title, onSave }) => {
 
   const handleSave = () => {
     onSave(editedFields);
+    alert("Saved successfully!");
     setIsEditing(false);
   };
 
