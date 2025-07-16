@@ -21,7 +21,9 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
     remarks: "",
   });
 
-  // Dropdown options
+  const [msdsFile, setMsdsFile] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [categories, setCategories] = useState([
     "Lactic Acid",
     "Fermentation",
@@ -70,13 +72,11 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Input change handler
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Add new option to dropdown
   const handleAddOption = (field) => {
     const val = newValue[field]?.trim();
     if (!val) return;
@@ -97,7 +97,6 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
     setNewValue((prev) => ({ ...prev, [field]: "" }));
   };
 
-  // Select existing or trigger add-new
   const handleSelect = (field, value) => {
     if (value === "__add__") {
       setAddingField((prev) => ({ ...prev, [field]: true }));
@@ -107,7 +106,6 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
     setShowDropdown((prev) => ({ ...prev, [field]: false }));
   };
 
-  // Dropdown rendering function
   const renderDropdown = (label, field, options, setter) => (
     <div
       className="form-group"
@@ -186,12 +184,42 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
     </div>
   );
 
-  // Submit handler
-  const handleSubmit = (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  console.log("Submitting...")
+  e.preventDefault();
+  if (isSubmitting) return;
+  setIsSubmitting(true);
+
+  const data = new FormData();
+  Object.entries(formData).forEach(([key, value]) => data.append(key, value));
+  if (msdsFile) data.append("msds_file", msdsFile);
+
+  try {
+    const res = await fetch("http://localhost:5000/api/chemical", {
+      method: "POST",
+      body: data,
+    });
+
+    if (!res.ok) {
+      let errorMessage = "Failed to submit";
+      try {
+        const errorData = await res.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch (_) {}
+      throw new Error(errorMessage);
+    }
+
+    await res.json();
     alert("New Chemical Reagent saved successfully!");
-    onSave(formData);
-  };
+    await onSave(); // ✅ just a signal ✅ this fixes the duplication
+    setIsSubmitting(false);
+  } catch (err) {
+    console.error("Error submitting form:", err);
+    alert("Error saving chemical: " + err.message);
+    setIsSubmitting(false);
+  }
+};
+
 
   return (
     <form onSubmit={handleSubmit} className="form">
@@ -310,14 +338,16 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
 
         {/* Misc */}
         <div className="form-group">
-          <label>MSDS</label>
-          <input
-            type="text"
-            name="msds_file"
-            value={formData.msds_file}
-            onChange={handleChange}
-          />
-        </div>
+        <label>MSDS File (PDF)</label>
+        <input type="file" accept="application/pdf" onChange={(e) => setMsdsFile(e.target.files[0])} />
+        {formData.msds_file && (
+          <div style={{ marginTop: "8px" }}>
+            <a href={`/uploads/${formData.msds_file}`} target="_blank" rel="noopener noreferrer">
+              View Existing MSDS
+            </a>
+          </div>
+        )}
+      </div>
 
         <div className="form-group">
           <label>Disposal Method</label>
@@ -347,8 +377,8 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
         <button type="button" className="btn-secondary" onClick={onCancel}>
           Cancel
         </button>
-        <button type="submit" className="btn-primary">
-          Save
+         <button type="submit" className="btn-primary" disabled={isSubmitting}>
+          {isSubmitting ? "Saving..." : "Save"}
         </button>
       </div>
     </form>

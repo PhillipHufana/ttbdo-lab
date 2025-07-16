@@ -1,4 +1,6 @@
-import { useState } from "react";
+// src/components/DetailPopup.jsx
+
+import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { X, Pencil } from "lucide-react";
 
@@ -6,6 +8,12 @@ const DetailPopup = ({ item, onClose, fields, title, onSave }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedFields, setEditedFields] = useState(fields);
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    setEditedFields(fields);
+    setErrors({});
+    setIsEditing(false);
+  }, [fields]);
 
   const validateField = (field, value) => {
     if (field.type === "number" && isNaN(Number(value))) {
@@ -22,35 +30,44 @@ const DetailPopup = ({ item, onClose, fields, title, onSave }) => {
     updated[index].value = newValue;
     setEditedFields(updated);
 
-    const field = updated[index];
-    const error = validateField(field, newValue);
-    setErrors((prev) => ({ ...prev, [field.name]: error }));
+    const error = validateField(updated[index], newValue);
+    setErrors((prev) => ({ ...prev, [updated[index].name]: error }));
+  };
+
+  const handleFileChange = (file, index) => {
+    const updated = [...editedFields];
+    updated[index].value = file;
+    setEditedFields(updated);
   };
 
   const handleSave = () => {
     const newErrors = {};
-    for (const field of editedFields) {
+    editedFields.forEach((field) => {
       const error = validateField(field, field.value);
       if (error) newErrors[field.name] = error;
-    }
+    });
 
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
 
-    const updatedObject = editedFields.reduce((acc, field) => {
-      if (field.name) acc[field.name] = field.value;
-      return acc;
-    }, {});
+    const formData = new FormData();
+    editedFields.forEach((field) => {
+      if (field.name === "msds_file" && field.value instanceof File) {
+        formData.append(field.name, field.value);
+      } else {
+        formData.append(field.name, field.value?.toString().trim() || "");
+      }
+    });
 
-    onSave(updatedObject);
+    onSave(formData);
     alert("Saved successfully!");
     setIsEditing(false);
   };
 
   const handleCancel = () => {
     setEditedFields(fields);
-    setIsEditing(false);
     setErrors({});
+    setIsEditing(false);
   };
 
   if (!item) return null;
@@ -83,42 +100,80 @@ const DetailPopup = ({ item, onClose, fields, title, onSave }) => {
         </div>
 
         <div className="detail-content-right">
-          <div className="detail-info-right">
-            {editedFields.map((field, index) => (
-              <div key={index} className="detail-row-right">
-                <span className="detail-label-right">{field.label}</span>
-                {isEditing ? (
-                  field.type === "select" ? (
-                    <select
-                      className="detail-input-right"
-                      value={field.value || ""}
-                      onChange={(e) => handleChange(index, e.target.value)}
-                    >
-                      <option value="">-- Select --</option>
-                      {field.options?.map((opt) => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input
-                      type={field.type || "text"}
-                      className="detail-input-right"
-                      value={field.value || ""}
-                      onChange={(e) => handleChange(index, e.target.value)}
-                    />
-                  )
-                ) : (
-                  <span className="detail-value-right">
-                    {field.value || "N/A"}
-                  </span>
-                )}
-                {errors[field.name] && (
-                  <span className="error-text">{errors[field.name]}</span>
-                )}
-              </div>
-            ))}
-          </div>
+        <div className="detail-info-right">
+          {editedFields.map((field, index) => (
+            <div key={field.name} className="detail-row-right">
+              <span className="detail-label-right">{field.label}</span>
 
+              {isEditing ? (
+                field.name === "msds_file" ? (
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    onChange={(e) =>
+                      handleFileChange(e.target.files[0], index)
+                    }
+                    className="detail-input-right"
+                  />
+                ) : field.type === "select" ? (
+                  <select
+                    className="detail-input-right"
+                    value={field.value || ""}
+                    onChange={(e) => handleChange(index, e.target.value)}
+                  >
+                    <option value="">-- Select --</option>
+                    {field.options?.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type={field.type || "text"}
+                    className="detail-input-right"
+                    value={field.value || ""}
+                    onChange={(e) => handleChange(index, e.target.value)}
+                  />
+                )
+              ) : field.name === "msds_file" ? (
+                field.value instanceof File ? (
+                  <span className="detail-value-right">
+                    {field.value.name}
+                  </span>
+                ) : field.value ? (
+                  <span
+                    className="detail-value-right"
+                    onClick={() =>
+                      window.open(
+                        `http://localhost:5000/uploads/${field.value}`,
+                        "_blank",
+                        "noopener"
+                      )
+                    }
+                    style={{
+                      color: "blue",
+                      textDecoration: "underline",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {field.value.split('-').slice(1).join('-')}
+                  </span>
+                ) : (
+                  <span className="detail-value-right">N/A</span>
+                )
+              ) : (
+                <span className="detail-value-right">
+                  {field.value || "N/A"}
+                </span>
+              )}
+
+              {errors[field.name] && (
+                <span className="error-text">{errors[field.name]}</span>
+              )}
+            </div>
+          ))}
+        </div>
           {isEditing && (
             <div className="detail-button-group">
               <button className="save-button" onClick={handleSave}>

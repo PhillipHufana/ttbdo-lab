@@ -165,29 +165,34 @@ const ChemicalReagents = () => {
     setEditingItem(reagent);
     setShowForm(true);
   };
-  const handleSave = async (formData) => {
-    const payload = {
-      ...formData,
-      msds_file: formData.msds_file ? 1 : 0,
-    };
 
-    const method = editingItem ? "PUT" : "POST";
-    const url = editingItem ? `${API_URL}/${editingItem.chemical_id}` : API_URL;
+// const handleSave = async (data) => {
+//   const isFormData = data instanceof FormData;
+//   const isEdit = !!editingItem;
+//   const method = isEdit ? "PUT" : "POST";
+//   const url = isEdit ? `${API_URL}/${editingItem.chemical_id}` : API_URL;
 
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+//   const res = await fetch(url, {
+//     method,
+//     ...(isFormData ? {} : { headers: { "Content-Type": "application/json" } }),
+//     body: isFormData ? data : JSON.stringify(data),
+//   });
 
-    if (res.ok) {
-      await fetchReagents();
-      setShowForm(false);
-      setEditingItem(null);
-    } else {
-      console.error(await res.text());
-    }
-  };
+//   if (res.ok) {
+//     await fetchReagents();        // ✅ single source of truth
+//     setShowForm(false);
+//     setEditingItem(null);
+//     setDetailItem(null);
+//   } else {
+//     console.error(await res.text());
+//   }
+// };
+const handleSave = async () => {
+  await fetchReagents();  // ✅ refresh from DB
+  setShowForm(false);
+  setEditingItem(null);
+  setDetailItem(null);
+};
 
   const handleDelete = async (id) => {
     if (window.confirm("Delete?")) {
@@ -709,27 +714,30 @@ const ChemicalReagents = () => {
                 {
                   label: "MSDS",
                   name: "msds_file",
-                  value: detailItem.msds_file ? "Available" : "Not Available",
-                  type: "select",
-                  options: ["Available", "Not Available"],
+                  value: detailItem.msds_file || "",
+                  type: "file",
                 },
-
                 { label: "Disposal Method", name: "disposal_method", value: detailItem.disposal_method, type: "text" },
                 { label: "Remarks", name: "remarks", value: detailItem.remarks, type: "text" },
               ]}
-              onSave={async (updatedFields) => {
-                const payload = {
-                  ...detailItem,
-                  ...updatedFields,
-                  msds_file: updatedFields.msds_file === "Available" ? 1 : 0,
-                };
-
+              onSave={async (formOrData) => {
                 try {
+                  let body, headers;
+
+                  if (formOrData instanceof FormData) {
+                    body = formOrData;
+                    headers = {}; // browser sets multipart
+                  } else {
+                    body = JSON.stringify(formOrData);
+                    headers = { "Content-Type": "application/json" };
+                  }
+
                   const res = await fetch(`${API_URL}/${detailItem.chemical_id}`, {
                     method: "PUT",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload),
+                    body,
+                    headers,
                   });
+
                   if (res.ok) {
                     await fetchReagents();
                     setDetailItem(null);

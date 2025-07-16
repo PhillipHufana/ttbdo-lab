@@ -1,6 +1,10 @@
 // chemicalRoutes.js
 import express from "express";
 import db from "../db.js";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
 
 const router = express.Router();
 
@@ -8,9 +12,20 @@ const normalizeDate = (str) => str?.slice(0, 10) || null;
 
 const formatDbDate = (d) => {
   if (!d) return null;
-  return new Date(d).toLocaleDateString("en-CA"); // always YYYY-MM-DD, local timezone
+  return new Date(d).toLocaleDateString("en-CA");
 };
 
+// Multer setup
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = Date.now() + "-" + file.originalname;
+    cb(null, uniqueName);
+  },
+});
+const upload = multer({ storage });
 
 // GET all chemicals
 router.get("/", async (req, res) => {
@@ -21,7 +36,8 @@ router.get("/", async (req, res) => {
       date_received: formatDbDate(item.date_received),
       date_opened: formatDbDate(item.date_opened),
       expiration_date: formatDbDate(item.expiration_date),
-      msds_file: !!item.msds_file,
+      msds_file: item.msds_file || null
+
     }));
     res.json(data);
   } catch (err) {
@@ -30,8 +46,8 @@ router.get("/", async (req, res) => {
   }
 });
 
-// CREATE chemical
-router.post("/", async (req, res) => {
+// CREATE chemical with file upload
+router.post("/", upload.single("msds_file"), async (req, res) => {
   try {
     const {
       name,
@@ -48,12 +64,13 @@ router.post("/", async (req, res) => {
       location,
       status,
       hazard_level,
-      msds_file,
       disposal_method,
       remarks,
     } = req.body;
 
-    await db.query(
+    const msds_file = req.file ? req.file.filename : null;
+
+    const [result] = await db.query(
       `INSERT INTO chemicals 
       (name, item_code, category, brand, quantity, container_type, container_size, form, date_received, date_opened, expiration_date, location, status, hazard_level, msds_file, disposal_method, remarks)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -72,23 +89,34 @@ router.post("/", async (req, res) => {
         location,
         status,
         hazard_level,
-        msds_file ? 1 : 0,
+        msds_file,
         disposal_method,
         remarks,
       ]
     );
 
-    res.status(201).json({ message: "Chemical reagent added successfully" });
+    // Fetch full inserted row
+    const [rows] = await db.query(
+      "SELECT * FROM chemicals WHERE chemical_id = ?",
+      [result.insertId]
+    );
+
+    res.status(201).json({
+      message: "Chemical reagent added successfully",
+      chemical: rows[0],
+    });
   } catch (error) {
     console.error("POST /api/chemical error:", error.message);
     res.status(500).json({ error: error.message });
   }
 });
 
-// UPDATE chemical
-router.put("/:id", async (req, res) => {
+
+// UPDATE chemical// UPDATE chemical with optional file
+router.put("/:id", upload.single("msds_file"), async (req, res) => {
   try {
     const id = req.params.id;
+
     const {
       name,
       item_code,
@@ -104,10 +132,24 @@ router.put("/:id", async (req, res) => {
       location,
       status,
       hazard_level,
-      msds_file,
       disposal_method,
       remarks,
     } = req.body;
+
+    // get old file name
+    const [[existing]] = await db.query("SELECT msds_file FROM chemicals WHERE chemical_id = ?", [id]);
+
+    // if new file uploaded, replace it
+    let newFilename = existing.msds_file;
+    if (req.file) {
+      newFilename = req.file.filename;
+
+      // optional: delete old file
+      if (existing.msds_file) {
+        const oldPath = path.join("uploads", existing.msds_file);
+        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+      }
+    }
 
     const updated = {
       name,
@@ -124,7 +166,7 @@ router.put("/:id", async (req, res) => {
       location,
       status,
       hazard_level,
-      msds_file: msds_file ? 1 : 0,
+      msds_file: newFilename,
       disposal_method,
       remarks,
     };
