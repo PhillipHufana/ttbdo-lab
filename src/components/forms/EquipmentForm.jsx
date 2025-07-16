@@ -1,3 +1,5 @@
+// src/components/forms/EquipmentForm.jsx
+
 import { useState, useEffect, useRef } from "react";
 import { ChevronDown } from "lucide-react";
 
@@ -18,7 +20,7 @@ const EquipmentForm = ({ initialData, onSave, onCancel }) => {
     last_calibration_date: "",
     next_calibration_date: "",
     remarks: "",
-    manual_available: false,
+    manual_file: null,
     po_no: "",
     purchase_price: "",
     fund_source: "",
@@ -26,7 +28,8 @@ const EquipmentForm = ({ initialData, onSave, onCancel }) => {
     supplier_contact: "",
   });
 
-  // Options for dropdowns
+  const [submitting, setSubmitting] = useState(false);
+
   const [statusList, setStatusList] = useState(["Working", "To be Fixed"]);
   const [locationList, setLocationList] = useState([
     "Left Side Table 2, Countertop",
@@ -35,7 +38,6 @@ const EquipmentForm = ({ initialData, onSave, onCancel }) => {
     "Warehouse",
   ]);
 
-  // Control visibility of dropdowns and new field input
   const [showDropdown, setShowDropdown] = useState({
     location: false,
     status: false,
@@ -46,12 +48,11 @@ const EquipmentForm = ({ initialData, onSave, onCancel }) => {
   });
   const [newValue, setNewValue] = useState({ location: "", status: "" });
 
-  // Refs for detecting outside clicks on dropdowns
   const dropdownRefs = useRef({});
 
   useEffect(() => {
     if (initialData) {
-      setFormData({ ...initialData });
+      setFormData({ ...initialData, manual_file: null });
     }
   }, [initialData]);
 
@@ -66,20 +67,22 @@ const EquipmentForm = ({ initialData, onSave, onCancel }) => {
         }
       });
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+    const { name, value, type, checked, files } = e.target;
+    if (type === "file") {
+      setFormData((prev) => ({ ...prev, [name]: files[0] }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: type === "checkbox" ? checked : value,
+      }));
+    }
   };
 
-  // Handle option selection in dropdown or trigger add-new input
   const handleSelect = (field, value) => {
     if (value === "__add__") {
       setAddingField((prev) => ({ ...prev, [field]: true }));
@@ -90,40 +93,34 @@ const EquipmentForm = ({ initialData, onSave, onCancel }) => {
     }
   };
 
-  // Add new value to dropdown list
   const handleAddOption = (field) => {
     const val = newValue[field].trim();
     if (!val) return;
-
     const setList = field === "location" ? setLocationList : setStatusList;
     const list = field === "location" ? locationList : statusList;
-
     if (!list.includes(val)) {
       setList([...list, val]);
       setFormData((prev) => ({ ...prev, [field]: val }));
     }
-
     setAddingField((prev) => ({ ...prev, [field]: false }));
     setNewValue((prev) => ({ ...prev, [field]: "" }));
   };
 
-  // Reusable dropdown renderer with custom "Add new" option
   const renderDropdown = (label, field, options) => (
     <div
       className="form-group"
       ref={(el) => (dropdownRefs.current[field] = el)}
     >
-      <label>
-        {label} {field === "location" && <span className="required">*</span>}
-      </label>
-
+      <label>{label}</label>
       {!addingField[field] ? (
-        // Normal dropdown display
         <div className="custom-dropdown-wrapper">
           <div
             className="custom-dropdown-selected"
             onClick={() =>
-              setShowDropdown((prev) => ({ ...prev, [field]: !prev[field] }))
+              setShowDropdown((prev) => ({
+                ...prev,
+                [field]: !prev[field],
+              }))
             }
           >
             <span>{formData[field] || `Select ${label}`}</span>
@@ -155,7 +152,6 @@ const EquipmentForm = ({ initialData, onSave, onCancel }) => {
           )}
         </div>
       ) : (
-        // Input for adding a new option
         <div className="custom-add-field">
           <input
             type="text"
@@ -187,12 +183,37 @@ const EquipmentForm = ({ initialData, onSave, onCancel }) => {
     </div>
   );
 
-  // Form submit handler
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    alert("New Equipment saved successfully!");
-    onSave(formData);
-  };
+// ✅ FORM
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (submitting) return;
+  setSubmitting(true);
+
+  const payload = new FormData();
+  Object.entries(formData).forEach(([key, val]) => {
+    if (val !== null && val !== undefined) {
+      payload.append(key, val);
+    }
+  });
+
+  try {
+    const res = await fetch("http://localhost:5000/api/equipment", {
+      method: "POST",
+      body: payload,
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || "Save failed");
+
+    onSave(data); // ✅ only call parent to update state!
+  } catch (err) {
+    console.error("❌ Save error:", err);
+  } finally {
+    setSubmitting(false);
+  }
+};
+
 
   return (
     <form onSubmit={handleSubmit} className="form">
@@ -261,14 +282,15 @@ const EquipmentForm = ({ initialData, onSave, onCancel }) => {
         </div>
 
         <div className="form-group">
-          <label>Equipment Manual Available</label>
+          <label>Upload Manual File (PDF)</label>
           <input
-            type="checkbox"
-            name="manual_available"
-            checked={!!formData.manual_available}
+            type="file"
+            name="manual_file"
+            accept=".pdf"
             onChange={handleChange}
           />
         </div>
+
 
         {/* Dropdowns for location and status */}
         {renderDropdown("Location", "location", locationList)}

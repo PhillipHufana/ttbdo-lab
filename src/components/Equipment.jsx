@@ -142,7 +142,7 @@ const Equipment = () => {
   const handleSaveInlineEdit = async () => {
     const payload = {
       ...editingData,
-      manual_available: editingData.manual_available ? 1 : 0,
+      // manual_available: editingData.manual_available ? 1 : 0,
     };
 
     const res = await fetch(`${API_URL}/${editingRowId}`, {
@@ -180,31 +180,12 @@ const Equipment = () => {
       else console.error(await res.text());
     }
   };
-
-  const handleSave = async (formData) => {
-    const payload = {
-      ...formData,
-      manual_available: formData.manual_available ? 1 : 0,
-    };
-
-    const method = editingItem ? "PUT" : "POST";
-    const url = editingItem
-      ? `${API_URL}/${editingItem.equipment_id}`
-      : API_URL;
-
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (res.ok) {
-      await fetchEquipment();
-      setShowForm(false);
-      setEditingItem(null);
-    } else {
-      console.error("Save failed", await res.text());
-    }
+  // ✅ PARENT
+  const handleSave = (saved) => {
+    console.log("✅ Parent got:", saved);
+    setEquipment((prev) => [...prev, saved]);
+    setShowForm(false);
+    setEditingItem(null);
   };
 
   const handleCancel = () => {
@@ -276,30 +257,24 @@ const Equipment = () => {
                       }`}
                     />
                   </div>
-                  {showLocationFilter && (
-                    <div
-                      className="filter-dropdown"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {locations.map((location) => (
-                        <label key={location} className="filter-option">
-                          <input
-                            type="checkbox"
-                            checked={filterLocation.includes(location)}
-                            onChange={(e) => {
-                              handleFilterChange(
-                                "location",
-                                location,
-                                e.target.checked
-                              );
-                              closeAllFilters();
-                            }}
-                          />
-                          <span>{location}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
+                 {showLocationFilter && (
+                <div className="filter-dropdown" onClick={(e) => e.stopPropagation()}>
+                  {[...new Set(locations)].filter(Boolean).map((location) => (
+                    <label key={location} className="filter-option">
+                      <input
+                        type="checkbox"
+                        checked={filterLocation.includes(location)}
+                        onChange={(e) => {
+                          handleFilterChange("location", location, e.target.checked);
+                          closeAllFilters();
+                        }}
+                      />
+                      <span>{location}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+
                 </div>
 
                 <div className="header-cell filter-header" ref={lastMaintRef}>
@@ -472,17 +447,14 @@ const Equipment = () => {
                             type="checkbox"
                             checked={filterStatus.includes(status)}
                             onChange={(e) => {
-                              handleFilterChange(
-                                "status",
-                                status,
-                                e.target.checked
-                              );
+                              handleFilterChange("status", status, e.target.checked);
                               closeAllFilters();
                             }}
                           />
                           <span>{status}</span>
                         </label>
-                      ))}
+                      ))
+                      }
                     </div>
                   )}
                 </div>
@@ -547,12 +519,10 @@ const Equipment = () => {
                           {editingRowId === item.equipment_id ? (
                             <select
                               value={editingData.location}
-                              onChange={(e) =>
-                                handleInputChange("location", e.target.value)
-                              }
+                              onChange={(e) => handleInputChange("location", e.target.value)}
                               className="inline-edit-select"
                             >
-                              {locations.map((loc) => (
+                              {[...new Set(locations)].filter(Boolean).map((loc) => (
                                 <option key={loc} value={loc}>
                                   {loc}
                                 </option>
@@ -644,12 +614,10 @@ const Equipment = () => {
                           {editingRowId === item.equipment_id ? (
                             <select
                               value={editingData.status}
-                              onChange={(e) =>
-                                handleInputChange("status", e.target.value)
-                              }
+                              onChange={(e) => handleInputChange("status", e.target.value)}
                               className="inline-edit-select"
                             >
-                              {statuses.map((status) => (
+                              {[...new Set(statuses)].filter(Boolean).map((status) => (
                                 <option key={status} value={status}>
                                   {status}
                                 </option>
@@ -715,25 +683,21 @@ const Equipment = () => {
     item={detailItem}
     onClose={() => setDetailItem(null)}
     title="Equipment Details"
-    onSave={async (updated) => {
-      const payload = {
-        ...detailItem,
-        ...updated,
-        manual_available: updated.manual_available === "Yes" ? 1 : 0,
-        purchase_price: parseFloat((updated.purchase_price || "").replace(/[₱,]/g, "")) || 0,
-      };
+    onSave={async (formData) => {
+      try {
+        const res = await fetch(`${API_URL}/${detailItem.equipment_id}`, {
+          method: "PUT",
+          body: formData, // contains file + other fields
+        });
 
-      const res = await fetch(`${API_URL}/${detailItem.equipment_id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (res.ok) {
-        await fetchEquipment();
-        setDetailItem(null);
-      } else {
-        console.error("Save failed", await res.text());
+        if (res.ok) {
+          await fetchEquipment();
+          setDetailItem(null);
+        } else {
+          console.error("Save failed", await res.text());
+        }
+      } catch (err) {
+        console.error("Detail save error:", err);
       }
     }}
     fields={[
@@ -743,40 +707,42 @@ const Equipment = () => {
       { label: "Brand", value: detailItem.brand, name: "brand", type: "text" },
       { label: "Model", value: detailItem.model, name: "model", type: "text" },
       { label: "Serial No.", value: detailItem.serial_no, name: "serial_no", type: "text" },
-
       { label: "Other Details", value: detailItem.other_details, name: "other_details", type: "text" },
       { label: "Status", value: detailItem.status, name: "status", type: "text" },
       { label: "Remarks", value: detailItem.remarks, name: "remarks", type: "text" },
-
       { label: "Location", value: detailItem.location, name: "location", type: "text" },
       { label: "Date Received", value: detailItem.date_received, name: "date_received", type: "date" },
-
       { label: "Last Maintenance", value: detailItem.last_updated, name: "last_updated", type: "date" },
       { label: "Next Maintenance", value: detailItem.maintenance_schedule, name: "maintenance_schedule", type: "date" },
       { label: "Last Calibration", value: detailItem.last_calibration_date, name: "last_calibration_date", type: "date" },
       { label: "Next Calibration", value: detailItem.next_calibration_date, name: "next_calibration_date", type: "date" },
-
       { label: "PO No.", value: detailItem.po_no, name: "po_no", type: "text" },
       {
         label: "Purchase Price",
-        value: String(detailItem.purchase_price || ""), // use raw numeric string
+        value: String(detailItem.purchase_price || ""),
         name: "purchase_price",
         type: "number",
       },
       { label: "Fund Source", value: detailItem.fund_source, name: "fund_source", type: "text" },
       { label: "Supplier", value: detailItem.supplier, name: "supplier", type: "text" },
       { label: "Supplier Contact", value: detailItem.supplier_contact, name: "supplier_contact", type: "text" },
-
+      // {
+      //   label: "Manual Available",
+      //   value: detailItem.manual_available ? "Yes" : "No",
+      //   name: "manual_available",
+      //   type: "select",
+      //   options: ["Yes", "No"],
+      // },
       {
-        label: "Manual Available",
-        value: detailItem.manual_available ? "Yes" : "No",
-        name: "manual_available",
-        type: "select",
-        options: ["Yes", "No"],
+        label: "Manual File (PDF)",
+        value: detailItem.manual_file || "",
+        name: "manual_file",
+        type: "file",
       },
     ]}
   />
 )}
+
 
         </div>
       </div>

@@ -52,7 +52,10 @@ const DetailPopup = ({ item, onClose, fields, title, onSave }) => {
 
     const formData = new FormData();
     editedFields.forEach((field) => {
-      if (field.name === "msds_file" && field.value instanceof File) {
+      if (
+        (field.name === "msds_file" || field.name === "manual_file") &&
+        field.value instanceof File
+      ) {
         formData.append(field.name, field.value);
       } else {
         formData.append(field.name, field.value?.toString().trim() || "");
@@ -100,80 +103,80 @@ const DetailPopup = ({ item, onClose, fields, title, onSave }) => {
         </div>
 
         <div className="detail-content-right">
-        <div className="detail-info-right">
-          {editedFields.map((field, index) => (
-            <div key={field.name} className="detail-row-right">
-              <span className="detail-label-right">{field.label}</span>
+          <div className="detail-info-right">
+            {editedFields.map((field, index) => (
+              <div key={field.name} className="detail-row-right">
+                <span className="detail-label-right">{field.label}</span>
 
-              {isEditing ? (
-                field.name === "msds_file" ? (
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    onChange={(e) =>
-                      handleFileChange(e.target.files[0], index)
-                    }
-                    className="detail-input-right"
-                  />
-                ) : field.type === "select" ? (
-                  <select
-                    className="detail-input-right"
-                    value={field.value || ""}
-                    onChange={(e) => handleChange(index, e.target.value)}
-                  >
-                    <option value="">-- Select --</option>
-                    {field.options?.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
-                    ))}
-                  </select>
+                {isEditing ? (
+                  field.name === "msds_file" || field.name === "manual_file" ? (
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => handleFileChange(e.target.files[0], index)}
+                      className="detail-input-right"
+                    />
+                  ) : field.type === "select" ? (
+                    <select
+                      className="detail-input-right"
+                      value={field.value || ""}
+                      onChange={(e) => handleChange(index, e.target.value)}
+                    >
+                      <option value="">-- Select --</option>
+                      {[...(new Set(field.options || []))]
+                        .filter(Boolean)
+                        .map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                    </select>
+                  ) : (
+                    <input
+                      type={field.type || "text"}
+                      className="detail-input-right"
+                      value={field.value || ""}
+                      onChange={(e) => handleChange(index, e.target.value)}
+                    />
+                  )
+                ) : field.name === "msds_file" || field.name === "manual_file" ? (
+                  field.value instanceof File ? (
+                    <span className="detail-value-right">
+                      {field.value.name}
+                    </span>
+                  ) : field.value ? (
+                    <span
+                      className="detail-value-right"
+                      onClick={() =>
+                        window.open(
+                          `http://localhost:5000/uploads/${field.value}`,
+                          "_blank",
+                          "noopener"
+                        )
+                      }
+                      style={{
+                        color: "blue",
+                        textDecoration: "underline",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {field.value.split("-").slice(1).join("-")}
+                    </span>
+                  ) : (
+                    <span className="detail-value-right">N/A</span>
+                  )
                 ) : (
-                  <input
-                    type={field.type || "text"}
-                    className="detail-input-right"
-                    value={field.value || ""}
-                    onChange={(e) => handleChange(index, e.target.value)}
-                  />
-                )
-              ) : field.name === "msds_file" ? (
-                field.value instanceof File ? (
                   <span className="detail-value-right">
-                    {field.value.name}
+                    {field.value || "N/A"}
                   </span>
-                ) : field.value ? (
-                  <span
-                    className="detail-value-right"
-                    onClick={() =>
-                      window.open(
-                        `http://localhost:5000/uploads/${field.value}`,
-                        "_blank",
-                        "noopener"
-                      )
-                    }
-                    style={{
-                      color: "blue",
-                      textDecoration: "underline",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {field.value.split('-').slice(1).join('-')}
-                  </span>
-                ) : (
-                  <span className="detail-value-right">N/A</span>
-                )
-              ) : (
-                <span className="detail-value-right">
-                  {field.value || "N/A"}
-                </span>
-              )}
+                )}
 
-              {errors[field.name] && (
-                <span className="error-text">{errors[field.name]}</span>
-              )}
-            </div>
-          ))}
-        </div>
+                {errors[field.name] && (
+                  <span className="error-text">{errors[field.name]}</span>
+                )}
+              </div>
+            ))}
+          </div>
           {isEditing && (
             <div className="detail-button-group">
               <button className="save-button" onClick={handleSave}>
