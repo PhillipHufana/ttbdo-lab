@@ -483,55 +483,63 @@ const Consumables = () => {
             </div>
           </div>
         )}
+      {detailItem && (
+       <DetailPopup
+        item={detailItem}
+        onClose={() => setDetailItem(null)}
+        title="Consumable Details"
+       fields={[
+          { name: "supplyItem", label: "Name", value: detailItem.supplyItem },
+          { name: "brand", label: "Brand", value: detailItem.brand },
+          { name: "description", label: "Description", value: detailItem.description },
+          { name: "quantity", label: "Quantity", value: detailItem.quantity },
+          { name: "remainingQuantity", label: "Remaining Quantity", value: detailItem.remainingQuantity },
+          { name: "dateReceived", label: "Date Received", value: detailItem.dateReceived },
+          { name: "dateOpened", label: "Date Opened", value: detailItem.dateOpened },
+          { name: "expirationDate", label: "Expiration Date", value: detailItem.expirationDate },
+          { name: "poNo", label: "PO No.", value: detailItem.poNo },
+          { name: "price", label: "Price", value: detailItem.price },
+          { name: "totalPrice", label: "Total Price", value: detailItem.totalPrice },
+          { name: "receivedBy", label: "Received By", value: detailItem.receivedBy },
+          { name: "supplier", label: "Supplier", value: detailItem.supplier },
+          { name: "location", label: "Location", value: detailItem.location },
+        ]}
+        onSave={async (updatedFields) => {
+        const payload = {
+          name: updatedFields.supplyItem, // ✅ now using the updated value
+          category: detailItem.category || "Consumable",
+          brand: updatedFields.brand,
+          description: updatedFields.description,
+          quantity: Number(updatedFields.quantity),
+          remaining_qty: Number(updatedFields.remainingQuantity),
+          date_received: formatDateInput(updatedFields.dateReceived),
+          date_opened: formatDateInput(updatedFields.dateOpened),
+          expiration_date: formatDateInput(updatedFields.expirationDate),
+          po_no: updatedFields.poNo,
+          unit_price: parseFloat(updatedFields.price),
+          total_price: parseFloat(updatedFields.totalPrice),
+          received_by: updatedFields.receivedBy,
+          supplier: updatedFields.supplier,
+          location: updatedFields.location,
+          unit: detailItem.unit,
+        };
 
-        {detailItem && (
-          <DetailPopup
-            item={detailItem}
-            onClose={() => setDetailItem(null)}
-            title="Consumable Details"
-            fields={[
-              // Identification
-              { label: "Brand", value: detailItem.brand },
-              { label: "Description", value: detailItem.description },
+        const res = await fetch(`${API_URL}/${detailItem.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
 
-              // Quantity Tracking
-              { label: "Quantity", value: detailItem.quantity },
-              {
-                label: "Remaining Quantity",
-                value: detailItem.remainingQuantity,
-              },
+        if (res.ok) {
+          await fetchConsumables();
+          setDetailItem(null);
+        } else {
+          console.error("Detail save failed:", await res.text());
+        }
+      }}
+      />
+      )}
 
-              // Dates & Tracking
-              { label: "Date Received", value: detailItem.dateReceived },
-              {
-                label: "Date Opened",
-                value: detailItem.dateOpened || "Not opened",
-              },
-              { label: "Expiration Date", value: detailItem.expirationDate },
-
-              // Procurement Details
-              { label: "PO No.", value: detailItem.poNo },
-              {
-                label: "Price",
-                value: `₱${Number(detailItem.price || 0).toFixed(2)}`,
-              },
-              {
-                label: "Total Price",
-                value: `₱${Number(detailItem.totalPrice || 0).toFixed(2)}`,
-              },
-
-              { label: "Received By", value: detailItem.receivedBy },
-              { label: "Supplier", value: detailItem.supplier },
-
-              // Location
-              { label: "Location", value: detailItem.location },
-            ]}
-            onSave={(updatedFields) => {
-              console.log("Updated fields:", updatedFields);
-              // Save logic here 
-            }}
-          />
-        )}
       </div>
     </div>
   );

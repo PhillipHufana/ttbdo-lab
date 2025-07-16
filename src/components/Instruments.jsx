@@ -580,30 +580,46 @@ const Instruments = () => {
 
         {detailItem && (
           <DetailPopup
-            item={detailItem}
-            onClose={() => setDetailItem(null)}
-            title="Instrument Details"
-            fields={[
-              // Identification
-              { label: "Description", value: detailItem.description },
+          item={detailItem}
+          onClose={() => setDetailItem(null)}
+          title="Instrument Details"
+          fields={[
+            { label: "Name", name: "instrument", value: detailItem.instrument, type: "text" },
+            { label: "Description", name: "description", value: detailItem.description, type: "text" },
+            { label: "Capacity", name: "capacity", value: detailItem.capacity, type: "text" },
+            { label: "Quantity", name: "quantity", value: String(detailItem.quantity || ""), type: "number" },
+            { label: "Status", name: "status", value: detailItem.status, type: "text" },
+            { label: "Condition", name: "condition", value: detailItem.condition, type: "text" },
+            { label: "Location", name: "location", value: detailItem.location, type: "text" },
+            { label: "Remarks", name: "remarks", value: detailItem.remarks, type: "text" },
+          ]}
+          onSave={async (updatedFields) => {
+            const payload = {
+              name: updatedFields.instrument,
+              description: updatedFields.description,
+              location: updatedFields.location,
+              quantity: parseInt(updatedFields.quantity),
+              unit: detailItem.unit || "pcs",
+              capacity: updatedFields.capacity,
+              status: updatedFields.status,
+              condition: updatedFields.condition,
+              remarks: updatedFields.remarks,
+            };
 
-              // Specifications
-              { label: "Capacity", value: detailItem.capacity },
-              { label: "Quantity", value: detailItem.quantity },
+            const res = await fetch(`${API_URL}/${detailItem.id}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
 
-              // Status & Condition
-              { label: "Status", value: detailItem.status },
-              { label: "Condition", value: detailItem.condition },
-
-              // Location & Notes
-              { label: "Location", value: detailItem.location },
-              { label: "Remarks", value: detailItem.remarks },
-            ]}
-            onSave={(updatedFields) => {
-              console.log("Updated fields:", updatedFields);
-              // Save logic here
-            }}
-          />
+            if (res.ok) {
+              await fetchInstruments();
+              setDetailItem(null);
+            } else {
+              console.error("Detail save failed", await res.text());
+            }
+          }}
+        />
         )}
       </div>
     </div>

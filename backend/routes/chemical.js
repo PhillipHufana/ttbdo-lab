@@ -21,7 +21,7 @@ router.get("/", async (req, res) => {
       date_received: formatDbDate(item.date_received),
       date_opened: formatDbDate(item.date_opened),
       expiration_date: formatDbDate(item.expiration_date),
-      msds_available: !!item.msds_available,
+      msds_file: !!item.msds_file,
     }));
     res.json(data);
   } catch (err) {
@@ -48,14 +48,14 @@ router.post("/", async (req, res) => {
       location,
       status,
       hazard_level,
-      msds_available,
+      msds_file,
       disposal_method,
       remarks,
     } = req.body;
 
     await db.query(
       `INSERT INTO chemicals 
-      (name, item_code, category, brand, quantity, container_type, container_size, form, date_received, date_opened, expiration_date, location, status, hazard_level, msds_available, disposal_method, remarks)
+      (name, item_code, category, brand, quantity, container_type, container_size, form, date_received, date_opened, expiration_date, location, status, hazard_level, msds_file, disposal_method, remarks)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         name,
@@ -72,7 +72,7 @@ router.post("/", async (req, res) => {
         location,
         status,
         hazard_level,
-        msds_available ? 1 : 0,
+        msds_file ? 1 : 0,
         disposal_method,
         remarks,
       ]
@@ -104,7 +104,7 @@ router.put("/:id", async (req, res) => {
       location,
       status,
       hazard_level,
-      msds_available,
+      msds_file,
       disposal_method,
       remarks,
     } = req.body;
@@ -124,7 +124,7 @@ router.put("/:id", async (req, res) => {
       location,
       status,
       hazard_level,
-      msds_available: msds_available ? 1 : 0,
+      msds_file: msds_file ? 1 : 0,
       disposal_method,
       remarks,
     };

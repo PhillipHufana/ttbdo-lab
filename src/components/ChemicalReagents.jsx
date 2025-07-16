@@ -168,7 +168,7 @@ const ChemicalReagents = () => {
   const handleSave = async (formData) => {
     const payload = {
       ...formData,
-      msds_available: formData.msds_available ? 1 : 0,
+      msds_file: formData.msds_file ? 1 : 0,
     };
 
     const method = editingItem ? "PUT" : "POST";
@@ -663,55 +663,82 @@ const ChemicalReagents = () => {
               </div>
             </div>
           )}
-
           {detailItem && (
             <DetailPopup
               item={detailItem}
               onClose={() => setDetailItem(null)}
               title="Chemical Reagent Details"
-              fields={[
-                // Identification
-                { label: "Name", value: detailItem.name },
-                { label: "Item Code", value: detailItem.item_code },
-                { label: "Category", value: detailItem.category },
-                { label: "Brand", value: detailItem.brand },
-                { label: "Form", value: detailItem.form },
-                { label: "Container Type", value: detailItem.container_type },
-                { label: "Container Size", value: detailItem.container_size },
-                { label: "Quantity", value: detailItem.quantity },
+             fields={[
+                { label: "Name", name: "name", value: detailItem.name, type: "text" },
+                { label: "Item Code", name: "item_code", value: detailItem.item_code, type: "text" },
+                { label: "Category", name: "category", value: detailItem.category, type: "text" },
+                { label: "Brand", name: "brand", value: detailItem.brand, type: "text" },
+                { label: "Form", name: "form", value: detailItem.form, type: "text" },
+                { label: "Container Type", name: "container_type", value: detailItem.container_type, type: "text" },
+                { label: "Container Size", name: "container_size", value: detailItem.container_size, type: "text" },
 
-                // Inventory
+                {
+                  label: "Quantity",
+                  name: "quantity",
+                  value: String(detailItem.quantity || ""),
+                  type: "number",
+                },
+
                 {
                   label: "Date Received",
-                  value: formatDatePretty(detailItem.date_received),
+                  name: "date_received",
+                  value: detailItem.date_received?.split("T")[0] || "",
+                  type: "date",
                 },
                 {
                   label: "Date Opened",
-                  value:
-                    formatDatePretty(detailItem.date_opened) || "Not opened",
+                  name: "date_opened",
+                  value: detailItem.date_opened?.split("T")[0] || "",
+                  type: "date",
                 },
                 {
                   label: "Expiration Date",
-                  value: formatDatePretty(detailItem.expiration_date),
+                  name: "expiration_date",
+                  value: detailItem.expiration_date?.split("T")[0] || "",
+                  type: "date",
                 },
-                { label: "Status", value: detailItem.status },
-                { label: "Location", value: detailItem.location },
 
-                // Safety & Compliance
+                { label: "Status", name: "status", value: detailItem.status, type: "text" },
+                { label: "Location", name: "location", value: detailItem.location, type: "text" },
+
                 {
                   label: "MSDS",
-                  value: detailItem.msds_available
-                    ? "Available"
-                    : "Not Available",
+                  name: "msds_file",
+                  value: detailItem.msds_file ? "Available" : "Not Available",
+                  type: "select",
+                  options: ["Available", "Not Available"],
                 },
-                { label: "Disposal Method", value: detailItem.disposal_method },
 
-                // Notes
-                { label: "Remarks", value: detailItem.remarks },
+                { label: "Disposal Method", name: "disposal_method", value: detailItem.disposal_method, type: "text" },
+                { label: "Remarks", name: "remarks", value: detailItem.remarks, type: "text" },
               ]}
-              onSave={(updatedFields) => {
-                console.log("Updated fields:", updatedFields);
-                // Save logic here
+              onSave={async (updatedFields) => {
+                const payload = {
+                  ...detailItem,
+                  ...updatedFields,
+                  msds_file: updatedFields.msds_file === "Available" ? 1 : 0,
+                };
+
+                try {
+                  const res = await fetch(`${API_URL}/${detailItem.chemical_id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                  });
+                  if (res.ok) {
+                    await fetchReagents();
+                    setDetailItem(null);
+                  } else {
+                    console.error("Save failed:", await res.text());
+                  }
+                } catch (err) {
+                  console.error("Error saving:", err);
+                }
               }}
             />
           )}

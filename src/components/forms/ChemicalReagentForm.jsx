@@ -15,7 +15,7 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
     expiration_date: "",
     date_opened: "",
     location: "",
-    msds_available: "",
+    msds_file: "",
     disposal_method: "",
     status: "",
     remarks: "",
@@ -313,8 +313,8 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
           <label>MSDS</label>
           <input
             type="text"
-            name="msds_available"
-            value={formData.msds_available}
+            name="msds_file"
+            value={formData.msds_file}
             onChange={handleChange}
           />
         </div>
