@@ -1,61 +1,212 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { ChevronDown } from "lucide-react";
 
-const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
+const ChemicalReagentForm = ({
+  initialData,
+  onSave,
+  onCancel,
+  categories,
+  setCategories,
+  forms,
+  setForms,
+  locations,
+  setLocations,
+  statuses,
+  setStatuses,
+}) => {
+  // ✅ Hooks are now inside the component
   const [formData, setFormData] = useState({
-    chemicalName: "",
-    itemCode: "",
+    name: "",
+    item_code: "",
     category: "",
     brand: "",
-    quantity: "",
-    containerType: "",
-    containerSize: "",
     form: "",
-    dateReceived: "",
-    expirationDate: "",
-    dateOpened: "",
+    quantity: "",
+    container_type: "",
+    container_size: "",
+    date_received: "",
+    expiration_date: "",
+    date_opened: "",
     location: "",
-    msds: "",
-    disposalMethod: "",
-    status: "Unopened",
+    msds_file: "",
+    disposal_method: "",
+    status: "",
     remarks: "",
   });
 
+  const [msdsFile, setMsdsFile] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [addingField, setAddingField] = useState({});
+  const [newValue, setNewValue] = useState({});
+  const [showDropdown, setShowDropdown] = useState({});
+  const dropdownRefs = useRef({});
+
   useEffect(() => {
-    if (initialData) {
-      setFormData({ ...initialData });
-    }
+    if (initialData) setFormData({ ...initialData });
   }, [initialData]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      Object.keys(dropdownRefs.current).forEach((field) => {
+        if (
+          dropdownRefs.current[field] &&
+          !dropdownRefs.current[field].contains(event.target)
+        ) {
+          setShowDropdown((prev) => ({ ...prev, [field]: false }));
+        }
+      });
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleAddOption = (field) => {
+    const val = newValue[field]?.trim();
+    if (!val) return;
+
+    const update = (setter, list) => {
+      if (!list.includes(val)) {
+        setter([...list, val]);
+        setFormData((prev) => ({ ...prev, [field]: val }));
+      }
+    };
+
+    if (field === "category") update(setCategories, categories);
+    if (field === "form") update(setForms, forms);
+    if (field === "location") update(setLocations, locations);
+    if (field === "status") update(setStatuses, statuses);
+
+    setAddingField((prev) => ({ ...prev, [field]: false }));
+    setNewValue((prev) => ({ ...prev, [field]: "" }));
+  };
+
+  const handleSelect = (field, value) => {
+    if (value === "__add__") {
+      setAddingField((prev) => ({ ...prev, [field]: true }));
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    }
+    setShowDropdown((prev) => ({ ...prev, [field]: false }));
+  };
+
+  const renderDropdown = (label, field, options, setter) => (
+    <div
+      className="form-group"
+      ref={(el) => (dropdownRefs.current[field] = el)}
+    >
+      <label>
+        {label} <span className="required">*</span>
+      </label>
+
+      {!addingField[field] ? (
+        <div className="custom-dropdown-wrapper">
+          <div
+            className="custom-dropdown-selected"
+            onClick={() =>
+              setShowDropdown((prev) => ({ ...prev, [field]: !prev[field] }))
+            }
+          >
+            <span>{formData[field] || `Select ${label}`}</span>
+            <ChevronDown
+              className={`dropdown-chevron ${
+                showDropdown[field] ? "rotated" : ""
+              }`}
+              size={18}
+            />
+          </div>
+
+          {showDropdown[field] && (
+            <div className="custom-dropdown-menu">
+              {options.map((opt) => (
+                <div
+                  key={opt}
+                  className="custom-dropdown-option"
+                  onClick={() => handleSelect(field, opt)}
+                >
+                  {opt}
+                </div>
+              ))}
+              <div
+                className="custom-dropdown-option add-new"
+                onClick={() => handleSelect(field, "__add__")}
+              >
+                + Add new {label.toLowerCase()}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="custom-add-field">
+          <input
+            type="text"
+            placeholder={`Enter new ${label.toLowerCase()}`}
+            value={newValue[field] || ""}
+            onChange={(e) =>
+              setNewValue((prev) => ({ ...prev, [field]: e.target.value }))
+            }
+            onBlur={() => handleAddOption(field)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleAddOption(field);
+              }
+            }}
+            autoFocus
+          />
+          <button
+            type="button"
+            onClick={() =>
+              setAddingField((prev) => ({ ...prev, [field]: false }))
+            }
+            className="btn-secondary"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
+  const handleSubmit = async (e) => {
+    console.log("Submitting...");
     e.preventDefault();
-    onSave(formData);
-  };
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
-  const categories = [
-    "Lactic Acid",
-    "Lactic Acid Fermentation",
-    "Polymerization",
-    "Filtration and Purification",
-    "Sugar Analysis",
-    "Others",
-  ];
-  const forms = ["Solid", "Liquid"];
-  const statuses = [
-    "Opened",
-    "Unopened",
-    "Expired Opened",
-    "Expired Unopened",
-    "Expired Sealed",
-  ];
-  const locations = ["Table 2, Cabinet 4", "Shelf 2b", "Shelf 1d"];
+    const data = new FormData();
+    Object.entries(formData).forEach(([key, value]) => data.append(key, value));
+    if (msdsFile) data.append("msds_file", msdsFile);
+
+    try {
+      const res = await fetch("http://localhost:5000/api/chemical", {
+        method: "POST",
+        body: data,
+      });
+
+      if (!res.ok) {
+        let errorMessage = "Failed to submit";
+        try {
+          const errorData = await res.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (_) {}
+        throw new Error(errorMessage);
+      }
+
+      await res.json();
+      alert("New Chemical Reagent saved successfully!");
+      await onSave();
+      setIsSubmitting(false);
+    } catch (err) {
+      console.error("Error submitting form:", err);
+      alert("Error saving chemical: " + err.message);
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="form">
@@ -66,8 +217,8 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
           </label>
           <input
             type="text"
-            name="chemicalName"
-            value={formData.chemicalName}
+            name="name"
+            value={formData.name}
             onChange={handleChange}
             required
           />
@@ -79,31 +230,14 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
           </label>
           <input
             type="text"
-            name="itemCode"
-            value={formData.itemCode}
+            name="item_code"
+            value={formData.item_code}
             onChange={handleChange}
             required
           />
         </div>
 
-        <div className="form-group">
-          <label>
-            Category <span className="required">*</span>
-          </label>
-          <select
-            name="category"
-            value={formData.category}
-            onChange={handleChange}
-            required
-          >
-            <option value="">Select Category</option>
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-        </div>
+        {renderDropdown("Category", "category", categories, setCategories)}
 
         <div className="form-group">
           <label>Brand</label>
@@ -115,20 +249,9 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
           />
         </div>
 
-        <div className="form-group">
-          <label>
-            Form <span className="required">*</span>
-          </label>
-          <select name="form" value={formData.form} onChange={handleChange}>
-            <option value="">Select Form</option>
-            {forms.map((form) => (
-              <option key={form} value={form}>
-                {form}
-              </option>
-            ))}
-          </select>
-        </div>
+        {renderDropdown("Form", "form", forms, setForms)}
 
+        {/* Quantity and container */}
         <div className="form-group">
           <label>
             Quantity <span className="required">*</span>
@@ -145,8 +268,8 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
           <label>Container Type</label>
           <input
             type="text"
-            name="containerType"
-            value={formData.containerType}
+            name="container_type"
+            value={formData.container_type}
             onChange={handleChange}
           />
         </div>
@@ -155,20 +278,21 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
           <label>Container Size</label>
           <input
             type="text"
-            name="containerSize"
-            value={formData.containerSize}
+            name="container_size"
+            value={formData.container_size}
             onChange={handleChange}
           />
         </div>
 
+        {/* Dates */}
         <div className="form-group">
           <label>
             Date Received <span className="required">*</span>
           </label>
           <input
             type="date"
-            name="dateReceived"
-            value={formData.dateReceived}
+            name="date_received"
+            value={formData.date_received}
             onChange={handleChange}
             required
           />
@@ -180,8 +304,8 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
           </label>
           <input
             type="date"
-            name="expirationDate"
-            value={formData.expirationDate}
+            name="expiration_date"
+            value={formData.expiration_date}
             onChange={handleChange}
             required
           />
@@ -191,63 +315,46 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
           <label>Date Opened</label>
           <input
             type="date"
-            name="dateOpened"
-            value={formData.dateOpened}
+            name="date_opened"
+            value={formData.date_opened}
             onChange={handleChange}
           />
         </div>
 
-        <div className="form-group">
-          <label>
-            Location <span className="required">*</span>
-          </label>
-          <select
-            name="location"
-            value={formData.location}
-            onChange={handleChange}
-            required
-          >
-            <option value="" disabled>
-              Select Location
-            </option>
-            {locations.map((location) => (
-              <option key={location} value={location}>
-                {location}
-              </option>
-            ))}
-          </select>
-        </div>
+        {renderDropdown("Location", "location", locations, setLocations)}
 
+        {/* Misc */}
         <div className="form-group">
-          <label>MSDS</label>
+          <label>MSDS File (PDF)</label>
           <input
-            type="text"
-            name="msds"
-            value={formData.msds}
-            onChange={handleChange}
+            type="file"
+            accept="application/pdf"
+            onChange={(e) => setMsdsFile(e.target.files[0])}
           />
+          {formData.msds_file && (
+            <div style={{ marginTop: "8px" }}>
+              <a
+                href={`/uploads/${formData.msds_file}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                View Existing MSDS
+              </a>
+            </div>
+          )}
         </div>
 
         <div className="form-group">
           <label>Disposal Method</label>
           <input
             type="text"
-            name="disposalMethod"
-            value={formData.disposalMethod}
+            name="disposal_method"
+            value={formData.disposal_method}
             onChange={handleChange}
           />
         </div>
 
-        <div className="form-group">
-          <label>Status</label>
-          <select name="status" value={formData.status} onChange={handleChange}>
-            {statuses.map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
-            ))}
-          </select>
-        </div>
+        {renderDropdown("Status", "status", statuses, setStatuses)}
 
         <div className="form-group">
           <label>Remarks</label>
@@ -260,12 +367,13 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
         </div>
       </div>
 
+      {/* Form buttons */}
       <div className="form-actions">
         <button type="button" className="btn-secondary" onClick={onCancel}>
           Cancel
         </button>
-        <button type="submit" className="btn-primary">
-          Save
+        <button type="submit" className="btn-primary" disabled={isSubmitting}>
+          {isSubmitting ? "Saving..." : "Save"}
         </button>
       </div>
     </form>

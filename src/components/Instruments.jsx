@@ -11,6 +11,8 @@ import {
 import InstrumentForm from "./forms/InstrumentForm";
 import DetailPopup from "./DetailPopup";
 
+const API_URL = "http://localhost:5000/api/instrument";
+
 const Instruments = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState([]);
@@ -26,37 +28,11 @@ const Instruments = () => {
     status: false,
     condition: false,
   });
-  const [instruments, setInstruments] = useState([
-    {
-      id: 1,
-      instrument: "1000 mL Rotary Flask",
-      description: "Glassware",
-      location: "Table 2, Cabinet 2",
-      quantity: "1 pc",
-      capacity: "1000 mL",
-      status: "Broken",
-      condition: "Poor",
-      remarks: "For Disposal",
-    },
-  ]);
+  const [instruments, setInstruments] = useState([]);
 
-  const statuses = [
-    "Opened",
-    "Unused",
-    "Sealed",
-    "Tip Chipped",
-    "Unopened",
-    "Broken",
-  ];
-  const conditions = ["Good", "Poor"];
-  const locations = [
-    "Lab Room 1",
-    "Lab Room 2",
-    "Instrument Room",
-    "Storage",
-    "Calibration Lab",
-    "Table 2, Cabinet 2",
-  ];
+  const [statusList, setStatusList] = useState([]);
+  const [conditionList, setConditionList] = useState([]);
+  const [locationList, setLocationList] = useState([]);
 
   const filterRefs = {
     location: useRef(null),
@@ -64,7 +40,42 @@ const Instruments = () => {
     condition: useRef(null),
   };
 
+  const fetchInstruments = async () => {
+    try {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      const formatted = data.map((item) => ({
+        id: item.instrument_id,
+        instrument: item.name,
+        description: item.description,
+        location: item.location,
+        quantity: item.quantity,
+        unit: item.unit,
+        capacity: item.capacity,
+        status: item.status,
+        condition: item.condition,
+        remarks: item.remarks,
+      }));
+      setInstruments(formatted);
+
+      // dynamically build unique filter options
+      setLocationList([
+        ...new Set(formatted.map((i) => i.location).filter(Boolean)),
+      ]);
+      setStatusList([
+        ...new Set(formatted.map((i) => i.status).filter(Boolean)),
+      ]);
+      setConditionList([
+        ...new Set(formatted.map((i) => i.condition).filter(Boolean)),
+      ]);
+    } catch (err) {
+      console.error("Fetch error:", err);
+    }
+  };
+
   useEffect(() => {
+    fetchInstruments();
+
     const handleClickOutside = (event) => {
       Object.entries(filterRefs).forEach(([key, ref]) => {
         if (ref.current && !ref.current.contains(event.target)) {
@@ -75,6 +86,8 @@ const Instruments = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const locations = [...new Set(instruments.map((item) => item.location))];
 
   const filteredInstruments = instruments.filter((item) => {
     const matchesSearch =
@@ -121,15 +134,19 @@ const Instruments = () => {
       case "Opened":
         return "status-opened";
       case "Unused":
-        return "status-expired-sealed";
+        return "status-unused";
+      case "Used":
+        return "status-used";
+      case "Opened, unused":
+        return "status-opened-unused";
       case "Sealed":
         return "status-unopened";
       case "Tip Chipped":
-        return "status-expired-opened";
+        return "status-tip-chipped";
       case "Unopened":
         return "status-unopened";
       case "Broken":
-        return "status-expired-unopened";
+        return "status-broken";
       default:
         return "";
     }
@@ -151,19 +168,77 @@ const Instruments = () => {
     setShowForm(true);
   };
 
+  const handleSave = async (formData) => {
+    const method = editingItem ? "PUT" : "POST";
+    const url = editingItem ? `${API_URL}/${editingItem.id}` : API_URL;
+
+    const payload = {
+      name: formData.instrument,
+      description: formData.description,
+      location: formData.location,
+      quantity: parseInt(formData.quantity),
+      unit: formData.unit || "pcs", // fallback if unit is missing
+      capacity: formData.capacity,
+      status: formData.status,
+      condition: formData.condition,
+      remarks: formData.remarks,
+    };
+
+    console.log("Saving payload:", payload);
+
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      await fetchInstruments();
+      setShowForm(false);
+      setEditingItem(null);
+    } else {
+      console.error("Save failed", await res.text());
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to delete this instrument?")) {
+      const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+      if (res.ok) fetchInstruments();
+    }
+  };
+
   const handleInlineEdit = (item) => {
     setEditingRowId(item.id);
     setEditingData({ ...item });
   };
 
-  const handleSaveInlineEdit = () => {
-    setInstruments(
-      instruments.map((item) =>
-        item.id === editingRowId ? { ...editingData } : item
-      )
-    );
-    setEditingRowId(null);
-    setEditingData({});
+  const handleSaveInlineEdit = async () => {
+    const payload = {
+      name: editingData.instrument,
+      description: editingData.description,
+      location: editingData.location,
+      quantity: parseInt(editingData.quantity),
+      unit: editingData.unit || "pcs", // fallback
+      capacity: editingData.capacity,
+      status: editingData.status,
+      condition: editingData.condition,
+      remarks: editingData.remarks,
+    };
+
+    const res = await fetch(`${API_URL}/${editingRowId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      await fetchInstruments();
+      setEditingRowId(null);
+      setEditingData({});
+    } else {
+      console.error("Update failed", await res.text());
+    }
   };
 
   const handleCancelInlineEdit = () => {
@@ -179,24 +254,6 @@ const Instruments = () => {
     setDetailItem(item);
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this instrument?")) {
-      setInstruments(instruments.filter((item) => item.id !== id));
-    }
-  };
-
-  const handleSave = (formData) => {
-    if (editingItem) {
-      setInstruments(
-        instruments.map((item) =>
-          item.id === editingItem.id ? { ...item, ...formData } : item
-        )
-      );
-    }
-    setShowForm(false);
-    setEditingItem(null);
-  };
-
   const handleCancel = () => {
     setShowForm(false);
     setEditingItem(null);
@@ -208,7 +265,6 @@ const Instruments = () => {
         <div className="section-header">
           <h1 className="font-marcellus">Instruments Inventory</h1>
         </div>
-
         <div className="controls-section">
           <div className="search-container">
             <Search size={20} className="search-icon" />
@@ -221,8 +277,7 @@ const Instruments = () => {
             />
           </div>
           <button className="btn-primary" onClick={handleAdd}>
-            <Plus size={20} />
-            Add Instrument
+            <Plus size={20} /> Add Instrument
           </button>
         </div>
 
@@ -235,6 +290,12 @@ const Instruments = () => {
               initialData={editingItem}
               onSave={handleSave}
               onCancel={handleCancel}
+              locationList={locationList}
+              setLocationList={setLocationList}
+              statusList={statusList}
+              setStatusList={setStatusList}
+              conditionList={conditionList}
+              setConditionList={setConditionList}
             />
           </div>
         ) : (
@@ -307,7 +368,7 @@ const Instruments = () => {
                 />
                 {showFilters.status && (
                   <div className="filter-dropdown">
-                    {statuses.map((status) => (
+                    {statusList.map((status) => (
                       <label key={status} className="filter-option">
                         <input
                           type="checkbox"
@@ -345,7 +406,7 @@ const Instruments = () => {
                 />
                 {showFilters.condition && (
                   <div className="filter-dropdown">
-                    {conditions.map((cond) => (
+                    {conditionList.map((cond) => (
                       <label key={cond} className="filter-option">
                         <input
                           type="checkbox"
@@ -368,149 +429,160 @@ const Instruments = () => {
                 <span>Actions</span>
               </div>
             </div>
+            <div className="table-scroll-body">
+              <div className="table-body">
+                {filteredInstruments
+                  .sort((a, b) => {
+                    const aName = a.instrument?.trim() || "";
+                    const bName = b.instrument?.trim() || "";
+                    if (!aName && !bName) return 0;
+                    if (!aName) return 1;
+                    if (!bName) return -1;
+                    return aName.localeCompare(bName);
+                  })
 
-            <div className="table-body">
-              {filteredInstruments.map((item) => (
-                <div
-                  key={item.id}
-                  className={`table-row ${
-                    editingRowId === item.id ? "editing-row" : ""
-                  }`}
-                >
-                  <div className="row-cell">
-                    <div className="item-details">
-                      <button
-                        className="item-name"
-                        onClick={() => handleViewDetails(item)}
-                      >
-                        {item.instrument}
-                      </button>
+                  .map((item) => (
+                    <div
+                      key={item.id}
+                      className={`table-row ${
+                        editingRowId === item.id ? "editing-row" : ""
+                      }`}
+                    >
+                      <div className="row-cell">
+                        <div className="item-details">
+                          <button
+                            className="item-name"
+                            onClick={() => handleViewDetails(item)}
+                          >
+                            {item.instrument}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="row-cell">
+                        {editingRowId === item.id ? (
+                          <input
+                            type="number"
+                            value={editingData.quantity}
+                            onChange={(e) =>
+                              handleInputChange("quantity", e.target.value)
+                            }
+                            className="inline-edit-input"
+                          />
+                        ) : (
+                          item.quantity
+                        )}
+                      </div>
+                      <div className="row-cell">{item.description}</div>
+                      <div className="row-cell">
+                        {editingRowId === item.id ? (
+                          <select
+                            value={editingData.location}
+                            onChange={(e) =>
+                              handleInputChange("location", e.target.value)
+                            }
+                            className="inline-edit-select"
+                          >
+                            {locations.map((loc) => (
+                              <option key={loc} value={loc}>
+                                {loc}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          item.location
+                        )}
+                      </div>
+
+                      <div className="row-cell">
+                        {editingRowId === item.id ? (
+                          <select
+                            value={editingData.status}
+                            onChange={(e) =>
+                              handleInputChange("status", e.target.value)
+                            }
+                            className="inline-edit-select"
+                          >
+                            {statusList.map((status) => (
+                              <option key={status} value={status}>
+                                {status}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span
+                            className={`status-badge ${getStatusColor(
+                              item.status
+                            )}`}
+                          >
+                            {item.status}
+                          </span>
+                        )}
+                      </div>
+                      <div className="row-cell">
+                        {editingRowId === item.id ? (
+                          <select
+                            value={editingData.condition}
+                            onChange={(e) =>
+                              handleInputChange("condition", e.target.value)
+                            }
+                            className="inline-edit-select"
+                          >
+                            {conditionList.map((condition) => (
+                              <option key={condition} value={condition}>
+                                {condition}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span
+                            className={`status-badge ${getConditionColor(
+                              item.condition
+                            )}`}
+                          >
+                            {item.condition}
+                          </span>
+                        )}
+                      </div>
+                      <div className="row-cell">
+                        {editingRowId === item.id ? (
+                          <div className="editing-actions">
+                            <button
+                              className="btn-icon btn-save"
+                              onClick={handleSaveInlineEdit}
+                              title="Save"
+                            >
+                              <Check size={16} />
+                            </button>
+                            <button
+                              className="btn-icon btn-cancel"
+                              onClick={handleCancelInlineEdit}
+                              title="Cancel"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="action-buttons">
+                            <button
+                              className="btn-icon"
+                              onClick={() => handleInlineEdit(item)}
+                              title="Edit"
+                            >
+                              <Edit size={16} />
+                            </button>
+                            <button
+                              className="btn-icon delete"
+                              onClick={() => handleDelete(item.id)}
+                              title="Delete"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="row-cell">
-                    {editingRowId === item.id ? (
-                      <input
-                        type="number"
-                        value={editingData.quantity}
-                        onChange={(e) =>
-                          handleInputChange("quantity", e.target.value)
-                        }
-                        className="inline-edit-input"
-                      />
-                    ) : (
-                      item.quantity
-                    )}
-                  </div>
-                  <div className="row-cell">{item.description}</div>
-                  <div className="row-cell">
-                    {editingRowId === item.id ? (
-                      <select
-                        value={editingData.location}
-                        onChange={(e) =>
-                          handleInputChange("location", e.target.value)
-                        }
-                        className="inline-edit-select"
-                      >
-                        {locations.map((loc) => (
-                          <option key={loc} value={loc}>
-                            {loc}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      item.location
-                    )}
-                  </div>
-
-                  <div className="row-cell">
-                    {editingRowId === item.id ? (
-                      <select
-                        value={editingData.status}
-                        onChange={(e) =>
-                          handleInputChange("status", e.target.value)
-                        }
-                        className="inline-edit-select"
-                      >
-                        {statuses.map((status) => (
-                          <option key={status} value={status}>
-                            {status}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span
-                        className={`status-badge ${getStatusColor(
-                          item.status
-                        )}`}
-                      >
-                        {item.status}
-                      </span>
-                    )}
-                  </div>
-                  <div className="row-cell">
-                    {editingRowId === item.id ? (
-                      <select
-                        value={editingData.condition}
-                        onChange={(e) =>
-                          handleInputChange("condition", e.target.value)
-                        }
-                        className="inline-edit-select"
-                      >
-                        {conditions.map((condition) => (
-                          <option key={condition} value={condition}>
-                            {condition}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span
-                        className={`status-badge ${getConditionColor(
-                          item.condition
-                        )}`}
-                      >
-                        {item.condition}
-                      </span>
-                    )}
-                  </div>
-                  <div className="row-cell">
-                    {editingRowId === item.id ? (
-                      <div className="editing-actions">
-                        <button
-                          className="btn-icon btn-save"
-                          onClick={handleSaveInlineEdit}
-                          title="Save"
-                        >
-                          <Check size={16} />
-                        </button>
-                        <button
-                          className="btn-icon btn-cancel"
-                          onClick={handleCancelInlineEdit}
-                          title="Cancel"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="action-buttons">
-                        <button
-                          className="btn-icon"
-                          onClick={() => handleInlineEdit(item)}
-                          title="Edit"
-                        >
-                          <Edit size={16} />
-                        </button>
-                        <button
-                          className="btn-icon delete"
-                          onClick={() => handleDelete(item.id)}
-                          title="Delete"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+                  ))}
+              </div>
             </div>
           </div>
         )}
@@ -521,21 +593,81 @@ const Instruments = () => {
             onClose={() => setDetailItem(null)}
             title="Instrument Details"
             fields={[
-              // Identification
-              { label: "Description", value: detailItem.description },
-
-              // Specifications
-              { label: "Capacity", value: detailItem.capacity },
-              { label: "Quantity", value: detailItem.quantity },
-
-              // Status & Condition
-              { label: "Status", value: detailItem.status },
-              { label: "Condition", value: detailItem.condition },
-
-              // Location & Notes
-              { label: "Location", value: detailItem.location },
-              { label: "Remarks", value: detailItem.remarks },
+              {
+                label: "Name",
+                name: "instrument",
+                value: detailItem.instrument,
+                type: "text",
+              },
+              {
+                label: "Description",
+                name: "description",
+                value: detailItem.description,
+                type: "text",
+              },
+              {
+                label: "Capacity",
+                name: "capacity",
+                value: detailItem.capacity,
+                type: "text",
+              },
+              {
+                label: "Quantity",
+                name: "quantity",
+                value: String(detailItem.quantity || ""),
+                type: "number",
+              },
+              {
+                label: "Status",
+                name: "status",
+                value: detailItem.status,
+                type: "text",
+              },
+              {
+                label: "Condition",
+                name: "condition",
+                value: detailItem.condition,
+                type: "text",
+              },
+              {
+                label: "Location",
+                name: "location",
+                value: detailItem.location,
+                type: "text",
+              },
+              {
+                label: "Remarks",
+                name: "remarks",
+                value: detailItem.remarks,
+                type: "text",
+              },
             ]}
+            onSave={async (updatedFields) => {
+              const payload = {
+                name: updatedFields.instrument,
+                description: updatedFields.description,
+                location: updatedFields.location,
+                quantity: parseInt(updatedFields.quantity),
+                unit: detailItem.unit || "pcs",
+                capacity: updatedFields.capacity,
+                status: updatedFields.status,
+                condition: updatedFields.condition,
+                remarks: updatedFields.remarks,
+              };
+
+              const res = await fetch(`${API_URL}/${detailItem.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+              });
+
+              if (res.ok) {
+                await fetchInstruments();
+                setDetailItem(null);
+              } else {
+                console.error("Detail save failed", await res.text());
+              }
+            }}
           />
         )}
       </div>

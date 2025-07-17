@@ -1,82 +1,238 @@
-import { useState, useEffect } from "react";
+// src/components/forms/EquipmentForm.jsx
 
-const EquipmentForm = ({ initialData, onSave, onCancel }) => {
+import { useState, useEffect, useRef } from "react";
+import { ChevronDown } from "lucide-react";
+
+const EquipmentForm = ({
+  initialData,
+  onSave,
+  onCancel,
+  statusList,
+  setStatusList,
+  locationList,
+  setLocationList,
+}) => {
   const [formData, setFormData] = useState({
-    equipment: "",
-    equipmentCode: "",
-    otherNames: "",
+    name: "",
+    equipment_code: "",
+    other_name: "",
     location: "",
     brand: "",
     model: "",
-    serialNo: "",
-    otherDetails: "",
-    dateReceived: "",
-    status: "Operational",
-    lastMaintenance: "",
-    nextMaintenance: "",
-    lastCalib: "",
-    nextCalib: "",
+    serial_no: "",
+    other_details: "",
+    date_received: "",
+    status: "",
+    last_updated: "",
+    maintenance_schedule: "",
+    last_calibration_date: "",
+    next_calibration_date: "",
     remarks: "",
-    equipmentManual: "",
-    poNo: "",
-    purchasePrice: "",
-    fundSource: "",
+    manual_file: null,
+    po_no: "",
+    purchase_price: "",
+    fund_source: "",
     supplier: "",
-    supplierContactDetails: "",
+    supplier_contact: "",
   });
 
+  const [submitting, setSubmitting] = useState(false);
+
+  const [showDropdown, setShowDropdown] = useState({
+    location: false,
+    status: false,
+  });
+  const [addingField, setAddingField] = useState({
+    location: false,
+    status: false,
+  });
+  const [newValue, setNewValue] = useState({ location: "", status: "" });
+
+  const dropdownRefs = useRef({});
   useEffect(() => {
     if (initialData) {
-      setFormData({ ...initialData });
+      setFormData({ ...initialData, manual_file: null });
     }
   }, [initialData]);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      Object.keys(dropdownRefs.current).forEach((field) => {
+        if (
+          dropdownRefs.current[field] &&
+          !dropdownRefs.current[field].contains(event.target)
+        ) {
+          setShowDropdown((prev) => ({ ...prev, [field]: false }));
+        }
+      });
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    const { name, value, type, checked, files } = e.target;
+    if (type === "file") {
+      setFormData((prev) => ({ ...prev, [name]: files[0] }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: type === "checkbox" ? checked : value,
+      }));
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSelect = (field, value) => {
+    if (value === "__add__") {
+      setAddingField((prev) => ({ ...prev, [field]: true }));
+      setFormData((prev) => ({ ...prev, [field]: "" }));
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+      setShowDropdown((prev) => ({ ...prev, [field]: false }));
+    }
+  };
+
+  const handleAddOption = (field) => {
+    const val = newValue[field].trim();
+    if (!val) return;
+    const setList = field === "location" ? setLocationList : setStatusList;
+    const list = field === "location" ? locationList : statusList;
+    if (!list.includes(val)) {
+      setList([...list, val]);
+      setFormData((prev) => ({ ...prev, [field]: val }));
+    }
+    setAddingField((prev) => ({ ...prev, [field]: false }));
+    setNewValue((prev) => ({ ...prev, [field]: "" }));
+  };
+
+  const renderDropdown = (label, field, options) => (
+    <div
+      className="form-group"
+      ref={(el) => (dropdownRefs.current[field] = el)}
+    >
+      <label>{label}</label>
+      {!addingField[field] ? (
+        <div className="custom-dropdown-wrapper">
+          <div
+            className="custom-dropdown-selected"
+            onClick={() =>
+              setShowDropdown((prev) => ({
+                ...prev,
+                [field]: !prev[field],
+              }))
+            }
+          >
+            <span>{formData[field] || `Select ${label}`}</span>
+            <ChevronDown
+              className={`dropdown-chevron ${
+                showDropdown[field] ? "rotated" : ""
+              }`}
+              size={18}
+            />
+          </div>
+          {showDropdown[field] && (
+            <div className="custom-dropdown-menu">
+              {options.map((opt) => (
+                <div
+                  key={opt}
+                  className="custom-dropdown-option"
+                  onClick={() => handleSelect(field, opt)}
+                >
+                  {opt}
+                </div>
+              ))}
+              <div
+                className="custom-dropdown-option add-new"
+                onClick={() => handleSelect(field, "__add__")}
+              >
+                + Add new {label.toLowerCase()}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="custom-add-field">
+          <input
+            type="text"
+            placeholder={`Enter new ${label.toLowerCase()}`}
+            value={newValue[field] || ""}
+            onChange={(e) =>
+              setNewValue((prev) => ({ ...prev, [field]: e.target.value }))
+            }
+            onBlur={() => handleAddOption(field)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleAddOption(field);
+              }
+            }}
+            autoFocus
+          />
+          <button
+            type="button"
+            onClick={() =>
+              setAddingField((prev) => ({ ...prev, [field]: false }))
+            }
+            className="btn-secondary"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
+  // ✅ FORM
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSave(formData);
+    if (submitting) return;
+    setSubmitting(true);
+
+    const payload = new FormData();
+    Object.entries(formData).forEach(([key, val]) => {
+      if (val !== null && val !== undefined) {
+        payload.append(key, val);
+      }
+    });
+
+    try {
+      const res = await fetch("http://localhost:5000/api/equipment", {
+        method: "POST",
+        body: payload,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || "Save failed");
+
+      onSave(data); // ✅ only call parent to update state!
+    } catch (err) {
+      console.error("Save error:", err);
+    } finally {
+      setSubmitting(false);
+    }
   };
-
-  const statuses = ["Working", "To be Fixed"];
-
-  const locations = [
-    "Left Side Table 2, Countertop",
-    "Storage Room",
-    "Main Laboratory",
-    "Warehouse",
-  ];
 
   return (
     <form onSubmit={handleSubmit} className="form">
       <div className="form-grid">
         <div className="form-group">
-          <label>
-            Equipment <span className="required">*</span>
-          </label>
+          <label>Equipment Name *</label>
           <input
             type="text"
-            name="equipment"
-            value={formData.equipment}
+            name="name"
+            value={formData.name}
             onChange={handleChange}
             required
           />
         </div>
 
         <div className="form-group">
-          <label>
-            Equipment Code <span className="required">*</span>
-          </label>
+          <label>Equipment Code *</label>
           <input
             type="text"
-            name="equipmentCode"
-            value={formData.equipmentCode}
+            name="equipment_code"
+            value={formData.equipment_code}
             onChange={handleChange}
             required
           />
@@ -86,8 +242,8 @@ const EquipmentForm = ({ initialData, onSave, onCancel }) => {
           <label>Other Names</label>
           <input
             type="text"
-            name="otherNames"
-            value={formData.otherNames}
+            name="other_name"
+            value={formData.other_name}
             onChange={handleChange}
           />
         </div>
@@ -113,67 +269,36 @@ const EquipmentForm = ({ initialData, onSave, onCancel }) => {
         </div>
 
         <div className="form-group">
-          <label>
-            Serial No. <span className="required">*</span>
-          </label>
+          <label>Serial No. *</label>
           <input
             type="text"
-            name="serialNo"
-            value={formData.serialNo}
+            name="serial_no"
+            value={formData.serial_no}
             onChange={handleChange}
             required
           />
         </div>
 
         <div className="form-group">
-          <label>Equipment Manual</label>
+          <label>Upload Manual File (PDF)</label>
           <input
-            type="text"
-            name="equipmentManual"
-            value={formData.equipmentManual}
+            type="file"
+            name="manual_file"
+            accept=".pdf"
             onChange={handleChange}
           />
         </div>
 
-        <div className="form-group">
-          <label>
-            Location <span className="required">*</span>
-          </label>
-          <select
-            name="location"
-            value={formData.location}
-            onChange={handleChange}
-            required
-          >
-            <option value="" disabled>
-              Select Location
-            </option>
-            {locations.map((location) => (
-              <option key={location} value={location}>
-                {location}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Dropdowns for location and status */}
+        {renderDropdown("Location", "location", locationList)}
+        {renderDropdown("Status", "status", statusList)}
 
         <div className="form-group">
-          <label>Status</label>
-          <select name="status" value={formData.status} onChange={handleChange}>
-            {statuses.map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="form-group">
-          <label>
-            Date Received <span className="required">*</span>
-          </label>
+          <label>Date Received *</label>
           <input
             type="date"
-            name="dateReceived"
-            value={formData.dateReceived}
+            name="date_received"
+            value={formData.date_received || ""}
             onChange={handleChange}
             required
           />
@@ -183,8 +308,8 @@ const EquipmentForm = ({ initialData, onSave, onCancel }) => {
           <label>PO No.</label>
           <input
             type="text"
-            name="poNo"
-            value={formData.poNo}
+            name="po_no"
+            value={formData.po_no}
             onChange={handleChange}
           />
         </div>
@@ -194,8 +319,8 @@ const EquipmentForm = ({ initialData, onSave, onCancel }) => {
           <input
             type="number"
             step="0.01"
-            name="purchasePrice"
-            value={formData.purchasePrice}
+            name="purchase_price"
+            value={formData.purchase_price}
             onChange={handleChange}
           />
         </div>
@@ -204,8 +329,8 @@ const EquipmentForm = ({ initialData, onSave, onCancel }) => {
           <label>Fund Source</label>
           <input
             type="text"
-            name="fundSource"
-            value={formData.fundSource}
+            name="fund_source"
+            value={formData.fund_source}
             onChange={handleChange}
           />
         </div>
@@ -221,67 +346,63 @@ const EquipmentForm = ({ initialData, onSave, onCancel }) => {
         </div>
 
         <div className="form-group">
-          <label>Supplier Contact Details</label>
+          <label>Supplier Contact</label>
           <textarea
-            name="supplierContactDetails"
-            value={formData.supplierContactDetails}
+            name="supplier_contact"
+            value={formData.supplier_contact}
             onChange={handleChange}
-            rows="3"
+            rows="2"
           />
         </div>
 
         <div className="form-group">
           <label>Other Details</label>
           <textarea
-            name="otherDetails"
-            value={formData.otherDetails}
+            name="other_details"
+            value={formData.other_details}
             onChange={handleChange}
-            rows="3"
+            rows="2"
           />
         </div>
 
         <div className="form-group">
-          <label>
-            Last Maintenance Schedule <span className="required">*</span>
-          </label>
+          <label>Last Maintenance *</label>
           <input
             type="date"
-            name="lastMaintenance"
-            value={formData.lastMaintenance}
+            name="last_updated"
+            value={formData.last_updated || ""}
             onChange={handleChange}
             required
           />
         </div>
 
         <div className="form-group">
-          <label>Next Maintenance Schedule</label>
+          <label>Next Maintenance</label>
           <input
             type="date"
-            name="nextMaintenance"
-            value={formData.nextMaintenance}
+            name="maintenance_schedule"
+            value={formData.maintenance_schedule || ""}
             onChange={handleChange}
           />
         </div>
 
         <div className="form-group">
-          <label>
-            Last Calibration Schedule <span className="required">*</span>
-          </label>
+          <label>Last Calibration *</label>
           <input
             type="date"
-            name="lastCalib"
-            value={formData.lastCalib}
+            name="last_calibration_date"
+            value={formData.last_calibration_date || ""}
             onChange={handleChange}
             required
           />
         </div>
 
         <div className="form-group">
-          <label>Next Calibration Schedule</label>
+          <label>Next Calibration</label>
           <input
             type="date"
-            name="nextCalib"
-            value={formData.nextCalib}
+            name="next_calibration_date"
+            value={formData.next_calibration_date || ""}
             onChange={handleChange}
           />
         </div>
@@ -292,11 +413,12 @@ const EquipmentForm = ({ initialData, onSave, onCancel }) => {
             name="remarks"
             value={formData.remarks}
             onChange={handleChange}
-            rows="3"
+            rows="2"
           />
         </div>
       </div>
 
+      {/* Form action buttons */}
       <div className="form-actions">
         <button type="button" className="btn-secondary" onClick={onCancel}>
           Cancel

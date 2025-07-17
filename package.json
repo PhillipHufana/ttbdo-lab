@@ -1,7 +1,8 @@
 {
   "name": "ttbdo-lab",
-  "version": "0.1.0",
   "private": true,
+  "version": "0.1.0",
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -9,8 +10,18 @@
   },
   "dependencies": {
     "@vitejs/plugin-react": "^4.6.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "lucide-react": "^0.525.0",
+    "multer": "^2.0.1",
+    "mysql": "^2.18.1",
+    "mysql2": "^3.14.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "vite": "^6.3.5"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.1.10"
   }
 }
