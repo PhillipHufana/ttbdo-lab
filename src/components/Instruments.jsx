@@ -30,17 +30,9 @@ const Instruments = () => {
   });
   const [instruments, setInstruments] = useState([]);
 
-  const statuses = [
-    "Opened",
-    "Unused",
-    "Used",
-    "Opened, unused",
-    "Sealed",
-    "Tip Chipped",
-    "Unopened",
-    "Broken",
-  ];
-  const conditions = ["Good", "Poor"];
+  const [statusList, setStatusList] = useState([]);
+  const [conditionList, setConditionList] = useState([]);
+  const [locationList, setLocationList] = useState([]);
 
   const filterRefs = {
     location: useRef(null),
@@ -65,6 +57,17 @@ const Instruments = () => {
         remarks: item.remarks,
       }));
       setInstruments(formatted);
+
+      // dynamically build unique filter options
+      setLocationList([
+        ...new Set(formatted.map((i) => i.location).filter(Boolean)),
+      ]);
+      setStatusList([
+        ...new Set(formatted.map((i) => i.status).filter(Boolean)),
+      ]);
+      setConditionList([
+        ...new Set(formatted.map((i) => i.condition).filter(Boolean)),
+      ]);
     } catch (err) {
       console.error("Fetch error:", err);
     }
@@ -287,6 +290,12 @@ const Instruments = () => {
               initialData={editingItem}
               onSave={handleSave}
               onCancel={handleCancel}
+              locationList={locationList}
+              setLocationList={setLocationList}
+              statusList={statusList}
+              setStatusList={setStatusList}
+              conditionList={conditionList}
+              setConditionList={setConditionList}
             />
           </div>
         ) : (
@@ -359,7 +368,7 @@ const Instruments = () => {
                 />
                 {showFilters.status && (
                   <div className="filter-dropdown">
-                    {statuses.map((status) => (
+                    {statusList.map((status) => (
                       <label key={status} className="filter-option">
                         <input
                           type="checkbox"
@@ -397,7 +406,7 @@ const Instruments = () => {
                 />
                 {showFilters.condition && (
                   <div className="filter-dropdown">
-                    {conditions.map((cond) => (
+                    {conditionList.map((cond) => (
                       <label key={cond} className="filter-option">
                         <input
                           type="checkbox"
@@ -493,7 +502,7 @@ const Instruments = () => {
                             }
                             className="inline-edit-select"
                           >
-                            {statuses.map((status) => (
+                            {statusList.map((status) => (
                               <option key={status} value={status}>
                                 {status}
                               </option>
@@ -518,7 +527,7 @@ const Instruments = () => {
                             }
                             className="inline-edit-select"
                           >
-                            {conditions.map((condition) => (
+                            {conditionList.map((condition) => (
                               <option key={condition} value={condition}>
                                 {condition}
                               </option>
@@ -580,46 +589,86 @@ const Instruments = () => {
 
         {detailItem && (
           <DetailPopup
-          item={detailItem}
-          onClose={() => setDetailItem(null)}
-          title="Instrument Details"
-          fields={[
-            { label: "Name", name: "instrument", value: detailItem.instrument, type: "text" },
-            { label: "Description", name: "description", value: detailItem.description, type: "text" },
-            { label: "Capacity", name: "capacity", value: detailItem.capacity, type: "text" },
-            { label: "Quantity", name: "quantity", value: String(detailItem.quantity || ""), type: "number" },
-            { label: "Status", name: "status", value: detailItem.status, type: "text" },
-            { label: "Condition", name: "condition", value: detailItem.condition, type: "text" },
-            { label: "Location", name: "location", value: detailItem.location, type: "text" },
-            { label: "Remarks", name: "remarks", value: detailItem.remarks, type: "text" },
-          ]}
-          onSave={async (updatedFields) => {
-            const payload = {
-              name: updatedFields.instrument,
-              description: updatedFields.description,
-              location: updatedFields.location,
-              quantity: parseInt(updatedFields.quantity),
-              unit: detailItem.unit || "pcs",
-              capacity: updatedFields.capacity,
-              status: updatedFields.status,
-              condition: updatedFields.condition,
-              remarks: updatedFields.remarks,
-            };
+            item={detailItem}
+            onClose={() => setDetailItem(null)}
+            title="Instrument Details"
+            fields={[
+              {
+                label: "Name",
+                name: "instrument",
+                value: detailItem.instrument,
+                type: "text",
+              },
+              {
+                label: "Description",
+                name: "description",
+                value: detailItem.description,
+                type: "text",
+              },
+              {
+                label: "Capacity",
+                name: "capacity",
+                value: detailItem.capacity,
+                type: "text",
+              },
+              {
+                label: "Quantity",
+                name: "quantity",
+                value: String(detailItem.quantity || ""),
+                type: "number",
+              },
+              {
+                label: "Status",
+                name: "status",
+                value: detailItem.status,
+                type: "text",
+              },
+              {
+                label: "Condition",
+                name: "condition",
+                value: detailItem.condition,
+                type: "text",
+              },
+              {
+                label: "Location",
+                name: "location",
+                value: detailItem.location,
+                type: "text",
+              },
+              {
+                label: "Remarks",
+                name: "remarks",
+                value: detailItem.remarks,
+                type: "text",
+              },
+            ]}
+            onSave={async (updatedFields) => {
+              const payload = {
+                name: updatedFields.instrument,
+                description: updatedFields.description,
+                location: updatedFields.location,
+                quantity: parseInt(updatedFields.quantity),
+                unit: detailItem.unit || "pcs",
+                capacity: updatedFields.capacity,
+                status: updatedFields.status,
+                condition: updatedFields.condition,
+                remarks: updatedFields.remarks,
+              };
 
-            const res = await fetch(`${API_URL}/${detailItem.id}`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload),
-            });
+              const res = await fetch(`${API_URL}/${detailItem.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+              });
 
-            if (res.ok) {
-              await fetchInstruments();
-              setDetailItem(null);
-            } else {
-              console.error("Detail save failed", await res.text());
-            }
-          }}
-        />
+              if (res.ok) {
+                await fetchInstruments();
+                setDetailItem(null);
+              } else {
+                console.error("Detail save failed", await res.text());
+              }
+            }}
+          />
         )}
       </div>
     </div>

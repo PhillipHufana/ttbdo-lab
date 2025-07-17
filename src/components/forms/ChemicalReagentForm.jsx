@@ -1,16 +1,29 @@
 import { useState, useEffect, useRef } from "react";
 import { ChevronDown } from "lucide-react";
 
-const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
+const ChemicalReagentForm = ({
+  initialData,
+  onSave,
+  onCancel,
+  categories,
+  setCategories,
+  forms,
+  setForms,
+  locations,
+  setLocations,
+  statuses,
+  setStatuses,
+}) => {
+  // ✅ Hooks are now inside the component
   const [formData, setFormData] = useState({
     name: "",
     item_code: "",
     category: "",
     brand: "",
+    form: "",
     quantity: "",
     container_type: "",
     container_size: "",
-    form: "",
     date_received: "",
     expiration_date: "",
     date_opened: "",
@@ -23,34 +36,9 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
 
   const [msdsFile, setMsdsFile] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const [categories, setCategories] = useState([
-    "Lactic Acid",
-    "Fermentation",
-    "Polymerization",
-    "Purification",
-    "Sugar Analysis",
-  ]);
-
-  const [forms, setForms] = useState(["Solid", "Liquid"]);
-  const [locations, setLocations] = useState([
-    "Table 2, Cabinet 4",
-    "Shelf 2b",
-    "Shelf 1d",
-  ]);
-
-  const [statuses, setStatuses] = useState([
-    "Opened",
-    "Unopened",
-    "Expired Opened",
-    "Expired Unopened",
-    "Expired Sealed",
-  ]);
-
   const [addingField, setAddingField] = useState({});
   const [newValue, setNewValue] = useState({});
   const [showDropdown, setShowDropdown] = useState({});
-
   const dropdownRefs = useRef({});
 
   useEffect(() => {
@@ -184,42 +172,41 @@ const ChemicalReagentForm = ({ initialData, onSave, onCancel }) => {
     </div>
   );
 
-const handleSubmit = async (e) => {
-  console.log("Submitting...")
-  e.preventDefault();
-  if (isSubmitting) return;
-  setIsSubmitting(true);
+  const handleSubmit = async (e) => {
+    console.log("Submitting...");
+    e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
-  const data = new FormData();
-  Object.entries(formData).forEach(([key, value]) => data.append(key, value));
-  if (msdsFile) data.append("msds_file", msdsFile);
+    const data = new FormData();
+    Object.entries(formData).forEach(([key, value]) => data.append(key, value));
+    if (msdsFile) data.append("msds_file", msdsFile);
 
-  try {
-    const res = await fetch("http://localhost:5000/api/chemical", {
-      method: "POST",
-      body: data,
-    });
+    try {
+      const res = await fetch("http://localhost:5000/api/chemical", {
+        method: "POST",
+        body: data,
+      });
 
-    if (!res.ok) {
-      let errorMessage = "Failed to submit";
-      try {
-        const errorData = await res.json();
-        errorMessage = errorData.error || errorMessage;
-      } catch (_) {}
-      throw new Error(errorMessage);
+      if (!res.ok) {
+        let errorMessage = "Failed to submit";
+        try {
+          const errorData = await res.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch (_) {}
+        throw new Error(errorMessage);
+      }
+
+      await res.json();
+      alert("New Chemical Reagent saved successfully!");
+      await onSave();
+      setIsSubmitting(false);
+    } catch (err) {
+      console.error("Error submitting form:", err);
+      alert("Error saving chemical: " + err.message);
+      setIsSubmitting(false);
     }
-
-    await res.json();
-    alert("New Chemical Reagent saved successfully!");
-    await onSave(); // ✅ just a signal ✅ this fixes the duplication
-    setIsSubmitting(false);
-  } catch (err) {
-    console.error("Error submitting form:", err);
-    alert("Error saving chemical: " + err.message);
-    setIsSubmitting(false);
-  }
-};
-
+  };
 
   return (
     <form onSubmit={handleSubmit} className="form">
@@ -338,16 +325,24 @@ const handleSubmit = async (e) => {
 
         {/* Misc */}
         <div className="form-group">
-        <label>MSDS File (PDF)</label>
-        <input type="file" accept="application/pdf" onChange={(e) => setMsdsFile(e.target.files[0])} />
-        {formData.msds_file && (
-          <div style={{ marginTop: "8px" }}>
-            <a href={`/uploads/${formData.msds_file}`} target="_blank" rel="noopener noreferrer">
-              View Existing MSDS
-            </a>
-          </div>
-        )}
-      </div>
+          <label>MSDS File (PDF)</label>
+          <input
+            type="file"
+            accept="application/pdf"
+            onChange={(e) => setMsdsFile(e.target.files[0])}
+          />
+          {formData.msds_file && (
+            <div style={{ marginTop: "8px" }}>
+              <a
+                href={`/uploads/${formData.msds_file}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                View Existing MSDS
+              </a>
+            </div>
+          )}
+        </div>
 
         <div className="form-group">
           <label>Disposal Method</label>
@@ -377,7 +372,7 @@ const handleSubmit = async (e) => {
         <button type="button" className="btn-secondary" onClick={onCancel}>
           Cancel
         </button>
-         <button type="submit" className="btn-primary" disabled={isSubmitting}>
+        <button type="submit" className="btn-primary" disabled={isSubmitting}>
           {isSubmitting ? "Saving..." : "Save"}
         </button>
       </div>

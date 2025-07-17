@@ -3,7 +3,15 @@
 import { useState, useEffect, useRef } from "react";
 import { ChevronDown } from "lucide-react";
 
-const EquipmentForm = ({ initialData, onSave, onCancel }) => {
+const EquipmentForm = ({
+  initialData,
+  onSave,
+  onCancel,
+  statusList,
+  setStatusList,
+  locationList,
+  setLocationList,
+}) => {
   const [formData, setFormData] = useState({
     name: "",
     equipment_code: "",
@@ -30,14 +38,6 @@ const EquipmentForm = ({ initialData, onSave, onCancel }) => {
 
   const [submitting, setSubmitting] = useState(false);
 
-  const [statusList, setStatusList] = useState(["Working", "To be Fixed"]);
-  const [locationList, setLocationList] = useState([
-    "Left Side Table 2, Countertop",
-    "Storage Room",
-    "Main Laboratory",
-    "Warehouse",
-  ]);
-
   const [showDropdown, setShowDropdown] = useState({
     location: false,
     status: false,
@@ -49,7 +49,6 @@ const EquipmentForm = ({ initialData, onSave, onCancel }) => {
   const [newValue, setNewValue] = useState({ location: "", status: "" });
 
   const dropdownRefs = useRef({});
-
   useEffect(() => {
     if (initialData) {
       setFormData({ ...initialData, manual_file: null });
@@ -183,37 +182,36 @@ const EquipmentForm = ({ initialData, onSave, onCancel }) => {
     </div>
   );
 
-// ✅ FORM
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (submitting) return;
-  setSubmitting(true);
+  // ✅ FORM
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
 
-  const payload = new FormData();
-  Object.entries(formData).forEach(([key, val]) => {
-    if (val !== null && val !== undefined) {
-      payload.append(key, val);
-    }
-  });
-
-  try {
-    const res = await fetch("http://localhost:5000/api/equipment", {
-      method: "POST",
-      body: payload,
+    const payload = new FormData();
+    Object.entries(formData).forEach(([key, val]) => {
+      if (val !== null && val !== undefined) {
+        payload.append(key, val);
+      }
     });
 
-    const data = await res.json();
+    try {
+      const res = await fetch("http://localhost:5000/api/equipment", {
+        method: "POST",
+        body: payload,
+      });
 
-    if (!res.ok) throw new Error(data.error || "Save failed");
+      const data = await res.json();
 
-    onSave(data); // ✅ only call parent to update state!
-  } catch (err) {
-    console.error("❌ Save error:", err);
-  } finally {
-    setSubmitting(false);
-  }
-};
+      if (!res.ok) throw new Error(data.error || "Save failed");
 
+      onSave(data); // ✅ only call parent to update state!
+    } catch (err) {
+      console.error("Save error:", err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit} className="form">
@@ -290,7 +288,6 @@ const handleSubmit = async (e) => {
             onChange={handleChange}
           />
         </div>
-
 
         {/* Dropdowns for location and status */}
         {renderDropdown("Location", "location", locationList)}

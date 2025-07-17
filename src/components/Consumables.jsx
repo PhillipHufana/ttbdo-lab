@@ -30,7 +30,6 @@ const formatDateReadable = (dateStr) => {
 const Consumables = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterLocation, setFilterLocation] = useState([]);
-  const [filterExpirationMonth, setFilterExpirationMonth] = useState("");
   const [showExpirationFilter, setShowExpirationFilter] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -38,8 +37,10 @@ const Consumables = () => {
   const [editingRowId, setEditingRowId] = useState(null);
   const [editingData, setEditingData] = useState({});
   const [showLocationFilter, setShowLocationFilter] = useState(false);
-
+  const [expirationSortOrder, setExpirationSortOrder] = useState("");
+  const [locations, setLocations] = useState([]);
   const [consumables, setConsumables] = useState([]);
+  
 
   const fetchConsumables = async () => {
     try {
@@ -65,6 +66,7 @@ const Consumables = () => {
         location: item.location,
       }));
       setConsumables(formatted);
+      setLocations([...new Set(formatted.map((item) => item.location))]); // <-- update locations
     } catch (err) {
       console.error("Fetch error:", err);
     }
@@ -88,9 +90,6 @@ const Consumables = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
-  const locations = [...new Set(consumables.map((item) => item.location))];
-
   const filteredConsumables = consumables.filter((item) => {
     const matchesSearch =
       item.supplyItem.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -99,12 +98,7 @@ const Consumables = () => {
     const matchesLocation =
       filterLocation.length === 0 || filterLocation.includes(item.location);
 
-    const matchesExpiration =
-      !filterExpirationMonth ||
-      (item.expirationDate &&
-        item.expirationDate.startsWith(filterExpirationMonth));
-
-    return matchesSearch && matchesLocation && matchesExpiration;
+    return matchesSearch && matchesLocation;
   });
 
   const handleAdd = () => {
@@ -251,6 +245,9 @@ const Consumables = () => {
               initialData={editingItem}
               onSave={handleSave}
               onCancel={handleCancel}
+              onAddLocation={(newLoc) => {
+                setLocations((prev) => [...new Set([...prev, newLoc])]);
+              }}
             />
           </div>
         ) : (
@@ -285,18 +282,37 @@ const Consumables = () => {
                     className="filter-dropdown"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <input
-                      type="month"
-                      value={filterExpirationMonth}
-                      onChange={(e) => {
-                        setFilterExpirationMonth(e.target.value);
-                        setShowExpirationFilter(false);
-                      }}
-                      className="month-input"
-                    />
+                    <label className="filter-option">
+                      <input
+                        type="checkbox"
+                        checked={expirationSortOrder === "soonest"}
+                        onChange={() => {
+                          setExpirationSortOrder(
+                            expirationSortOrder === "soonest" ? "" : "soonest"
+                          );
+                          setShowExpirationFilter(false);
+                        }}
+                      />
+                      <span>Soonest to Expire</span>
+                    </label>
+
+                    <label className="filter-option">
+                      <input
+                        type="checkbox"
+                        checked={expirationSortOrder === "farthest"}
+                        onChange={() => {
+                          setExpirationSortOrder(
+                            expirationSortOrder === "farthest" ? "" : "farthest"
+                          );
+                          setShowExpirationFilter(false);
+                        }}
+                      />
+                      <span>Farthest to Expire</span>
+                    </label>
                   </div>
                 )}
               </div>
+
               <div className="header-cell filter-header" ref={locationRef}>
                 <div onClick={() => setShowLocationFilter(!showLocationFilter)}>
                   <span className="text-center">Location</span>
@@ -326,7 +342,6 @@ const Consumables = () => {
                             setShowLocationFilter(false);
                           }}
                         />
-
                         <span>{location}</span>
                       </label>
                     ))}
@@ -338,208 +353,274 @@ const Consumables = () => {
               </div>
             </div>
             <div className="table-scroll-body">
-            <div className="table-body">
-              {filteredConsumables
-              .sort((a, b) => a.supplyItem.localeCompare(b.supplyItem))
-              .map((item) => (
-                <div
-                  key={item.id}
-                  className={`table-row ${
-                    editingRowId === item.id ? "editing-row" : ""
-                  }`}
-                >
-                  <div className="row-cell">
-                    <div className="item-details">
-                      <button
-                        className="item-name"
-                        onClick={() => handleViewDetails(item)}
-                      >
-                        {item.supplyItem}
-                      </button>
-                      <div className="item-brand">{item.brand}</div>
+              <div className="table-body">
+                {[...filteredConsumables]
+                  .sort((a, b) => {
+                    if (expirationSortOrder === "soonest") {
+                      return (
+                        new Date(a.expirationDate || 0) -
+                        new Date(b.expirationDate || 0)
+                      );
+                    } else if (expirationSortOrder === "farthest") {
+                      return (
+                        new Date(b.expirationDate || 0) -
+                        new Date(a.expirationDate || 0)
+                      );
+                    } else {
+                      // default alphabetical
+                      return a.supplyItem.localeCompare(b.supplyItem);
+                    }
+                  })
+
+                  .map((item) => (
+                    <div
+                      key={item.id}
+                      className={`table-row ${
+                        editingRowId === item.id ? "editing-row" : ""
+                      }`}
+                    >
+                      <div className="row-cell">
+                        <div className="item-details">
+                          <button
+                            className="item-name"
+                            onClick={() => handleViewDetails(item)}
+                          >
+                            {item.supplyItem}
+                          </button>
+                          <div className="item-brand">{item.brand}</div>
+                        </div>
+                      </div>
+                      <div className="row-cell">
+                        {editingRowId === item.id ? (
+                          <input
+                            type="number"
+                            value={editingData.remainingQuantity}
+                            onChange={(e) =>
+                              handleInputChange(
+                                "remainingQuantity",
+                                e.target.value
+                              )
+                            }
+                            className="inline-edit-input"
+                          />
+                        ) : (
+                          item.remainingQuantity
+                        )}
+                      </div>
+                      <div className="row-cell">
+                        {editingRowId === item.id ? (
+                          <input
+                            type="number"
+                            value={editingData.quantity}
+                            onChange={(e) =>
+                              handleInputChange("quantity", e.target.value)
+                            }
+                            className="inline-edit-input"
+                          />
+                        ) : (
+                          item.quantity
+                        )}
+                      </div>
+                      <div className="row-cell">
+                        {editingRowId === item.id ? (
+                          <input
+                            type="date"
+                            value={formatDateInput(editingData.dateOpened)}
+                            onChange={(e) =>
+                              handleInputChange("dateOpened", e.target.value)
+                            }
+                            className="inline-edit-input"
+                          />
+                        ) : (
+                          <span>
+                            {formatDateReadable(item.dateOpened) ||
+                              "Not opened"}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="row-cell">
+                        {editingRowId === item.id ? (
+                          <input
+                            type="date"
+                            value={formatDateInput(editingData.expirationDate)}
+                            onChange={(e) =>
+                              handleInputChange(
+                                "expirationDate",
+                                e.target.value
+                              )
+                            }
+                            className="inline-edit-input"
+                          />
+                        ) : (
+                          <span className="text-left">
+                            {formatDateReadable(item.expirationDate)}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="row-cell">
+                        {editingRowId === item.id ? (
+                          <select
+                            value={editingData.location}
+                            onChange={(e) =>
+                              handleInputChange("location", e.target.value)
+                            }
+                            className="inline-edit-select"
+                          >
+                            {locations.map((loc) => (
+                              <option key={loc} value={loc}>
+                                {loc}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span className="text-left">{item.location}</span>
+                        )}
+                      </div>
+                      <div className="row-cell">
+                        {editingRowId === item.id ? (
+                          <div className="action-buttons">
+                            <button
+                              className="btn-icon btn-save"
+                              onClick={handleSaveInlineEdit}
+                              title="Save"
+                            >
+                              <Check size={16} />
+                            </button>
+                            <button
+                              className="btn-icon btn-cancel"
+                              onClick={handleCancelInlineEdit}
+                              title="Cancel"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="action-buttons">
+                            <button
+                              className="btn-icon btn-edit"
+                              onClick={() => handleInlineEdit(item)}
+                              title="Edit"
+                            >
+                              <Edit size={16} />
+                            </button>
+                            <button
+                              className="btn-icon btn-delete"
+                              onClick={() => handleDelete(item.id)}
+                              title="Delete"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="row-cell">
-                    {editingRowId === item.id ? (
-                      <input
-                        type="number"
-                        value={editingData.remainingQuantity}
-                        onChange={(e) =>
-                          handleInputChange("remainingQuantity", e.target.value)
-                        }
-                        className="inline-edit-input"
-                      />
-                    ) : (
-                      item.remainingQuantity
-                    )}
-                  </div>
-                  <div className="row-cell">
-                    {editingRowId === item.id ? (
-                      <input
-                        type="number"
-                        value={editingData.quantity}
-                        onChange={(e) =>
-                          handleInputChange("quantity", e.target.value)
-                        }
-                        className="inline-edit-input"
-                      />
-                    ) : (
-                      item.quantity
-                    )}
-                  </div>
-                  <div className="row-cell">
-                    {editingRowId === item.id ? (
-                      <input
-                        type="date"
-                        value={formatDateInput(editingData.dateOpened)}
-                        onChange={(e) =>
-                          handleInputChange("dateOpened", e.target.value)
-                        }
-                        className="inline-edit-input"
-                      />
-                    ) : (
-                      <span>
-                        {formatDateReadable(item.dateOpened) || "Not opened"}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="row-cell">
-                    {editingRowId === item.id ? (
-                      <input
-                        type="date"
-                        value={formatDateInput(editingData.expirationDate)}
-                        onChange={(e) =>
-                          handleInputChange("expirationDate", e.target.value)
-                        }
-                        className="inline-edit-input"
-                      />
-                    ) : (
-                      <span className="text-left">
-                        {formatDateReadable(item.expirationDate)}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="row-cell">
-                    {editingRowId === item.id ? (
-                      <select
-                        value={editingData.location}
-                        onChange={(e) =>
-                          handleInputChange("location", e.target.value)
-                        }
-                        className="inline-edit-select"
-                      >
-                        {locations.map((loc) => (
-                          <option key={loc} value={loc}>
-                            {loc}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span className="text-left">{item.location}</span>
-                    )}
-                  </div>
-                  <div className="row-cell">
-                    {editingRowId === item.id ? (
-                      <div className="action-buttons">
-                        <button
-                          className="btn-icon btn-save"
-                          onClick={handleSaveInlineEdit}
-                          title="Save"
-                        >
-                          <Check size={16} />
-                        </button>
-                        <button
-                          className="btn-icon btn-cancel"
-                          onClick={handleCancelInlineEdit}
-                          title="Cancel"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="action-buttons">
-                        <button
-                          className="btn-icon btn-edit"
-                          onClick={() => handleInlineEdit(item)}
-                          title="Edit"
-                        >
-                          <Edit size={16} />
-                        </button>
-                        <button
-                          className="btn-icon btn-delete"
-                          onClick={() => handleDelete(item.id)}
-                          title="Delete"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+                  ))}
+              </div>
             </div>
           </div>
         )}
-      {detailItem && (
-       <DetailPopup
-        item={detailItem}
-        onClose={() => setDetailItem(null)}
-        title="Consumable Details"
-       fields={[
-          { name: "supplyItem", label: "Name", value: detailItem.supplyItem },
-          { name: "brand", label: "Brand", value: detailItem.brand },
-          { name: "description", label: "Description", value: detailItem.description },
-          { name: "quantity", label: "Quantity", value: detailItem.quantity },
-          { name: "remainingQuantity", label: "Remaining Quantity", value: detailItem.remainingQuantity },
-          { name: "dateReceived", label: "Date Received", value: detailItem.dateReceived },
-          { name: "dateOpened", label: "Date Opened", value: detailItem.dateOpened },
-          { name: "expirationDate", label: "Expiration Date", value: detailItem.expirationDate },
-          { name: "poNo", label: "PO No.", value: detailItem.poNo },
-          { name: "price", label: "Price", value: detailItem.price },
-          { name: "totalPrice", label: "Total Price", value: detailItem.totalPrice },
-          { name: "receivedBy", label: "Received By", value: detailItem.receivedBy },
-          { name: "supplier", label: "Supplier", value: detailItem.supplier },
-          { name: "location", label: "Location", value: detailItem.location },
-        ]}
-        onSave={async (updatedFields) => {
-        const payload = {
-          name: updatedFields.supplyItem, // ✅ now using the updated value
-          category: detailItem.category || "Consumable",
-          brand: updatedFields.brand,
-          description: updatedFields.description,
-          quantity: Number(updatedFields.quantity),
-          remaining_qty: Number(updatedFields.remainingQuantity),
-          date_received: formatDateInput(updatedFields.dateReceived),
-          date_opened: formatDateInput(updatedFields.dateOpened),
-          expiration_date: formatDateInput(updatedFields.expirationDate),
-          po_no: updatedFields.poNo,
-          unit_price: parseFloat(updatedFields.price),
-          total_price: parseFloat(updatedFields.totalPrice),
-          received_by: updatedFields.receivedBy,
-          supplier: updatedFields.supplier,
-          location: updatedFields.location,
-          unit: detailItem.unit,
-        };
+        {detailItem && (
+          <DetailPopup
+            item={detailItem}
+            onClose={() => setDetailItem(null)}
+            title="Consumable Details"
+            fields={[
+              {
+                name: "supplyItem",
+                label: "Name",
+                value: detailItem.supplyItem,
+              },
+              { name: "brand", label: "Brand", value: detailItem.brand },
+              {
+                name: "description",
+                label: "Description",
+                value: detailItem.description,
+              },
+              {
+                name: "quantity",
+                label: "Quantity",
+                value: detailItem.quantity,
+              },
+              {
+                name: "remainingQuantity",
+                label: "Remaining Quantity",
+                value: detailItem.remainingQuantity,
+              },
+              {
+                name: "dateReceived",
+                label: "Date Received",
+                value: detailItem.dateReceived,
+              },
+              {
+                name: "dateOpened",
+                label: "Date Opened",
+                value: detailItem.dateOpened,
+              },
+              {
+                name: "expirationDate",
+                label: "Expiration Date",
+                value: detailItem.expirationDate,
+              },
+              { name: "poNo", label: "PO No.", value: detailItem.poNo },
+              { name: "price", label: "Price", value: detailItem.price },
+              {
+                name: "totalPrice",
+                label: "Total Price",
+                value: detailItem.totalPrice,
+              },
+              {
+                name: "receivedBy",
+                label: "Received By",
+                value: detailItem.receivedBy,
+              },
+              {
+                name: "supplier",
+                label: "Supplier",
+                value: detailItem.supplier,
+              },
+              {
+                name: "location",
+                label: "Location",
+                value: detailItem.location,
+              },
+            ]}
+            onSave={async (updatedFields) => {
+              const payload = {
+                name: updatedFields.supplyItem, // ✅ now using the updated value
+                category: detailItem.category || "Consumable",
+                brand: updatedFields.brand,
+                description: updatedFields.description,
+                quantity: Number(updatedFields.quantity),
+                remaining_qty: Number(updatedFields.remainingQuantity),
+                date_received: formatDateInput(updatedFields.dateReceived),
+                date_opened: formatDateInput(updatedFields.dateOpened),
+                expiration_date: formatDateInput(updatedFields.expirationDate),
+                po_no: updatedFields.poNo,
+                unit_price: parseFloat(updatedFields.price),
+                total_price: parseFloat(updatedFields.totalPrice),
+                received_by: updatedFields.receivedBy,
+                supplier: updatedFields.supplier,
+                location: updatedFields.location,
+                unit: detailItem.unit,
+              };
 
-        const res = await fetch(`${API_URL}/${detailItem.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
+              const res = await fetch(`${API_URL}/${detailItem.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+              });
 
-        if (res.ok) {
-          await fetchConsumables();
-          setDetailItem(null);
-        } else {
-          console.error("Detail save failed:", await res.text());
-        }
-      }}
-      />
-      )}
-
+              if (res.ok) {
+                await fetchConsumables();
+                setDetailItem(null);
+              } else {
+                console.error("Detail save failed:", await res.text());
+              }
+            }}
+          />
+        )}
       </div>
     </div>
   );
