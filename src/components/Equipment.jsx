@@ -31,14 +31,17 @@ const Equipment = () => {
   const [showLocationFilter, setShowLocationFilter] = useState(false);
   const [showScheduleFilter, setShowScheduleFilter] = useState(null);
 
-  const formatDatePretty = (iso) => {
-    if (!iso) return "N/A";
-    return new Date(iso).toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
+const formatDatePretty = (iso) => {
+  if (!iso) return "N/A";
+  const date = new Date(iso);
+  if (isNaN(date.getTime())) return "N/A";
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
 
   const locations = [
     "Left Side Table 2, Countertop",
@@ -260,7 +263,7 @@ const Equipment = () => {
                  {showLocationFilter && (
                 <div className="filter-dropdown" onClick={(e) => e.stopPropagation()}>
                   {[...new Set(locations)].filter(Boolean).map((location) => (
-                    <label key={location} className="filter-option">
+                    <label key={`filter-location-${location}-${i}`} className="filter-option">
                       <input
                         type="checkbox"
                         checked={filterLocation.includes(location)}
@@ -442,7 +445,7 @@ const Equipment = () => {
                       onClick={(e) => e.stopPropagation()}
                     >
                       {statuses.map((status) => (
-                        <label key={status} className="filter-option">
+                        <label key={`filter-status-${status}-${i}`} className="filter-option">
                           <input
                             type="checkbox"
                             checked={filterStatus.includes(status)}
@@ -522,8 +525,8 @@ const Equipment = () => {
                               onChange={(e) => handleInputChange("location", e.target.value)}
                               className="inline-edit-select"
                             >
-                              {[...new Set(locations)].filter(Boolean).map((loc) => (
-                                <option key={loc} value={loc}>
+                              {[...new Set(locations)].filter(Boolean).map((loc, i) => (
+                                <option key={`option-location-${loc}-${i}`} value={loc}>
                                   {loc}
                                 </option>
                               ))}
@@ -617,11 +620,11 @@ const Equipment = () => {
                               onChange={(e) => handleInputChange("status", e.target.value)}
                               className="inline-edit-select"
                             >
-                              {[...new Set(statuses)].filter(Boolean).map((status) => (
-                                <option key={status} value={status}>
-                                  {status}
-                                </option>
-                              ))}
+                            {[...new Set(statuses)].filter(Boolean).map((status, i) => (
+                              <option key={`option-status-${status}-${i}`} value={status}>
+                                {status}
+                              </option>
+                            ))}
                             </select>
                           ) : (
                             <span
