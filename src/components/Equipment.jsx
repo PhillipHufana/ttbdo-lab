@@ -444,7 +444,7 @@ const formatDatePretty = (iso) => {
                       className="filter-dropdown"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      {statuses.map((status) => (
+                      {statuses.map((status, i) => (
                         <label key={`filter-status-${status}-${i}`} className="filter-option">
                           <input
                             type="checkbox"
@@ -681,71 +681,70 @@ const formatDatePretty = (iso) => {
               </div>
             </div>
           )}
-{detailItem && (
-  <DetailPopup
-    item={detailItem}
-    onClose={() => setDetailItem(null)}
-    title="Equipment Details"
-    onSave={async (formData) => {
-      try {
-        const res = await fetch(`${API_URL}/${detailItem.equipment_id}`, {
-          method: "PUT",
-          body: formData, // contains file + other fields
-        });
+          {detailItem && (
+            <DetailPopup
+              item={detailItem}
+              onClose={() => setDetailItem(null)}
+              title="Equipment Details"
+              onSave={async (formData) => {
+                try {
+                  const res = await fetch(`${API_URL}/${detailItem.equipment_id}`, {
+                    method: "PUT",
+                    body: formData, // contains file + other fields
+                  });
 
-        if (res.ok) {
-          await fetchEquipment();
-          setDetailItem(null);
-        } else {
-          console.error("Save failed", await res.text());
-        }
-      } catch (err) {
-        console.error("Detail save error:", err);
-      }
-    }}
-    fields={[
-      { label: "Equipment Code", value: detailItem.equipment_code, name: "equipment_code", type: "text" },
-      { label: "Name", value: detailItem.name, name: "name", type: "text" },
-      { label: "Other Name", value: detailItem.other_name, name: "other_name", type: "text" },
-      { label: "Brand", value: detailItem.brand, name: "brand", type: "text" },
-      { label: "Model", value: detailItem.model, name: "model", type: "text" },
-      { label: "Serial No.", value: detailItem.serial_no, name: "serial_no", type: "text" },
-      { label: "Other Details", value: detailItem.other_details, name: "other_details", type: "text" },
-      { label: "Status", value: detailItem.status, name: "status", type: "text" },
-      { label: "Remarks", value: detailItem.remarks, name: "remarks", type: "text" },
-      { label: "Location", value: detailItem.location, name: "location", type: "text" },
-      { label: "Date Received", value: detailItem.date_received, name: "date_received", type: "date" },
-      { label: "Last Maintenance", value: detailItem.last_updated, name: "last_updated", type: "date" },
-      { label: "Next Maintenance", value: detailItem.maintenance_schedule, name: "maintenance_schedule", type: "date" },
-      { label: "Last Calibration", value: detailItem.last_calibration_date, name: "last_calibration_date", type: "date" },
-      { label: "Next Calibration", value: detailItem.next_calibration_date, name: "next_calibration_date", type: "date" },
-      { label: "PO No.", value: detailItem.po_no, name: "po_no", type: "text" },
-      {
-        label: "Purchase Price",
-        value: String(detailItem.purchase_price || ""),
-        name: "purchase_price",
-        type: "number",
-      },
-      { label: "Fund Source", value: detailItem.fund_source, name: "fund_source", type: "text" },
-      { label: "Supplier", value: detailItem.supplier, name: "supplier", type: "text" },
-      { label: "Supplier Contact", value: detailItem.supplier_contact, name: "supplier_contact", type: "text" },
-      // {
-      //   label: "Manual Available",
-      //   value: detailItem.manual_available ? "Yes" : "No",
-      //   name: "manual_available",
-      //   type: "select",
-      //   options: ["Yes", "No"],
-      // },
-      {
-        label: "Manual File (PDF)",
-        value: detailItem.manual_file || "",
-        name: "manual_file",
-        type: "file",
-      },
-    ]}
-  />
-)}
-
+                  if (res.ok) {
+                    await fetchEquipment();
+                    setDetailItem(null);
+                  } else {
+                    console.error("Save failed", await res.text());
+                  }
+                } catch (err) {
+                  console.error("Detail save error:", err);
+                }
+              }}
+              fields={[
+                { label: "Equipment Code", value: detailItem.equipment_code, name: "equipment_code", type: "text" },
+                { label: "Name", value: detailItem.name, name: "name", type: "text" },
+                { label: "Other Name", value: detailItem.other_name, name: "other_name", type: "text" },
+                { label: "Brand", value: detailItem.brand, name: "brand", type: "text" },
+                { label: "Model", value: detailItem.model, name: "model", type: "text" },
+                { label: "Serial No.", value: detailItem.serial_no, name: "serial_no", type: "text" },
+                { label: "Other Details", value: detailItem.other_details, name: "other_details", type: "text" },
+                { label: "Status", value: detailItem.status, name: "status", type: "text" },
+                { label: "Remarks", value: detailItem.remarks, name: "remarks", type: "text" },
+                { label: "Location", value: detailItem.location, name: "location", type: "text" },
+                { label: "Date Received", value: detailItem.date_received, name: "date_received", type: "date" },
+                { label: "Last Maintenance", value: detailItem.last_updated, name: "last_updated", type: "date" },
+                { label: "Next Maintenance", value: detailItem.maintenance_schedule, name: "maintenance_schedule", type: "date" },
+                { label: "Last Calibration", value: detailItem.last_calibration_date, name: "last_calibration_date", type: "date" },
+                { label: "Next Calibration", value: detailItem.next_calibration_date, name: "next_calibration_date", type: "date" },
+                { label: "PO No.", value: detailItem.po_no, name: "po_no", type: "text" },
+                {
+                  label: "Purchase Price",
+                  value: String(detailItem.purchase_price || ""),
+                  name: "purchase_price",
+                  type: "number",
+                },
+                { label: "Fund Source", value: detailItem.fund_source, name: "fund_source", type: "text" },
+                { label: "Supplier", value: detailItem.supplier, name: "supplier", type: "text" },
+                { label: "Supplier Contact", value: detailItem.supplier_contact, name: "supplier_contact", type: "text" },
+                // {
+                //   label: "Manual Available",
+                //   value: detailItem.manual_available ? "Yes" : "No",
+                //   name: "manual_available",
+                //   type: "select",
+                //   options: ["Yes", "No"],
+                // },
+                {
+                  label: "Manual File (PDF)",
+                  value: detailItem.manual_file || "",
+                  name: "manual_file",
+                  type: "file",
+                },
+              ]}
+            />
+          )}
 
         </div>
       </div>

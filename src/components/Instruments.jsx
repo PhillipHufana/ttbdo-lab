@@ -580,47 +580,50 @@ const Instruments = () => {
 
         {detailItem && (
           <DetailPopup
-          item={detailItem}
-          onClose={() => setDetailItem(null)}
-          title="Instrument Details"
-          fields={[
-            { label: "Name", name: "instrument", value: detailItem.instrument, type: "text" },
-            { label: "Description", name: "description", value: detailItem.description, type: "text" },
-            { label: "Capacity", name: "capacity", value: detailItem.capacity, type: "text" },
-            { label: "Quantity", name: "quantity", value: String(detailItem.quantity || ""), type: "number" },
-            { label: "Status", name: "status", value: detailItem.status, type: "text" },
-            { label: "Condition", name: "condition", value: detailItem.condition, type: "text" },
-            { label: "Location", name: "location", value: detailItem.location, type: "text" },
-            { label: "Remarks", name: "remarks", value: detailItem.remarks, type: "text" },
-          ]}
-          onSave={async (updatedFields) => {
-            const payload = {
-              name: updatedFields.instrument,
-              description: updatedFields.description,
-              location: updatedFields.location,
-              quantity: parseInt(updatedFields.quantity),
-              unit: detailItem.unit || "pcs",
-              capacity: updatedFields.capacity,
-              status: updatedFields.status,
-              condition: updatedFields.condition,
-              remarks: updatedFields.remarks,
-            };
+            item={detailItem}
+            onClose={() => setDetailItem(null)}
+            title="Instrument Details"
+            fields={[
+              { label: "Name", name: "instrument", value: detailItem.instrument, type: "text" },
+              { label: "Description", name: "description", value: detailItem.description, type: "text" },
+              { label: "Capacity", name: "capacity", value: detailItem.capacity, type: "text" },
+              { label: "Quantity", name: "quantity", value: String(detailItem.quantity || ""), type: "number" },
+              { label: "Status", name: "status", value: detailItem.status, type: "text" },
+              { label: "Condition", name: "condition", value: detailItem.condition, type: "text" },
+              { label: "Location", name: "location", value: detailItem.location, type: "text" },
+              { label: "Remarks", name: "remarks", value: detailItem.remarks, type: "text" },
+            ]}
+            onSave={async (formData) => {
+              const raw = Object.fromEntries(formData.entries());
 
-            const res = await fetch(`${API_URL}/${detailItem.id}`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload),
-            });
+              const payload = {
+                name: raw.instrument,
+                description: raw.description,
+                location: raw.location,
+                quantity: parseInt(raw.quantity),
+                unit: detailItem.unit || "pcs",
+                capacity: raw.capacity,
+                status: raw.status,
+                condition: raw.condition,
+                remarks: raw.remarks,
+              };
 
-            if (res.ok) {
-              await fetchInstruments();
-              setDetailItem(null);
-            } else {
-              console.error("Detail save failed", await res.text());
-            }
-          }}
-        />
+              const res = await fetch(`${API_URL}/${detailItem.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+              });
+
+              if (res.ok) {
+                await fetchInstruments();
+                setDetailItem(null);
+              } else {
+                console.error("Detail save failed", await res.text());
+              }
+            }}
+          />
         )}
+
       </div>
     </div>
   );

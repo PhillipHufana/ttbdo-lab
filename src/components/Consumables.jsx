@@ -504,23 +504,25 @@ const Consumables = () => {
           { name: "supplier", label: "Supplier", value: detailItem.supplier },
           { name: "location", label: "Location", value: detailItem.location },
         ]}
-        onSave={async (updatedFields) => {
+       onSave={async (formData) => {
+        const raw = Object.fromEntries(formData.entries());
+
         const payload = {
-          name: updatedFields.supplyItem, // ✅ now using the updated value
+          name: raw.supplyItem,
           category: detailItem.category || "Consumable",
-          brand: updatedFields.brand,
-          description: updatedFields.description,
-          quantity: Number(updatedFields.quantity),
-          remaining_qty: Number(updatedFields.remainingQuantity),
-          date_received: formatDateInput(updatedFields.dateReceived),
-          date_opened: formatDateInput(updatedFields.dateOpened),
-          expiration_date: formatDateInput(updatedFields.expirationDate),
-          po_no: updatedFields.poNo,
-          unit_price: parseFloat(updatedFields.price),
-          total_price: parseFloat(updatedFields.totalPrice),
-          received_by: updatedFields.receivedBy,
-          supplier: updatedFields.supplier,
-          location: updatedFields.location,
+          brand: raw.brand,
+          description: raw.description,
+          quantity: Number(raw.quantity),
+          remaining_qty: Number(raw.remainingQuantity),
+          date_received: formatDateInput(raw.dateReceived),
+          date_opened: formatDateInput(raw.dateOpened),
+          expiration_date: formatDateInput(raw.expirationDate),
+          po_no: raw.poNo,
+          unit_price: parseFloat(raw.price),
+          total_price: parseFloat(raw.totalPrice),
+          received_by: raw.receivedBy,
+          supplier: raw.supplier,
+          location: raw.location,
           unit: detailItem.unit,
         };
 
@@ -537,6 +539,7 @@ const Consumables = () => {
           console.error("Detail save failed:", await res.text());
         }
       }}
+
       />
       )}
 
