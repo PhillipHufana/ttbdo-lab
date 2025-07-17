@@ -14,36 +14,49 @@ import DetailPopup from "./DetailPopup";
 const API_URL = "http://localhost:5000/api/instrument";
 
 const Instruments = () => {
+  // State
+  const [instruments, setInstruments] = useState([]);
+
+  // Filter values
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState([]);
   const [filterCondition, setFilterCondition] = useState([]);
   const [filterLocation, setFilterLocation] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
-  const [detailItem, setDetailItem] = useState(null);
-  const [editingRowId, setEditingRowId] = useState(null);
-  const [editingData, setEditingData] = useState({});
+
+  // Filter options
+  const [statusList, setStatusList] = useState([]);
+  const [conditionList, setConditionList] = useState([]);
+  const [locationList, setLocationList] = useState([]);
+
+  // UI Toggles
   const [showFilters, setShowFilters] = useState({
     location: false,
     status: false,
     condition: false,
   });
-  const [instruments, setInstruments] = useState([]);
 
-  const [statusList, setStatusList] = useState([]);
-  const [conditionList, setConditionList] = useState([]);
-  const [locationList, setLocationList] = useState([]);
+  // Form and details
+  const [showForm, setShowForm] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [detailItem, setDetailItem] = useState(null);
 
+  // Inline edit
+  const [editingRowId, setEditingRowId] = useState(null);
+  const [editingData, setEditingData] = useState({});
+
+  // Refs
   const filterRefs = {
     location: useRef(null),
     status: useRef(null),
     condition: useRef(null),
   };
 
+  // Fetch Data
   const fetchInstruments = async () => {
     try {
       const res = await fetch(API_URL);
       const data = await res.json();
+
       const formatted = data.map((item) => ({
         id: item.instrument_id,
         instrument: item.name,
@@ -56,6 +69,7 @@ const Instruments = () => {
         condition: item.condition,
         remarks: item.remarks,
       }));
+
       setInstruments(formatted);
 
       // dynamically build unique filter options
@@ -83,17 +97,21 @@ const Instruments = () => {
         }
       });
     };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const locations = [...new Set(instruments.map((item) => item.location))];
-
+  // Filtering
   const filteredInstruments = instruments.filter((item) => {
     const matchesSearch =
-      item.instrument.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.location.toLowerCase().includes(searchTerm.toLowerCase());
+      (item.instrument || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      (item.description || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      (item.location || "").toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus =
       filterStatus.length === 0 || filterStatus.includes(item.status);
@@ -107,28 +125,7 @@ const Instruments = () => {
     );
   });
 
-  const handleFilterChange = (filterType, value, checked) => {
-    switch (filterType) {
-      case "status":
-        setFilterStatus((prev) =>
-          checked ? [...prev, value] : prev.filter((v) => v !== value)
-        );
-        break;
-      case "condition":
-        setFilterCondition((prev) =>
-          checked ? [...prev, value] : prev.filter((v) => v !== value)
-        );
-        break;
-      case "location":
-        setFilterLocation((prev) =>
-          checked ? [...prev, value] : prev.filter((v) => v !== value)
-        );
-        break;
-      default:
-        break;
-    }
-  };
-
+  // Color helpers
   const getStatusColor = (status) => {
     switch (status) {
       case "Opened":
@@ -163,6 +160,16 @@ const Instruments = () => {
     }
   };
 
+  // Handlers
+  const handleFilterChange = (filterType, value, checked) => {
+    const update = (prev) =>
+      checked ? [...prev, value] : prev.filter((v) => v !== value);
+
+    if (filterType === "status") setFilterStatus(update);
+    if (filterType === "condition") setFilterCondition(update);
+    if (filterType === "location") setFilterLocation(update);
+  };
+
   const handleAdd = () => {
     setEditingItem(null);
     setShowForm(true);
@@ -177,14 +184,12 @@ const Instruments = () => {
       description: formData.description,
       location: formData.location,
       quantity: parseInt(formData.quantity),
-      unit: formData.unit || "pcs", // fallback if unit is missing
+      unit: formData.unit || "pcs",
       capacity: formData.capacity,
       status: formData.status,
       condition: formData.condition,
       remarks: formData.remarks,
     };
-
-    console.log("Saving payload:", payload);
 
     const res = await fetch(url, {
       method,
@@ -219,7 +224,7 @@ const Instruments = () => {
       description: editingData.description,
       location: editingData.location,
       quantity: parseInt(editingData.quantity),
-      unit: editingData.unit || "pcs", // fallback
+      unit: editingData.unit || "pcs",
       capacity: editingData.capacity,
       status: editingData.status,
       condition: editingData.condition,
@@ -247,12 +252,10 @@ const Instruments = () => {
   };
 
   const handleInputChange = (field, value) => {
-    setEditingData({ ...editingData, [field]: value });
+    setEditingData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleViewDetails = (item) => {
-    setDetailItem(item);
-  };
+  const handleViewDetails = (item) => setDetailItem(item);
 
   const handleCancel = () => {
     setShowForm(false);
@@ -593,14 +596,54 @@ const Instruments = () => {
             onClose={() => setDetailItem(null)}
             title="Instrument Details"
             fields={[
-              { label: "Name", name: "instrument", value: detailItem.instrument, type: "text" },
-              { label: "Description", name: "description", value: detailItem.description, type: "text" },
-              { label: "Capacity", name: "capacity", value: detailItem.capacity, type: "text" },
-              { label: "Quantity", name: "quantity", value: String(detailItem.quantity || ""), type: "number" },
-              { label: "Status", name: "status", value: detailItem.status, type: "text" },
-              { label: "Condition", name: "condition", value: detailItem.condition, type: "text" },
-              { label: "Location", name: "location", value: detailItem.location, type: "text" },
-              { label: "Remarks", name: "remarks", value: detailItem.remarks, type: "text" },
+              {
+                label: "Name",
+                name: "instrument",
+                value: detailItem.instrument,
+                type: "text",
+              },
+              {
+                label: "Description",
+                name: "description",
+                value: detailItem.description,
+                type: "text",
+              },
+              {
+                label: "Capacity",
+                name: "capacity",
+                value: detailItem.capacity,
+                type: "text",
+              },
+              {
+                label: "Quantity",
+                name: "quantity",
+                value: String(detailItem.quantity || ""),
+                type: "number",
+              },
+              {
+                label: "Status",
+                name: "status",
+                value: detailItem.status,
+                type: "text",
+              },
+              {
+                label: "Condition",
+                name: "condition",
+                value: detailItem.condition,
+                type: "text",
+              },
+              {
+                label: "Location",
+                name: "location",
+                value: detailItem.location,
+                type: "text",
+              },
+              {
+                label: "Remarks",
+                name: "remarks",
+                value: detailItem.remarks,
+                type: "text",
+              },
             ]}
             onSave={async (formData) => {
               const raw = Object.fromEntries(formData.entries());
@@ -632,7 +675,6 @@ const Instruments = () => {
             }}
           />
         )}
-
       </div>
     </div>
   );

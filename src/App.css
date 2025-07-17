@@ -506,6 +506,22 @@ body {
   color: #dc2626;
 }
 
+.exp-overdue {
+  color: #dc2626; 
+  font-weight: 600;
+}
+
+.exp-due-soon {
+  color: #c48746; 
+  font-weight: 600;
+}
+
+.exp-on-track {
+  color: #166534; /* green */
+  font-weight: 600;
+}
+
+
 /* Buttons */
 .btn-primary {
   display: flex;

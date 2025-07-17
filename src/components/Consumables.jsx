@@ -13,6 +13,7 @@ import DetailPopup from "./DetailPopup";
 
 const API_URL = "http://localhost:5000/api/consumable";
 
+// Helpers
 const formatDateInput = (dateStr) =>
   typeof dateStr === "string" ? dateStr.slice(0, 10) : "";
 
@@ -27,25 +28,55 @@ const formatDateReadable = (dateStr) => {
   });
 };
 
+// Decide the color class based on expiry
+const getExpiryColorClass = (dateStr) => {
+  if (!dateStr) return "";
+  const today = new Date();
+  const expDate = new Date(dateStr);
+
+  if (expDate < today) {
+    return "exp-overdue";
+  }
+
+  const diffDays = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
+  if (diffDays <= 30) {
+    return "exp-due-soon";
+  }
+
+  return "exp-on-track";
+};
+
 const Consumables = () => {
+  // State
+  const [consumables, setConsumables] = useState([]);
+  const [locations, setLocations] = useState([]);
+
+  // Filters
   const [searchTerm, setSearchTerm] = useState("");
   const [filterLocation, setFilterLocation] = useState([]);
-  const [showExpirationFilter, setShowExpirationFilter] = useState(false);
+  const [expirationSortOrder, setExpirationSortOrder] = useState("");
+
+  // UI Toggles
   const [showForm, setShowForm] = useState(false);
+  const [showLocationFilter, setShowLocationFilter] = useState(false);
+  const [showExpirationFilter, setShowExpirationFilter] = useState(false);
+
+  // Editing & Details
   const [editingItem, setEditingItem] = useState(null);
   const [detailItem, setDetailItem] = useState(null);
   const [editingRowId, setEditingRowId] = useState(null);
   const [editingData, setEditingData] = useState({});
-  const [showLocationFilter, setShowLocationFilter] = useState(false);
-  const [expirationSortOrder, setExpirationSortOrder] = useState("");
-  const [locations, setLocations] = useState([]);
-  const [consumables, setConsumables] = useState([]);
-  
 
+  // Refs
+  const locationRef = useRef(null);
+  const expirationRef = useRef(null);
+
+  // Fetch Data
   const fetchConsumables = async () => {
     try {
       const res = await fetch(API_URL);
       const data = await res.json();
+
       const formatted = data.map((item) => ({
         id: item.supply_id,
         supplyItem: item.name,
@@ -65,8 +96,11 @@ const Consumables = () => {
         supplier: item.supplier,
         location: item.location,
       }));
+
       setConsumables(formatted);
-      setLocations([...new Set(formatted.map((item) => item.location))]); // <-- update locations
+      setLocations([
+        ...new Set(formatted.map((item) => item.location).filter(Boolean)),
+      ]);
     } catch (err) {
       console.error("Fetch error:", err);
     }
@@ -74,6 +108,7 @@ const Consumables = () => {
 
   useEffect(() => {
     fetchConsumables();
+
     const handleClickOutside = (event) => {
       if (locationRef.current && !locationRef.current.contains(event.target)) {
         setShowLocationFilter(false);
@@ -85,15 +120,20 @@ const Consumables = () => {
         setShowExpirationFilter(false);
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  // Filtering
   const filteredConsumables = consumables.filter((item) => {
     const matchesSearch =
-      item.supplyItem.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.location.toLowerCase().includes(searchTerm.toLowerCase());
+      (item.supplyItem || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      (item.location || "").toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesLocation =
       filterLocation.length === 0 || filterLocation.includes(item.location);
@@ -101,6 +141,7 @@ const Consumables = () => {
     return matchesSearch && matchesLocation;
   });
 
+  // Handlers
   const handleAdd = () => {
     setEditingItem(null);
     setShowForm(true);
@@ -109,6 +150,7 @@ const Consumables = () => {
   const handleSave = async (formData) => {
     const method = editingItem ? "PUT" : "POST";
     const url = editingItem ? `${API_URL}/${editingItem.id}` : API_URL;
+
     const payload = {
       name: formData.supplyItem,
       category: formData.category || "Consumable",
@@ -182,12 +224,10 @@ const Consumables = () => {
   };
 
   const handleInputChange = (field, value) => {
-    setEditingData({ ...editingData, [field]: value });
+    setEditingData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleViewDetails = (item) => {
-    setDetailItem(item);
-  };
+  const handleViewDetails = (item) => setDetailItem(item);
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this consumable?")) {
@@ -208,9 +248,6 @@ const Consumables = () => {
       );
     }
   };
-
-  const locationRef = useRef(null);
-  const expirationRef = useRef(null);
 
   return (
     <div className="content-section">
@@ -367,7 +404,7 @@ const Consumables = () => {
                         new Date(a.expirationDate || 0)
                       );
                     } else {
-                      // default alphabetical
+                      // alphabetical
                       return a.supplyItem.localeCompare(b.supplyItem);
                     }
                   })
@@ -453,8 +490,12 @@ const Consumables = () => {
                             className="inline-edit-input"
                           />
                         ) : (
-                          <span className="text-left">
-                            {formatDateReadable(item.expirationDate)}
+                          <span
+                            className={`text-left ${getExpiryColorClass(
+                              item.expirationDate
+                            )}`}
+                          >
+                            {formatDateReadable(item.expirationDate) || "—"}
                           </span>
                         )}
                       </div>
@@ -586,8 +627,8 @@ const Consumables = () => {
                 value: detailItem.location,
               },
             ]}
-           onSave={async (formData) => {
-        const raw = Object.fromEntries(formData.entries());
+            onSave={async (formData) => {
+              const raw = Object.fromEntries(formData.entries());
 
               const payload = {
                 name: raw.supplyItem,
@@ -621,7 +662,6 @@ const Consumables = () => {
                 console.error("Detail save failed:", await res.text());
               }
             }}
-
           />
         )}
       </div>

@@ -16,10 +16,18 @@ const API_URL = "http://localhost:5000/api/equipment";
 const Equipment = () => {
   const [equipment, setEquipment] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Filters
   const [filterStatus, setFilterStatus] = useState([]);
   const [filterLocation, setFilterLocation] = useState([]);
   const [filterLastMaintenance, setFilterLastMaintenance] = useState("");
   const [filterLastCalibration, setFilterLastCalibration] = useState("");
+  const [filterNextMaintenanceStatus, setFilterNextMaintenanceStatus] =
+    useState("");
+  const [filterNextCalibrationStatus, setFilterNextCalibrationStatus] =
+    useState("");
+
+  // UI toggles
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [detailItem, setDetailItem] = useState(null);
@@ -28,11 +36,19 @@ const Equipment = () => {
   const [showStatusFilter, setShowStatusFilter] = useState(false);
   const [showLocationFilter, setShowLocationFilter] = useState(false);
   const [showScheduleFilter, setShowScheduleFilter] = useState(null);
-  const [filterNextMaintenanceStatus, setFilterNextMaintenanceStatus] =
-    useState("");
-  const [filterNextCalibrationStatus, setFilterNextCalibrationStatus] =
-    useState("");
 
+  // Lists for filter options
+  const [statusList, setStatusList] = useState([]);
+  const [locationList, setLocationList] = useState([]);
+
+  const locationRef = useRef(null);
+  const statusRef = useRef(null);
+  const lastMaintRef = useRef(null);
+  const nextMaintRef = useRef(null);
+  const lastCalibRef = useRef(null);
+  const nextCalibRef = useRef(null);
+
+  // Helpers
   const formatDatePretty = (iso) => {
     if (!iso) return "N/A";
     const date = new Date(iso);
@@ -44,16 +60,48 @@ const Equipment = () => {
     });
   };
 
-  const [statusList, setStatusList] = useState([]);
-  const [locationList, setLocationList] = useState([]);
+  const matchesUpcomingCategory = (dateValue, category) => {
+    if (!category) return true;
+    if (!dateValue) return false;
 
-  const locationRef = useRef(null);
-  const statusRef = useRef(null);
-  const lastMaintRef = useRef(null);
-  const nextMaintRef = useRef(null);
-  const lastCalibRef = useRef(null);
-  const nextCalibRef = useRef(null);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(dateValue);
+    target.setHours(0, 0, 0, 0);
 
+    const diffDays = (target - today) / (1000 * 60 * 60 * 24);
+
+    if (category === "Overdue") return target < today;
+    if (category === "Due Soon") return diffDays > 0 && diffDays <= 30;
+    if (category === "On Track") return diffDays > 30;
+    return true;
+  };
+
+  const getStatusColor = (status) => {
+    return status === "Working"
+      ? "status-working"
+      : status === "To be fixed"
+      ? "status-tobefixed"
+      : "";
+  };
+
+  // Extra helpers 
+  const isOverdue = (dateStr) => {
+    if (!dateStr) return false;
+    const today = new Date();
+    const target = new Date(dateStr);
+    return target < today.setHours(0, 0, 0, 0);
+  };
+
+  const isDueSoon = (dateStr) => {
+    if (!dateStr) return false;
+    const today = new Date();
+    const target = new Date(dateStr);
+    const diffDays = (target - today) / (1000 * 60 * 60 * 24);
+    return diffDays > 0 && diffDays <= 30;
+  };
+
+  // Fetch Data
   const fetchEquipment = async () => {
     try {
       const res = await fetch(API_URL);
@@ -68,12 +116,6 @@ const Equipment = () => {
     } catch (err) {
       console.error("Fetch equipment error:", err);
     }
-  };
-
-  const closeAllFilters = () => {
-    setShowLocationFilter(false);
-    setShowStatusFilter(false);
-    setShowScheduleFilter(null);
   };
 
   useEffect(() => {
@@ -96,28 +138,13 @@ const Equipment = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const matchesUpcomingCategory = (dateValue, category) => {
-    if (!category) return true; // no filter selected
-    if (!dateValue) return false;
-
-    const today = new Date();
-    const target = new Date(dateValue);
-    if (isNaN(target.getTime())) return false;
-
-    const diffDays = (target - today) / (1000 * 60 * 60 * 24);
-
-    switch (category) {
-      case "Overdue":
-        return target < today;
-      case "Due Soon":
-        return diffDays >= 0 && diffDays <= 30;
-      case "On Track":
-        return diffDays > 30;
-      default:
-        return true;
-    }
+  const closeAllFilters = () => {
+    setShowLocationFilter(false);
+    setShowStatusFilter(false);
+    setShowScheduleFilter(null);
   };
 
+  // Filtering
   const filteredEquipment = equipment.filter((item) => {
     const matchesSearch =
       (item.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -152,19 +179,12 @@ const Equipment = () => {
     );
   });
 
+  // Handlers
   const handleFilterChange = (type, value, checked) => {
     const updater = (prev) =>
       checked ? [...prev, value] : prev.filter((i) => i !== value);
     if (type === "status") setFilterStatus(updater);
     if (type === "location") setFilterLocation(updater);
-  };
-
-  const getStatusColor = (status) => {
-    return status === "Working"
-      ? "status-working"
-      : status === "To be fixed"
-      ? "status-tobefixed"
-      : "";
   };
 
   const handleAdd = () => {
@@ -178,11 +198,7 @@ const Equipment = () => {
   };
 
   const handleSaveInlineEdit = async () => {
-    const payload = {
-      ...editingData,
-      // manual_available: editingData.manual_available ? 1 : 0,
-    };
-
+    const payload = { ...editingData };
     const res = await fetch(`${API_URL}/${editingRowId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -207,9 +223,7 @@ const Equipment = () => {
     setEditingData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleViewDetails = (item) => {
-    setDetailItem(item);
-  };
+  const handleViewDetails = (item) => setDetailItem(item);
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this equipment?")) {
@@ -218,9 +232,9 @@ const Equipment = () => {
       else console.error(await res.text());
     }
   };
-  // ✅ PARENT
+
   const handleSave = (saved) => {
-    console.log("✅ Parent got:", saved);
+    console.log("Parent got:", saved);
     setEquipment((prev) => [...prev, saved]);
     setShowForm(false);
     setEditingItem(null);
@@ -634,6 +648,7 @@ const Equipment = () => {
                         </div>
 
                         {/* Next Maintenance */}
+                        {/* Next Maintenance */}
                         <div className="row-cell">
                           {editingRowId === item.equipment_id ? (
                             <input
@@ -648,7 +663,17 @@ const Equipment = () => {
                               className="inline-edit-input"
                             />
                           ) : (
-                            formatDatePretty(item.maintenance_schedule)
+                            <span
+                              className={
+                                isOverdue(item.maintenance_schedule)
+                                  ? "exp-overdue"
+                                  : isDueSoon(item.maintenance_schedule)
+                                  ? "exp-due-soon"
+                                  : "exp-on-track"
+                              }
+                            >
+                              {formatDatePretty(item.maintenance_schedule)}
+                            </span>
                           )}
                         </div>
 
@@ -686,7 +711,17 @@ const Equipment = () => {
                               className="inline-edit-input"
                             />
                           ) : (
-                            formatDatePretty(item.next_calibration_date)
+                            <span
+                              className={
+                                isOverdue(item.next_calibration_date)
+                                  ? "exp-overdue"
+                                  : isDueSoon(item.next_calibration_date)
+                                  ? "exp-due-soon"
+                                  : "exp-on-track"
+                              }
+                            >
+                              {formatDatePretty(item.next_calibration_date)}
+                            </span>
                           )}
                         </div>
 
@@ -912,13 +947,6 @@ const Equipment = () => {
                   name: "supplier_contact",
                   type: "text",
                 },
-                // {
-                //   label: "Manual Available",
-                //   value: detailItem.manual_available ? "Yes" : "No",
-                //   name: "manual_available",
-                //   type: "select",
-                //   options: ["Yes", "No"],
-                // },
                 {
                   label: "Manual File (PDF)",
                   value: detailItem.manual_file || "",
