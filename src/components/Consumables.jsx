@@ -288,6 +288,7 @@ const Consumables = () => {
             />
           </div>
         ) : (
+          <div className="table-responsive">
           <div className="modern-table">
             <div className="table-header">
               <div className="header-cell">
@@ -296,10 +297,10 @@ const Consumables = () => {
               <div className="header-cell">
                 <span>Remaining Quantity</span>
               </div>
-              <div className="header-cell">
+              <div className="header-cell hide-mobile">
                 <span>Total Quantity</span>
               </div>
-              <div className="header-cell">
+              <div className="header-cell hide-mobile">
                 <span>Date Opened</span>
               </div>
               <div className="header-cell filter-header" ref={expirationRef}>
@@ -427,7 +428,7 @@ const Consumables = () => {
                           <div className="item-brand">{item.brand}</div>
                         </div>
                       </div>
-                      <div className="row-cell">
+                      <div className="row-cell" data-label="Rem. Quantity">
                         {editingRowId === item.id ? (
                           <input
                             type="number"
@@ -444,7 +445,7 @@ const Consumables = () => {
                           item.remainingQuantity
                         )}
                       </div>
-                      <div className="row-cell">
+                      <div className="row-cell hide-mobile">
                         {editingRowId === item.id ? (
                           <input
                             type="number"
@@ -458,7 +459,7 @@ const Consumables = () => {
                           item.quantity
                         )}
                       </div>
-                      <div className="row-cell">
+                      <div className="row-cell hide-mobile">
                         {editingRowId === item.id ? (
                           <input
                             type="date"
@@ -476,7 +477,7 @@ const Consumables = () => {
                         )}
                       </div>
 
-                      <div className="row-cell">
+                      <div className="row-cell" data-label="Exp. Date">
                         {editingRowId === item.id ? (
                           <input
                             type="date"
@@ -500,7 +501,7 @@ const Consumables = () => {
                         )}
                       </div>
 
-                      <div className="row-cell">
+                      <div className="row-cell" data-label="Location">
                         {editingRowId === item.id ? (
                           <select
                             value={editingData.location}
@@ -560,6 +561,7 @@ const Consumables = () => {
                   ))}
               </div>
             </div>
+          </div>
           </div>
         )}
         {detailItem && (

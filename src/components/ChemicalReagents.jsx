@@ -339,6 +339,7 @@ const ChemicalReagents = () => {
               />
             </div>
           ) : (
+            <div className="table-responsive">
             <div className="modern-table">
               <div className="table-header">
                 {/* Existing Headers */}
@@ -381,7 +382,7 @@ const ChemicalReagents = () => {
                     </div>
                   )}
                 </div>
-                <div className="header-cell">
+                <div className="header-cell hide-mobile">
                   <span className="text-center">Date Opened</span>
                 </div>
                 {/* Expiration Date Header */}
@@ -439,7 +440,7 @@ const ChemicalReagents = () => {
                   )}
                 </div>
 
-                <div className="header-cell">
+                <div className="header-cell hide-mobile">
                   <span className="text-center">Container Size</span>
                 </div>
                 <div className="header-cell filter-header" ref={locationRef}>
@@ -560,7 +561,7 @@ const ChemicalReagents = () => {
                         </div>
 
                         {/* Category */}
-                        <div className="row-cell flex-[1.2]">
+                        <div className="row-cell flex-[1.2]" data-label="Category">
                           {editingRowId === reagent.chemical_id ? (
                             <select
                               value={editingData.category}
@@ -583,7 +584,7 @@ const ChemicalReagents = () => {
                         </div>
 
                         {/* Date Opened */}
-                        <div className="row-cell flex-[1]">
+                        <div className="row-cell flex-[1] hide-mobile">
                           {editingRowId === reagent.chemical_id ? (
                             <input
                               type="date"
@@ -602,7 +603,7 @@ const ChemicalReagents = () => {
                         </div>
 
                         {/* Expiration Date */}
-                        <div className="row-cell flex-[1]">
+                        <div className="row-cell flex-[1]" data-label="Exp. Date">
                           {editingRowId === reagent.chemical_id ? (
                             <input
                               type="date"
@@ -627,7 +628,7 @@ const ChemicalReagents = () => {
                         </div>
 
                         {/* Container Size */}
-                        <div className="row-cell flex-[0.8]">
+                        <div className="row-cell flex-[0.8] hide-mobile">
                           {editingRowId === reagent.chemical_id ? (
                             <input
                               type="text"
@@ -648,7 +649,7 @@ const ChemicalReagents = () => {
                         </div>
 
                         {/* Location */}
-                        <div className="row-cell flex-[1]">
+                        <div className="row-cell flex-[1]" data-label="Location">
                           {editingRowId === reagent.chemical_id ? (
                             <select
                               value={editingData.location}
@@ -671,7 +672,7 @@ const ChemicalReagents = () => {
                         </div>
 
                         {/* Status */}
-                        <div className="row-cell flex-[1]">
+                        <div className="row-cell flex-[1]" data-label="Status">
                           {editingRowId === reagent.chemical_id ? (
                             <select
                               value={editingData.status}
@@ -741,6 +742,7 @@ const ChemicalReagents = () => {
                     ))}
                 </div>
               </div>
+            </div>
             </div>
           )}
           {detailItem && (

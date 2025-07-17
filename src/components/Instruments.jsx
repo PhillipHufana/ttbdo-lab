@@ -302,289 +302,304 @@ const Instruments = () => {
             />
           </div>
         ) : (
-          <div className="modern-table instruments-table">
-            <div className="table-header">
-              <div className="header-cell">
-                <span>Instrument</span>
-              </div>
-              <div className="header-cell">
-                <span>Quantity</span>
-              </div>
-              <div className="header-cell">
-                <span>Description</span>
-              </div>
-              <div
-                className="header-cell filter-header"
-                ref={filterRefs.location}
-                onClick={() =>
-                  setShowFilters((prev) => ({
-                    ...prev,
-                    location: !prev.location,
-                  }))
-                }
-              >
-                <span>Location</span>
-                <ChevronDown
-                  size={16}
-                  className={`filter-arrow ${
-                    showFilters.location ? "rotated" : ""
-                  }`}
-                />
-                {showFilters.location && (
-                  <div className="filter-dropdown">
-                    {locations.map((loc) => (
-                      <label key={loc} className="filter-option">
-                        <input
-                          type="checkbox"
-                          checked={filterLocation.includes(loc)}
-                          onChange={(e) =>
-                            handleFilterChange(
-                              "location",
-                              loc,
-                              e.target.checked
-                            )
-                          }
-                        />
-                        <span>{loc}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
+          <div className="table-responsive">
+            <div className="modern-table instruments-table">
+              <div className="table-header">
+                <div className="header-cell">
+                  <span>Instrument</span>
+                </div>
+                <div className="header-cell hide-mobile">
+                  <span>Quantity</span>
+                </div>
+                <div className="header-cell hide-mobile">
+                  <span>Description</span>
+                </div>
+                <div
+                  className="header-cell filter-header"
+                  ref={filterRefs.location}
+                  onClick={() =>
+                    setShowFilters((prev) => ({
+                      ...prev,
+                      location: !prev.location,
+                    }))
+                  }
+                >
+                  <span>Location</span>
+                  <ChevronDown
+                    size={16}
+                    className={`filter-arrow ${
+                      showFilters.location ? "rotated" : ""
+                    }`}
+                  />
+                  {showFilters.location && (
+                    <div className="filter-dropdown">
+                      {locationList.map((loc) => (
+                        <label key={loc} className="filter-option">
+                          <input
+                            type="checkbox"
+                            checked={filterLocation.includes(loc)}
+                            onChange={(e) =>
+                              handleFilterChange(
+                                "location",
+                                loc,
+                                e.target.checked
+                              )
+                            }
+                          />
+                          <span>{loc}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-              <div
-                className="header-cell filter-header"
-                ref={filterRefs.status}
-                onClick={() =>
-                  setShowFilters((prev) => ({
-                    ...prev,
-                    status: !prev.status,
-                  }))
-                }
-              >
-                <span>Status</span>
-                <ChevronDown
-                  size={16}
-                  className={`filter-arrow ${
-                    showFilters.status ? "rotated" : ""
-                  }`}
-                />
-                {showFilters.status && (
-                  <div className="filter-dropdown">
-                    {statusList.map((status) => (
-                      <label key={status} className="filter-option">
-                        <input
-                          type="checkbox"
-                          checked={filterStatus.includes(status)}
-                          onChange={(e) =>
-                            handleFilterChange(
-                              "status",
-                              status,
-                              e.target.checked
-                            )
-                          }
-                        />
-                        <span>{status}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
+                <div
+                  className="header-cell filter-header"
+                  ref={filterRefs.status}
+                  onClick={() =>
+                    setShowFilters((prev) => ({
+                      ...prev,
+                      status: !prev.status,
+                    }))
+                  }
+                >
+                  <span>Status</span>
+                  <ChevronDown
+                    size={16}
+                    className={`filter-arrow ${
+                      showFilters.status ? "rotated" : ""
+                    }`}
+                  />
+                  {showFilters.status && (
+                    <div className="filter-dropdown">
+                      {statusList.map((status) => (
+                        <label key={status} className="filter-option">
+                          <input
+                            type="checkbox"
+                            checked={filterStatus.includes(status)}
+                            onChange={(e) =>
+                              handleFilterChange(
+                                "status",
+                                status,
+                                e.target.checked
+                              )
+                            }
+                          />
+                          <span>{status}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div
+                  className="header-cell filter-header"
+                  ref={filterRefs.condition}
+                  onClick={() =>
+                    setShowFilters((prev) => ({
+                      ...prev,
+                      condition: !prev.condition,
+                    }))
+                  }
+                >
+                  <span>Condition</span>
+                  <ChevronDown
+                    size={16}
+                    className={`filter-arrow ${
+                      showFilters.condition ? "rotated" : ""
+                    }`}
+                  />
+                  {showFilters.condition && (
+                    <div className="filter-dropdown">
+                      {conditionList.map((cond) => (
+                        <label key={cond} className="filter-option">
+                          <input
+                            type="checkbox"
+                            checked={filterCondition.includes(cond)}
+                            onChange={(e) =>
+                              handleFilterChange(
+                                "condition",
+                                cond,
+                                e.target.checked
+                              )
+                            }
+                          />
+                          <span>{cond}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="header-cell">
+                  <span>Actions</span>
+                </div>
               </div>
-              <div
-                className="header-cell filter-header"
-                ref={filterRefs.condition}
-                onClick={() =>
-                  setShowFilters((prev) => ({
-                    ...prev,
-                    condition: !prev.condition,
-                  }))
-                }
-              >
-                <span>Condition</span>
-                <ChevronDown
-                  size={16}
-                  className={`filter-arrow ${
-                    showFilters.condition ? "rotated" : ""
-                  }`}
-                />
-                {showFilters.condition && (
-                  <div className="filter-dropdown">
-                    {conditionList.map((cond) => (
-                      <label key={cond} className="filter-option">
-                        <input
-                          type="checkbox"
-                          checked={filterCondition.includes(cond)}
-                          onChange={(e) =>
-                            handleFilterChange(
-                              "condition",
-                              cond,
-                              e.target.checked
-                            )
-                          }
-                        />
-                        <span>{cond}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="header-cell">
-                <span>Actions</span>
-              </div>
-            </div>
-            <div className="table-scroll-body">
-              <div className="table-body">
-                {filteredInstruments
-                  .sort((a, b) => {
-                    const aName = a.instrument?.trim() || "";
-                    const bName = b.instrument?.trim() || "";
-                    if (!aName && !bName) return 0;
-                    if (!aName) return 1;
-                    if (!bName) return -1;
-                    return aName.localeCompare(bName);
-                  })
+              <div className="table-scroll-body">
+                <div className="table-body">
+                  {filteredInstruments
+                    .sort((a, b) => {
+                      const aName = a.instrument?.trim() || "";
+                      const bName = b.instrument?.trim() || "";
+                      if (!aName && !bName) return 0;
+                      if (!aName) return 1;
+                      if (!bName) return -1;
+                      return aName.localeCompare(bName);
+                    })
 
-                  .map((item) => (
-                    <div
-                      key={item.id}
-                      className={`table-row ${
-                        editingRowId === item.id ? "editing-row" : ""
-                      }`}
-                    >
-                      <div className="row-cell">
-                        <div className="item-details">
-                          <button
-                            className="item-name"
-                            onClick={() => handleViewDetails(item)}
-                          >
-                            {item.instrument}
-                          </button>
+                    .map((item) => (
+                      <div
+                        key={item.id}
+                        className={`table-row ${
+                          editingRowId === item.id ? "editing-row" : ""
+                        }`}
+                      >
+                        <div className="row-cell">
+                          <div className="item-details">
+                            <button
+                              className="item-name"
+                              onClick={() => handleViewDetails(item)}
+                            >
+                              {item.instrument}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="row-cell  hide-mobile">
+                          {editingRowId === item.id ? (
+                            <input
+                              type="number"
+                              value={editingData.quantity}
+                              onChange={(e) =>
+                                handleInputChange("quantity", e.target.value)
+                              }
+                              className="inline-edit-input"
+                            />
+                          ) : (
+                            item.quantity
+                          )}
+                        </div>
+                        <div className="row-cell  hide-mobile">
+                          {item.description}
+                        </div>
+                        <div className="row-cell" data-label="Location">
+                          {editingRowId === item.id ? (
+                            <select
+                              value={editingData.location}
+                              onChange={(e) =>
+                                handleInputChange("location", e.target.value)
+                              }
+                              className="inline-edit-select"
+                            >
+                              {locationList.map((loc) => (
+                                <label key={loc} className="filter-option">
+                                  <input
+                                    type="checkbox"
+                                    checked={filterLocation.includes(loc)}
+                                    onChange={(e) =>
+                                      handleFilterChange(
+                                        "location",
+                                        loc,
+                                        e.target.checked
+                                      )
+                                    }
+                                  />
+                                  <span>{loc}</span>
+                                </label>
+                              ))}
+                            </select>
+                          ) : (
+                            item.location
+                          )}
+                        </div>
+
+                        <div className="row-cell" data-label="Status">
+                          {editingRowId === item.id ? (
+                            <select
+                              value={editingData.status}
+                              onChange={(e) =>
+                                handleInputChange("status", e.target.value)
+                              }
+                              className="inline-edit-select"
+                            >
+                              {statusList.map((status) => (
+                                <option key={status} value={status}>
+                                  {status}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span
+                              className={`status-badge ${getStatusColor(
+                                item.status
+                              )}`}
+                            >
+                              {item.status}
+                            </span>
+                          )}
+                        </div>
+                        <div className="row-cell" data-label="Condition">
+                          {editingRowId === item.id ? (
+                            <select
+                              value={editingData.condition}
+                              onChange={(e) =>
+                                handleInputChange("condition", e.target.value)
+                              }
+                              className="inline-edit-select"
+                            >
+                              {conditionList.map((condition) => (
+                                <option key={condition} value={condition}>
+                                  {condition}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span
+                              className={`status-badge ${getConditionColor(
+                                item.condition
+                              )}`}
+                            >
+                              {item.condition}
+                            </span>
+                          )}
+                        </div>
+                        <div className="row-cell">
+                          {editingRowId === item.id ? (
+                            <div className="editing-actions">
+                              <button
+                                className="btn-icon btn-save"
+                                onClick={handleSaveInlineEdit}
+                                title="Save"
+                              >
+                                <Check size={16} />
+                              </button>
+                              <button
+                                className="btn-icon btn-cancel"
+                                onClick={handleCancelInlineEdit}
+                                title="Cancel"
+                              >
+                                <X size={16} />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="action-buttons">
+                              <button
+                                className="btn-icon"
+                                onClick={() => handleInlineEdit(item)}
+                                title="Edit"
+                              >
+                                <Edit size={16} />
+                              </button>
+                              <button
+                                className="btn-icon delete"
+                                onClick={() => handleDelete(item.id)}
+                                title="Delete"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
-                      <div className="row-cell">
-                        {editingRowId === item.id ? (
-                          <input
-                            type="number"
-                            value={editingData.quantity}
-                            onChange={(e) =>
-                              handleInputChange("quantity", e.target.value)
-                            }
-                            className="inline-edit-input"
-                          />
-                        ) : (
-                          item.quantity
-                        )}
-                      </div>
-                      <div className="row-cell">{item.description}</div>
-                      <div className="row-cell">
-                        {editingRowId === item.id ? (
-                          <select
-                            value={editingData.location}
-                            onChange={(e) =>
-                              handleInputChange("location", e.target.value)
-                            }
-                            className="inline-edit-select"
-                          >
-                            {locations.map((loc) => (
-                              <option key={loc} value={loc}>
-                                {loc}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          item.location
-                        )}
-                      </div>
-
-                      <div className="row-cell">
-                        {editingRowId === item.id ? (
-                          <select
-                            value={editingData.status}
-                            onChange={(e) =>
-                              handleInputChange("status", e.target.value)
-                            }
-                            className="inline-edit-select"
-                          >
-                            {statusList.map((status) => (
-                              <option key={status} value={status}>
-                                {status}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <span
-                            className={`status-badge ${getStatusColor(
-                              item.status
-                            )}`}
-                          >
-                            {item.status}
-                          </span>
-                        )}
-                      </div>
-                      <div className="row-cell">
-                        {editingRowId === item.id ? (
-                          <select
-                            value={editingData.condition}
-                            onChange={(e) =>
-                              handleInputChange("condition", e.target.value)
-                            }
-                            className="inline-edit-select"
-                          >
-                            {conditionList.map((condition) => (
-                              <option key={condition} value={condition}>
-                                {condition}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <span
-                            className={`status-badge ${getConditionColor(
-                              item.condition
-                            )}`}
-                          >
-                            {item.condition}
-                          </span>
-                        )}
-                      </div>
-                      <div className="row-cell">
-                        {editingRowId === item.id ? (
-                          <div className="editing-actions">
-                            <button
-                              className="btn-icon btn-save"
-                              onClick={handleSaveInlineEdit}
-                              title="Save"
-                            >
-                              <Check size={16} />
-                            </button>
-                            <button
-                              className="btn-icon btn-cancel"
-                              onClick={handleCancelInlineEdit}
-                              title="Cancel"
-                            >
-                              <X size={16} />
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="action-buttons">
-                            <button
-                              className="btn-icon"
-                              onClick={() => handleInlineEdit(item)}
-                              title="Edit"
-                            >
-                              <Edit size={16} />
-                            </button>
-                            <button
-                              className="btn-icon delete"
-                              onClick={() => handleDelete(item.id)}
-                              title="Delete"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                </div>
               </div>
             </div>
           </div>

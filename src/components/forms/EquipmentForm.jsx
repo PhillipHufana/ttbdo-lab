@@ -205,7 +205,7 @@ const EquipmentForm = ({
 
       if (!res.ok) throw new Error(data.error || "Save failed");
 
-      onSave(data); // ✅ only call parent to update state!
+      onSave(data); 
     } catch (err) {
       console.error("Save error:", err);
     } finally {
