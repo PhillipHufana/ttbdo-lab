@@ -30,17 +30,9 @@ const Instruments = () => {
   });
   const [instruments, setInstruments] = useState([]);
 
-  const statuses = [
-    "Opened",
-    "Unused",
-    "Used",
-    "Opened, unused",
-    "Sealed",
-    "Tip Chipped",
-    "Unopened",
-    "Broken",
-  ];
-  const conditions = ["Good", "Poor"];
+  const [statusList, setStatusList] = useState([]);
+  const [conditionList, setConditionList] = useState([]);
+  const [locationList, setLocationList] = useState([]);
 
   const filterRefs = {
     location: useRef(null),
@@ -65,6 +57,17 @@ const Instruments = () => {
         remarks: item.remarks,
       }));
       setInstruments(formatted);
+
+      // dynamically build unique filter options
+      setLocationList([
+        ...new Set(formatted.map((i) => i.location).filter(Boolean)),
+      ]);
+      setStatusList([
+        ...new Set(formatted.map((i) => i.status).filter(Boolean)),
+      ]);
+      setConditionList([
+        ...new Set(formatted.map((i) => i.condition).filter(Boolean)),
+      ]);
     } catch (err) {
       console.error("Fetch error:", err);
     }
@@ -287,6 +290,12 @@ const Instruments = () => {
               initialData={editingItem}
               onSave={handleSave}
               onCancel={handleCancel}
+              locationList={locationList}
+              setLocationList={setLocationList}
+              statusList={statusList}
+              setStatusList={setStatusList}
+              conditionList={conditionList}
+              setConditionList={setConditionList}
             />
           </div>
         ) : (
@@ -359,7 +368,7 @@ const Instruments = () => {
                 />
                 {showFilters.status && (
                   <div className="filter-dropdown">
-                    {statuses.map((status) => (
+                    {statusList.map((status) => (
                       <label key={status} className="filter-option">
                         <input
                           type="checkbox"
@@ -397,7 +406,7 @@ const Instruments = () => {
                 />
                 {showFilters.condition && (
                   <div className="filter-dropdown">
-                    {conditions.map((cond) => (
+                    {conditionList.map((cond) => (
                       <label key={cond} className="filter-option">
                         <input
                           type="checkbox"
@@ -493,7 +502,7 @@ const Instruments = () => {
                             }
                             className="inline-edit-select"
                           >
-                            {statuses.map((status) => (
+                            {statusList.map((status) => (
                               <option key={status} value={status}>
                                 {status}
                               </option>
@@ -518,7 +527,7 @@ const Instruments = () => {
                             }
                             className="inline-edit-select"
                           >
-                            {conditions.map((condition) => (
+                            {conditionList.map((condition) => (
                               <option key={condition} value={condition}>
                                 {condition}
                               </option>

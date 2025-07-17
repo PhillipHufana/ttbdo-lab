@@ -1,7 +1,17 @@
 import { useState, useEffect, useRef } from "react";
 import { ChevronDown } from "lucide-react";
 
-const InstrumentForm = ({ initialData, onSave, onCancel }) => {
+const InstrumentForm = ({
+  initialData,
+  onSave,
+  onCancel,
+  locationList,
+  setLocationList,
+  statusList,
+  setStatusList,
+  conditionList,
+  setConditionList,
+}) => {
   const [formData, setFormData] = useState({
     instrument: "",
     description: "",
@@ -12,27 +22,6 @@ const InstrumentForm = ({ initialData, onSave, onCancel }) => {
     condition: "",
     remarks: "",
   });
-
-  // Options for location, status, and condition
-  const [locationList, setLocationList] = useState([
-    "Lab Room 1",
-    "Lab Room 2",
-    "Instrument Room",
-    "Storage",
-    "Calibration Lab",
-    "Table 2, Cabinet 2",
-  ]);
-
-  const [statusList, setStatusList] = useState([
-    "Opened",
-    "Unused",
-    "Sealed",
-    "Tip Chipped",
-    "Unopened",
-    "Broken",
-  ]);
-
-  const [conditionList, setConditionList] = useState(["Good", "Poor"]);
 
   // State to control dropdown visibility per field
   const [showDropdown, setShowDropdown] = useState({

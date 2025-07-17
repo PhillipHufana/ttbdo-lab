@@ -1,5 +1,3 @@
-// src/components/ChemicalReagents.jsx
-
 import { useState, useRef, useEffect } from "react";
 import {
   Search,
@@ -21,7 +19,6 @@ const ChemicalReagents = () => {
   const [filterCategory, setFilterCategory] = useState([]);
   const [filterStatus, setFilterStatus] = useState([]);
   const [filterLocation, setFilterLocation] = useState([]);
-  const [filterExpirationMonth, setFilterExpirationMonth] = useState("");
   const [showExpirationFilter, setShowExpirationFilter] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -31,30 +28,37 @@ const ChemicalReagents = () => {
   const [showCategoryFilter, setShowCategoryFilter] = useState(false);
   const [showStatusFilter, setShowStatusFilter] = useState(false);
   const [showLocationFilter, setShowLocationFilter] = useState(false);
+  const [expirationSortOrder, setExpirationSortOrder] = useState("");
 
   const categoryRef = useRef(null);
   const statusRef = useRef(null);
   const locationRef = useRef(null);
   const expirationRef = useRef(null);
 
-  const categories = [
+  const [categories, setCategories] = useState([
     "Lactic Acid",
     "Lactic Acid Fermentation",
     "Polymerization",
     "Filtration and Purification",
     "Sugar Analysis",
-    "Others",
-  ];
+  ]);
 
-  const statuses = [
+  const [statuses, setStatuses] = useState([
     "Opened",
     "Unopened",
     "EXPIRED: Opened",
     "EXPIRED: Unopened",
     "EXPIRED: Sealed",
-  ];
+  ]);
 
-  const locations = ["Table 2, Cabinet 4", "Shelf 2b", "Shelf 1d"];
+  const [locations, setLocations] = useState([
+    "Table 2, Cabinet 4",
+    "Shelf 2b",
+    "Shelf 1d",
+  ]);
+
+  const [forms, setForms] = useState(["Solid", "Liquid"]);
+  
 
   useEffect(() => {
     fetchReagents();
@@ -118,17 +122,7 @@ const ChemicalReagents = () => {
       filterStatus.length === 0 || filterStatus.includes(r.status);
     const matchesLocation =
       filterLocation.length === 0 || filterLocation.includes(r.location);
-    const matchesExpiration =
-      !filterExpirationMonth ||
-      (r.expiration_date &&
-        r.expiration_date.startsWith(filterExpirationMonth));
-    return (
-      matchesSearch &&
-      matchesCategory &&
-      matchesStatus &&
-      matchesLocation &&
-      matchesExpiration
-    );
+    return matchesSearch && matchesCategory && matchesStatus && matchesLocation;
   });
 
   const handleFilterChange = (filterType, value, checked) => {
@@ -166,33 +160,33 @@ const ChemicalReagents = () => {
     setShowForm(true);
   };
 
-// const handleSave = async (data) => {
-//   const isFormData = data instanceof FormData;
-//   const isEdit = !!editingItem;
-//   const method = isEdit ? "PUT" : "POST";
-//   const url = isEdit ? `${API_URL}/${editingItem.chemical_id}` : API_URL;
+  // const handleSave = async (data) => {
+  //   const isFormData = data instanceof FormData;
+  //   const isEdit = !!editingItem;
+  //   const method = isEdit ? "PUT" : "POST";
+  //   const url = isEdit ? `${API_URL}/${editingItem.chemical_id}` : API_URL;
 
-//   const res = await fetch(url, {
-//     method,
-//     ...(isFormData ? {} : { headers: { "Content-Type": "application/json" } }),
-//     body: isFormData ? data : JSON.stringify(data),
-//   });
+  //   const res = await fetch(url, {
+  //     method,
+  //     ...(isFormData ? {} : { headers: { "Content-Type": "application/json" } }),
+  //     body: isFormData ? data : JSON.stringify(data),
+  //   });
 
-//   if (res.ok) {
-//     await fetchReagents();        // ✅ single source of truth
-//     setShowForm(false);
-//     setEditingItem(null);
-//     setDetailItem(null);
-//   } else {
-//     console.error(await res.text());
-//   }
-// };
-const handleSave = async () => {
-  await fetchReagents();  // ✅ refresh from DB
-  setShowForm(false);
-  setEditingItem(null);
-  setDetailItem(null);
-};
+  //   if (res.ok) {
+  //     await fetchReagents();        // ✅ single source of truth
+  //     setShowForm(false);
+  //     setEditingItem(null);
+  //     setDetailItem(null);
+  //   } else {
+  //     console.error(await res.text());
+  //   }
+  // };
+  const handleSave = async () => {
+    await fetchReagents(); // ✅ refresh from DB
+    setShowForm(false);
+    setEditingItem(null);
+    setDetailItem(null);
+  };
 
   const handleDelete = async (id) => {
     if (window.confirm("Delete?")) {
@@ -238,22 +232,21 @@ const handleSave = async () => {
   };
 
   const getStatusColor = (s) => {
-  switch (s) {
-    case "Opened":
-      return "status-opened";
-    case "Unopened":
-      return "status-unopened";
-    case "EXPIRED: Opened":
-      return "status-expired-opened";
-    case "EXPIRED: Unopened":
-      return "status-expired-unopened";
-    case "EXPIRED: Sealed":
-      return "status-expired-sealed";
-    default:
-      return "";
-  }
-};
-
+    switch (s) {
+      case "Opened":
+        return "status-opened";
+      case "Unopened":
+        return "status-unopened";
+      case "EXPIRED: Opened":
+        return "status-expired-opened";
+      case "EXPIRED: Unopened":
+        return "status-expired-unopened";
+      case "EXPIRED: Sealed":
+        return "status-expired-sealed";
+      default:
+        return "";
+    }
+  };
 
   const formatDatePretty = (isoDateStr) => {
     if (!isoDateStr) return "N/A";
@@ -304,6 +297,14 @@ const handleSave = async () => {
                 initialData={editingItem}
                 onSave={handleSave}
                 onCancel={handleCancel}
+                categories={categories}
+                setCategories={setCategories}
+                forms={forms}
+                setForms={setForms}
+                locations={locations}
+                setLocations={setLocations}
+                statuses={statuses}
+                setStatuses={setStatuses}
               />
             </div>
           ) : (
@@ -352,6 +353,8 @@ const handleSave = async () => {
                 <div className="header-cell">
                   <span className="text-center">Date Opened</span>
                 </div>
+                {/* Expiration Date Header */}
+                {/* Expiration Date Header */}
                 <div className="header-cell filter-header" ref={expirationRef}>
                   <div
                     onClick={() =>
@@ -366,20 +369,42 @@ const handleSave = async () => {
                       }`}
                     />
                   </div>
+
                   {showExpirationFilter && (
                     <div
                       className="filter-dropdown"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <input
-                        type="month"
-                        value={filterExpirationMonth}
-                        onChange={(e) => {
-                          setFilterExpirationMonth(e.target.value);
-                          setShowExpirationFilter(false);
-                        }}
-                        className="month-input"
-                      />
+                      <label className="filter-option">
+                        <input
+                          type="checkbox"
+                          checked={expirationSortOrder === "soonest"}
+                          onChange={(e) => {
+                            // if already selected, unselect; otherwise select
+                            setExpirationSortOrder(
+                              expirationSortOrder === "soonest" ? "" : "soonest"
+                            );
+                            setShowExpirationFilter(false);
+                          }}
+                        />
+                        <span>Soonest to Expire</span>
+                      </label>
+
+                      <label className="filter-option">
+                        <input
+                          type="checkbox"
+                          checked={expirationSortOrder === "farthest"}
+                          onChange={(e) => {
+                            setExpirationSortOrder(
+                              expirationSortOrder === "farthest"
+                                ? ""
+                                : "farthest"
+                            );
+                            setShowExpirationFilter(false);
+                          }}
+                        />
+                        <span>Farthest to Expire</span>
+                      </label>
                     </div>
                   )}
                 </div>
@@ -465,7 +490,23 @@ const handleSave = async () => {
               <div className="table-scroll-body">
                 <div className="table-body">
                   {filteredReagents
-                    .sort((a, b) => a.name.localeCompare(b.name))
+                    .slice() // make a shallow copy before sorting
+                    .sort((a, b) => {
+                      if (expirationSortOrder === "soonest") {
+                        return (
+                          new Date(a.expiration_date || 0) -
+                          new Date(b.expiration_date || 0)
+                        );
+                      } else if (expirationSortOrder === "farthest") {
+                        return (
+                          new Date(b.expiration_date || 0) -
+                          new Date(a.expiration_date || 0)
+                        );
+                      } else {
+                        // default sort (by name, or leave as-is)
+                        return a.name.localeCompare(b.name);
+                      }
+                    })
                     .map((reagent) => (
                       <div
                         key={reagent.chemical_id}
@@ -673,14 +714,49 @@ const handleSave = async () => {
               item={detailItem}
               onClose={() => setDetailItem(null)}
               title="Chemical Reagent Details"
-             fields={[
-                { label: "Name", name: "name", value: detailItem.name, type: "text" },
-                { label: "Item Code", name: "item_code", value: detailItem.item_code, type: "text" },
-                { label: "Category", name: "category", value: detailItem.category, type: "text" },
-                { label: "Brand", name: "brand", value: detailItem.brand, type: "text" },
-                { label: "Form", name: "form", value: detailItem.form, type: "text" },
-                { label: "Container Type", name: "container_type", value: detailItem.container_type, type: "text" },
-                { label: "Container Size", name: "container_size", value: detailItem.container_size, type: "text" },
+              fields={[
+                {
+                  label: "Name",
+                  name: "name",
+                  value: detailItem.name,
+                  type: "text",
+                },
+                {
+                  label: "Item Code",
+                  name: "item_code",
+                  value: detailItem.item_code,
+                  type: "text",
+                },
+                {
+                  label: "Category",
+                  name: "category",
+                  value: detailItem.category,
+                  type: "text",
+                },
+                {
+                  label: "Brand",
+                  name: "brand",
+                  value: detailItem.brand,
+                  type: "text",
+                },
+                {
+                  label: "Form",
+                  name: "form",
+                  value: detailItem.form,
+                  type: "text",
+                },
+                {
+                  label: "Container Type",
+                  name: "container_type",
+                  value: detailItem.container_type,
+                  type: "text",
+                },
+                {
+                  label: "Container Size",
+                  name: "container_size",
+                  value: detailItem.container_size,
+                  type: "text",
+                },
 
                 {
                   label: "Quantity",
@@ -708,8 +784,18 @@ const handleSave = async () => {
                   type: "date",
                 },
 
-                { label: "Status", name: "status", value: detailItem.status, type: "text" },
-                { label: "Location", name: "location", value: detailItem.location, type: "text" },
+                {
+                  label: "Status",
+                  name: "status",
+                  value: detailItem.status,
+                  type: "text",
+                },
+                {
+                  label: "Location",
+                  name: "location",
+                  value: detailItem.location,
+                  type: "text",
+                },
 
                 {
                   label: "MSDS",
@@ -717,8 +803,18 @@ const handleSave = async () => {
                   value: detailItem.msds_file || "",
                   type: "file",
                 },
-                { label: "Disposal Method", name: "disposal_method", value: detailItem.disposal_method, type: "text" },
-                { label: "Remarks", name: "remarks", value: detailItem.remarks, type: "text" },
+                {
+                  label: "Disposal Method",
+                  name: "disposal_method",
+                  value: detailItem.disposal_method,
+                  type: "text",
+                },
+                {
+                  label: "Remarks",
+                  name: "remarks",
+                  value: detailItem.remarks,
+                  type: "text",
+                },
               ]}
               onSave={async (formOrData) => {
                 try {
@@ -732,11 +828,14 @@ const handleSave = async () => {
                     headers = { "Content-Type": "application/json" };
                   }
 
-                  const res = await fetch(`${API_URL}/${detailItem.chemical_id}`, {
-                    method: "PUT",
-                    body,
-                    headers,
-                  });
+                  const res = await fetch(
+                    `${API_URL}/${detailItem.chemical_id}`,
+                    {
+                      method: "PUT",
+                      body,
+                      headers,
+                    }
+                  );
 
                   if (res.ok) {
                     await fetchReagents();

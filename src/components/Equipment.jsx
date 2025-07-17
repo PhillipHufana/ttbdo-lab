@@ -19,9 +19,7 @@ const Equipment = () => {
   const [filterStatus, setFilterStatus] = useState([]);
   const [filterLocation, setFilterLocation] = useState([]);
   const [filterLastMaintenance, setFilterLastMaintenance] = useState("");
-  const [filterNextMaintenance, setFilterNextMaintenance] = useState("");
   const [filterLastCalibration, setFilterLastCalibration] = useState("");
-  const [filterNextCalibration, setFilterNextCalibration] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [detailItem, setDetailItem] = useState(null);
@@ -30,27 +28,24 @@ const Equipment = () => {
   const [showStatusFilter, setShowStatusFilter] = useState(false);
   const [showLocationFilter, setShowLocationFilter] = useState(false);
   const [showScheduleFilter, setShowScheduleFilter] = useState(null);
+  const [filterNextMaintenanceStatus, setFilterNextMaintenanceStatus] =
+    useState("");
+  const [filterNextCalibrationStatus, setFilterNextCalibrationStatus] =
+    useState("");
 
-const formatDatePretty = (iso) => {
-  if (!iso) return "N/A";
-  const date = new Date(iso);
-  if (isNaN(date.getTime())) return "N/A";
-  return date.toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-};
+  const formatDatePretty = (iso) => {
+    if (!iso) return "N/A";
+    const date = new Date(iso);
+    if (isNaN(date.getTime())) return "N/A";
+    return date.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
 
-
-  const locations = [
-    "Left Side Table 2, Countertop",
-    "Storage Room",
-    "Main Laboratory",
-    "Warehouse",
-  ];
-
-  const statuses = ["Working", "To be fixed"];
+  const [statusList, setStatusList] = useState([]);
+  const [locationList, setLocationList] = useState([]);
 
   const locationRef = useRef(null);
   const statusRef = useRef(null);
@@ -64,9 +59,21 @@ const formatDatePretty = (iso) => {
       const res = await fetch(API_URL);
       const data = await res.json();
       setEquipment(data);
+      setStatusList([
+        ...new Set(data.map((item) => item.status).filter(Boolean)),
+      ]);
+      setLocationList([
+        ...new Set(data.map((item) => item.location).filter(Boolean)),
+      ]);
     } catch (err) {
       console.error("Fetch equipment error:", err);
     }
+  };
+
+  const closeAllFilters = () => {
+    setShowLocationFilter(false);
+    setShowStatusFilter(false);
+    setShowScheduleFilter(null);
   };
 
   useEffect(() => {
@@ -81,13 +88,35 @@ const formatDatePretty = (iso) => {
         !lastCalibRef.current?.contains(event.target) &&
         !nextCalibRef.current?.contains(event.target)
       ) {
-        setShowLocationFilter(false);
-        setShowStatusFilter(false);
+        closeAllFilters();
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const matchesUpcomingCategory = (dateValue, category) => {
+    if (!category) return true; // no filter selected
+    if (!dateValue) return false;
+
+    const today = new Date();
+    const target = new Date(dateValue);
+    if (isNaN(target.getTime())) return false;
+
+    const diffDays = (target - today) / (1000 * 60 * 60 * 24);
+
+    switch (category) {
+      case "Overdue":
+        return target < today;
+      case "Due Soon":
+        return diffDays >= 0 && diffDays <= 30;
+      case "On Track":
+        return diffDays > 30;
+      default:
+        return true;
+    }
+  };
 
   const filteredEquipment = equipment.filter((item) => {
     const matchesSearch =
@@ -111,9 +140,15 @@ const formatDatePretty = (iso) => {
       matchesStatus &&
       matchesLocation &&
       dateFilter(filterLastMaintenance, item.last_updated) &&
-      dateFilter(filterNextMaintenance, item.maintenance_schedule) &&
       dateFilter(filterLastCalibration, item.last_calibration_date) &&
-      dateFilter(filterNextCalibration, item.next_calibration_date)
+      matchesUpcomingCategory(
+        item.maintenance_schedule,
+        filterNextMaintenanceStatus
+      ) &&
+      matchesUpcomingCategory(
+        item.next_calibration_date,
+        filterNextCalibrationStatus
+      )
     );
   });
 
@@ -230,6 +265,10 @@ const formatDatePretty = (iso) => {
                 initialData={editingItem}
                 onSave={handleSave}
                 onCancel={handleCancel}
+                statusList={statusList}
+                setStatusList={setStatusList}
+                locationList={locationList}
+                setLocationList={setLocationList}
               />
             </div>
           ) : (
@@ -260,24 +299,32 @@ const formatDatePretty = (iso) => {
                       }`}
                     />
                   </div>
-                 {showLocationFilter && (
-                <div className="filter-dropdown" onClick={(e) => e.stopPropagation()}>
-                  {[...new Set(locations)].filter(Boolean).map((location) => (
-                    <label key={`filter-location-${location}-${i}`} className="filter-option">
-                      <input
-                        type="checkbox"
-                        checked={filterLocation.includes(location)}
-                        onChange={(e) => {
-                          handleFilterChange("location", location, e.target.checked);
-                          closeAllFilters();
-                        }}
-                      />
-                      <span>{location}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-
+                  {showLocationFilter && (
+                    <div
+                      className="filter-dropdown"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {locationList.map((loc, i) => (
+                        <label
+                          key={`filter-location-${loc}-${i}`}
+                          className="filter-option"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={filterLocation.includes(loc)}
+                            onChange={(e) =>
+                              handleFilterChange(
+                                "location",
+                                loc,
+                                e.target.checked
+                              )
+                            }
+                          />
+                          {loc}
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="header-cell filter-header" ref={lastMaintRef}>
@@ -339,14 +386,24 @@ const formatDatePretty = (iso) => {
                       className="filter-dropdown"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <input
-                        type="month"
-                        value={filterNextMaintenance}
-                        onChange={(e) => {
-                          setFilterNextMaintenance(e.target.value);
-                          setShowScheduleFilter(null);
-                        }}
-                      />
+                      {["Overdue", "Due Soon", "On Track"].map((option) => (
+                        <label key={option} className="filter-option">
+                          <input
+                            type="checkbox"
+                            checked={filterNextMaintenanceStatus === option}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setFilterNextMaintenanceStatus(option);
+                              } else {
+                                // unchecking clears
+                                setFilterNextMaintenanceStatus("");
+                              }
+                              setShowScheduleFilter(null);
+                            }}
+                          />
+                          {option}
+                        </label>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -410,15 +467,24 @@ const formatDatePretty = (iso) => {
                       className="filter-dropdown"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <input
-                        type="month"
-                        value={filterNextCalibration}
-                        onChange={(e) => {
-                          setFilterNextCalibration(e.target.value);
-                          setShowScheduleFilter(null);
-                        }}
-                        className="month-input"
-                      />
+                      {["Overdue", "Due Soon", "On Track"].map((option) => (
+                        <label key={option} className="filter-option">
+                          <input
+                            type="checkbox"
+                            checked={filterNextCalibrationStatus === option}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setFilterNextCalibrationStatus(option);
+                              } else {
+                                // unchecking clears
+                                setFilterNextCalibrationStatus("");
+                              }
+                              setShowScheduleFilter(null);
+                            }}
+                          />
+                          {option}
+                        </label>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -444,20 +510,25 @@ const formatDatePretty = (iso) => {
                       className="filter-dropdown"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      {statuses.map((status, i) => (
-                        <label key={`filter-status-${status}-${i}`} className="filter-option">
+                      {statusList.map((status, i) => (
+                        <label
+                          key={`filter-status-${status}-${i}`}
+                          className="filter-option"
+                        >
                           <input
                             type="checkbox"
                             checked={filterStatus.includes(status)}
-                            onChange={(e) => {
-                              handleFilterChange("status", status, e.target.checked);
-                              closeAllFilters();
-                            }}
+                            onChange={(e) =>
+                              handleFilterChange(
+                                "status",
+                                status,
+                                e.target.checked
+                              )
+                            }
                           />
-                          <span>{status}</span>
+                          {status}
                         </label>
-                      ))
-                      }
+                      ))}
                     </div>
                   )}
                 </div>
@@ -522,14 +593,21 @@ const formatDatePretty = (iso) => {
                           {editingRowId === item.equipment_id ? (
                             <select
                               value={editingData.location}
-                              onChange={(e) => handleInputChange("location", e.target.value)}
+                              onChange={(e) =>
+                                handleInputChange("location", e.target.value)
+                              }
                               className="inline-edit-select"
                             >
-                              {[...new Set(locations)].filter(Boolean).map((loc, i) => (
-                                <option key={`option-location-${loc}-${i}`} value={loc}>
-                                  {loc}
-                                </option>
-                              ))}
+                              {[...new Set(locationList)]
+                                .filter(Boolean)
+                                .map((loc, i) => (
+                                  <option
+                                    key={`option-location-${loc}-${i}`}
+                                    value={loc}
+                                  >
+                                    {loc}
+                                  </option>
+                                ))}
                             </select>
                           ) : (
                             item.location
@@ -617,14 +695,21 @@ const formatDatePretty = (iso) => {
                           {editingRowId === item.equipment_id ? (
                             <select
                               value={editingData.status}
-                              onChange={(e) => handleInputChange("status", e.target.value)}
+                              onChange={(e) =>
+                                handleInputChange("status", e.target.value)
+                              }
                               className="inline-edit-select"
                             >
-                            {[...new Set(statuses)].filter(Boolean).map((status, i) => (
-                              <option key={`option-status-${status}-${i}`} value={status}>
-                                {status}
-                              </option>
-                            ))}
+                              {[...new Set(statusList)]
+                                .filter(Boolean)
+                                .map((status, i) => (
+                                  <option
+                                    key={`option-status-${status}-${i}`}
+                                    value={status}
+                                  >
+                                    {status}
+                                  </option>
+                                ))}
                             </select>
                           ) : (
                             <span
@@ -688,10 +773,13 @@ const formatDatePretty = (iso) => {
               title="Equipment Details"
               onSave={async (formData) => {
                 try {
-                  const res = await fetch(`${API_URL}/${detailItem.equipment_id}`, {
-                    method: "PUT",
-                    body: formData, // contains file + other fields
-                  });
+                  const res = await fetch(
+                    `${API_URL}/${detailItem.equipment_id}`,
+                    {
+                      method: "PUT",
+                      body: formData, // contains file + other fields
+                    }
+                  );
 
                   if (res.ok) {
                     await fetchEquipment();
@@ -704,31 +792,126 @@ const formatDatePretty = (iso) => {
                 }
               }}
               fields={[
-                { label: "Equipment Code", value: detailItem.equipment_code, name: "equipment_code", type: "text" },
-                { label: "Name", value: detailItem.name, name: "name", type: "text" },
-                { label: "Other Name", value: detailItem.other_name, name: "other_name", type: "text" },
-                { label: "Brand", value: detailItem.brand, name: "brand", type: "text" },
-                { label: "Model", value: detailItem.model, name: "model", type: "text" },
-                { label: "Serial No.", value: detailItem.serial_no, name: "serial_no", type: "text" },
-                { label: "Other Details", value: detailItem.other_details, name: "other_details", type: "text" },
-                { label: "Status", value: detailItem.status, name: "status", type: "text" },
-                { label: "Remarks", value: detailItem.remarks, name: "remarks", type: "text" },
-                { label: "Location", value: detailItem.location, name: "location", type: "text" },
-                { label: "Date Received", value: detailItem.date_received, name: "date_received", type: "date" },
-                { label: "Last Maintenance", value: detailItem.last_updated, name: "last_updated", type: "date" },
-                { label: "Next Maintenance", value: detailItem.maintenance_schedule, name: "maintenance_schedule", type: "date" },
-                { label: "Last Calibration", value: detailItem.last_calibration_date, name: "last_calibration_date", type: "date" },
-                { label: "Next Calibration", value: detailItem.next_calibration_date, name: "next_calibration_date", type: "date" },
-                { label: "PO No.", value: detailItem.po_no, name: "po_no", type: "text" },
+                {
+                  label: "Equipment Code",
+                  value: detailItem.equipment_code,
+                  name: "equipment_code",
+                  type: "text",
+                },
+                {
+                  label: "Name",
+                  value: detailItem.name,
+                  name: "name",
+                  type: "text",
+                },
+                {
+                  label: "Other Name",
+                  value: detailItem.other_name,
+                  name: "other_name",
+                  type: "text",
+                },
+                {
+                  label: "Brand",
+                  value: detailItem.brand,
+                  name: "brand",
+                  type: "text",
+                },
+                {
+                  label: "Model",
+                  value: detailItem.model,
+                  name: "model",
+                  type: "text",
+                },
+                {
+                  label: "Serial No.",
+                  value: detailItem.serial_no,
+                  name: "serial_no",
+                  type: "text",
+                },
+                {
+                  label: "Other Details",
+                  value: detailItem.other_details,
+                  name: "other_details",
+                  type: "text",
+                },
+                {
+                  label: "Status",
+                  value: detailItem.status,
+                  name: "status",
+                  type: "text",
+                },
+                {
+                  label: "Remarks",
+                  value: detailItem.remarks,
+                  name: "remarks",
+                  type: "text",
+                },
+                {
+                  label: "Location",
+                  value: detailItem.location,
+                  name: "location",
+                  type: "text",
+                },
+                {
+                  label: "Date Received",
+                  value: detailItem.date_received,
+                  name: "date_received",
+                  type: "date",
+                },
+                {
+                  label: "Last Maintenance",
+                  value: detailItem.last_updated,
+                  name: "last_updated",
+                  type: "date",
+                },
+                {
+                  label: "Next Maintenance",
+                  value: detailItem.maintenance_schedule,
+                  name: "maintenance_schedule",
+                  type: "date",
+                },
+                {
+                  label: "Last Calibration",
+                  value: detailItem.last_calibration_date,
+                  name: "last_calibration_date",
+                  type: "date",
+                },
+                {
+                  label: "Next Calibration",
+                  value: detailItem.next_calibration_date,
+                  name: "next_calibration_date",
+                  type: "date",
+                },
+                {
+                  label: "PO No.",
+                  value: detailItem.po_no,
+                  name: "po_no",
+                  type: "text",
+                },
                 {
                   label: "Purchase Price",
                   value: String(detailItem.purchase_price || ""),
                   name: "purchase_price",
                   type: "number",
                 },
-                { label: "Fund Source", value: detailItem.fund_source, name: "fund_source", type: "text" },
-                { label: "Supplier", value: detailItem.supplier, name: "supplier", type: "text" },
-                { label: "Supplier Contact", value: detailItem.supplier_contact, name: "supplier_contact", type: "text" },
+                {
+                  label: "Fund Source",
+                  value: detailItem.fund_source,
+                  name: "fund_source",
+                  type: "text",
+                },
+                {
+                  label: "Supplier",
+                  value: detailItem.supplier,
+                  name: "supplier",
+                  type: "text",
+                },
+                {
+                  label: "Supplier Contact",
+                  value: detailItem.supplier_contact,
+                  name: "supplier_contact",
+                  type: "text",
+                },
                 // {
                 //   label: "Manual Available",
                 //   value: detailItem.manual_available ? "Yes" : "No",
@@ -745,7 +928,6 @@ const formatDatePretty = (iso) => {
               ]}
             />
           )}
-
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { ChevronDown } from "lucide-react";
 
-const ConsumableForm = ({ initialData, onSave, onCancel }) => {
+const ConsumableForm = ({ initialData, onSave, onCancel, onAddLocation }) => {
   const [formData, setFormData] = useState({
     supplyItem: "",
     brand: "",
@@ -81,10 +81,17 @@ const ConsumableForm = ({ initialData, onSave, onCancel }) => {
   const handleAddOption = (field) => {
     const val = newValue[field].trim();
     if (!val) return;
+
     if (!locationList.includes(val)) {
-      setLocationList([...locationList, val]);
+      setLocationList((prev) => [...prev, val]);
       setFormData((prev) => ({ ...prev, [field]: val }));
+
+      // ✅ Call parent to update filter options in Consumables
+      if (field === "location" && typeof onAddLocation === "function") {
+        onAddLocation(val);
+      }
     }
+
     setAddingField((prev) => ({ ...prev, [field]: false }));
     setNewValue((prev) => ({ ...prev, [field]: "" }));
   };
