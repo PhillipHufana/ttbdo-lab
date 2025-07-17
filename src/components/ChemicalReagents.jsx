@@ -162,9 +162,9 @@ const ChemicalReagents = () => {
     const expDate = new Date(expirationDate);
     const diffDays = (expDate - today) / (1000 * 60 * 60 * 24);
 
-    if (diffDays < 0) return "exp-overdue"; // red
-    if (diffDays <= 30) return "exp-due-soon"; // orange/yellow
-    return "exp-on-track"; // green
+    if (diffDays < 0) return "exp-overdue";
+    if (diffDays <= 30) return "exp-due-soon";
+    return "exp-on-track";
   };
 
   // Date helpers
@@ -385,7 +385,6 @@ const ChemicalReagents = () => {
                   <span className="text-center">Date Opened</span>
                 </div>
                 {/* Expiration Date Header */}
-                {/* Expiration Date Header */}
                 <div className="header-cell filter-header" ref={expirationRef}>
                   <div
                     onClick={() =>
@@ -603,7 +602,6 @@ const ChemicalReagents = () => {
                         </div>
 
                         {/* Expiration Date */}
-                        {/* Expiration Date */}
                         <div className="row-cell flex-[1]">
                           {editingRowId === reagent.chemical_id ? (
                             <input
@@ -619,7 +617,7 @@ const ChemicalReagents = () => {
                             />
                           ) : (
                             <span
-                              className={`text-left ${getExpirationColor(
+                              className={`expiration-badge ${getExpirationColor(
                                 reagent.expiration_date
                               )}`}
                             >

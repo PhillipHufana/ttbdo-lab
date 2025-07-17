@@ -85,7 +85,7 @@ const Equipment = () => {
       : "";
   };
 
-  // Extra helpers 
+  // Extra helpers
   const isOverdue = (dateStr) => {
     if (!dateStr) return false;
     const today = new Date();
@@ -648,7 +648,6 @@ const Equipment = () => {
                         </div>
 
                         {/* Next Maintenance */}
-                        {/* Next Maintenance */}
                         <div className="row-cell">
                           {editingRowId === item.equipment_id ? (
                             <input
@@ -664,15 +663,16 @@ const Equipment = () => {
                             />
                           ) : (
                             <span
-                              className={
+                              className={`expiration-badge ${
                                 isOverdue(item.maintenance_schedule)
                                   ? "exp-overdue"
                                   : isDueSoon(item.maintenance_schedule)
                                   ? "exp-due-soon"
                                   : "exp-on-track"
-                              }
+                              }`}
                             >
-                              {formatDatePretty(item.maintenance_schedule)}
+                              {formatDatePretty(item.maintenance_schedule) ||
+                                "—"}
                             </span>
                           )}
                         </div>
@@ -712,15 +712,16 @@ const Equipment = () => {
                             />
                           ) : (
                             <span
-                              className={
+                              className={`expiration-badge ${
                                 isOverdue(item.next_calibration_date)
                                   ? "exp-overdue"
                                   : isDueSoon(item.next_calibration_date)
                                   ? "exp-due-soon"
                                   : "exp-on-track"
-                              }
+                              }`}
                             >
-                              {formatDatePretty(item.next_calibration_date)}
+                              {formatDatePretty(item.next_calibration_date) ||
+                                "—"}
                             </span>
                           )}
                         </div>

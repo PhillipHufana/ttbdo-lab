@@ -491,7 +491,7 @@ const Consumables = () => {
                           />
                         ) : (
                           <span
-                            className={`text-left ${getExpiryColorClass(
+                            className={`expiration-badge ${getExpiryColorClass(
                               item.expirationDate
                             )}`}
                           >
