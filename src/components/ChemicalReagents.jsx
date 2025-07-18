@@ -209,7 +209,7 @@ const ChemicalReagents = () => {
   };
 
   const handleSave = async () => {
-    // before saving, compute proper status
+    // Compute proper status (if needed)
     const expDate = new Date(
       editingItem?.expiration_date || editingData?.expiration_date
     );
@@ -218,17 +218,21 @@ const ChemicalReagents = () => {
 
     if (expDate < today) {
       if (statusToSave.includes("Opened")) statusToSave = "EXPIRED: Opened";
-      else if (statusToSave.includes("Unopened"))
-        statusToSave = "EXPIRED: Unopened";
-      else if (statusToSave.includes("Sealed"))
-        statusToSave = "EXPIRED: Sealed";
+      else if (statusToSave.includes("Unopened")) statusToSave = "EXPIRED: Unopened";
+      else if (statusToSave.includes("Sealed")) statusToSave = "EXPIRED: Sealed";
       else statusToSave = "EXPIRED: " + statusToSave;
     } else if (statusToSave?.startsWith("EXPIRED: ")) {
       statusToSave = statusToSave.replace("EXPIRED: ", "");
     }
 
-    // include statusToSave in your payload before sending to backend
+    // ✅ Refresh the reagent list
+    await fetchReagents();
+
+    // ✅ Close the form and reset editing
+    setShowForm(false);
+    setEditingItem(null);
   };
+
 
   const handleDelete = async (id) => {
     if (window.confirm("Delete?")) {
