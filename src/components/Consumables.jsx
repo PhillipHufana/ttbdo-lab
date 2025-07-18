@@ -18,9 +18,10 @@ const formatDateInput = (dateStr) =>
   typeof dateStr === "string" ? dateStr.slice(0, 10) : "";
 
 const formatDateReadable = (dateStr) => {
-  if (!dateStr) return "";
+  if (!dateStr) return "N/A";
   const [year, month, day] = dateStr.slice(0, 10).split("-");
   const date = new Date(`${year}-${month}-${day}T00:00:00`);
+  if (isNaN(date)) return "N/A";
   return date.toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -28,23 +29,19 @@ const formatDateReadable = (dateStr) => {
   });
 };
 
+
 // Decide the color class based on expiry
 const getExpiryColorClass = (dateStr) => {
-  if (!dateStr) return "";
+  if (!dateStr) return "N/A";
   const today = new Date();
   const expDate = new Date(dateStr);
-
-  if (expDate < today) {
-    return "exp-overdue";
-  }
-
+  if (isNaN(expDate)) return "N/A";
+  if (expDate < today) return "exp-overdue";
   const diffDays = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
-  if (diffDays <= 30) {
-    return "exp-due-soon";
-  }
-
+  if (diffDays <= 30) return "exp-due-soon";
   return "exp-on-track";
 };
+
 
 const Consumables = () => {
   // State

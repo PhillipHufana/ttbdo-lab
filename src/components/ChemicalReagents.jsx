@@ -157,7 +157,7 @@ const ChemicalReagents = () => {
   };
 
   const getExpirationColor = (expirationDate) => {
-    if (!expirationDate) return "";
+    if (!expirationDate) return "N/A";
     const today = new Date();
     const expDate = new Date(expirationDate);
     const diffDays = (expDate - today) / (1000 * 60 * 60 * 24);
@@ -171,6 +171,7 @@ const ChemicalReagents = () => {
   const formatDatePretty = (isoDateStr) => {
     if (!isoDateStr) return "N/A";
     const date = new Date(isoDateStr);
+    if (isNaN(date)) return "N/A";
     return date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",

@@ -66,7 +66,9 @@ const Equipment = () => {
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
     const target = new Date(dateValue);
+    if (isNaN(target.getTime())) return false;
     target.setHours(0, 0, 0, 0);
 
     const diffDays = (target - today) / (1000 * 60 * 60 * 24);
@@ -74,8 +76,10 @@ const Equipment = () => {
     if (category === "Overdue") return target < today;
     if (category === "Due Soon") return diffDays > 0 && diffDays <= 30;
     if (category === "On Track") return diffDays > 30;
-    return true;
+
+    return true; // Fallback
   };
+
 
   const getStatusColor = (status) => {
     return status === "Working"
@@ -88,18 +92,22 @@ const Equipment = () => {
   // Extra helpers
   const isOverdue = (dateStr) => {
     if (!dateStr) return false;
-    const today = new Date();
     const target = new Date(dateStr);
-    return target < today.setHours(0, 0, 0, 0);
+    if (isNaN(target.getTime())) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize
+    return target < today;
   };
 
   const isDueSoon = (dateStr) => {
     if (!dateStr) return false;
-    const today = new Date();
     const target = new Date(dateStr);
+    if (isNaN(target.getTime())) return false;
+    const today = new Date();
     const diffDays = (target - today) / (1000 * 60 * 60 * 24);
     return diffDays > 0 && diffDays <= 30;
   };
+
 
   // Fetch Data
   const fetchEquipment = async () => {
