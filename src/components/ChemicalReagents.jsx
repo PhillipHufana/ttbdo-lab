@@ -14,27 +14,16 @@ import DetailPopup from "./DetailPopup";
 const API_URL = "http://localhost:5000/api/chemical";
 
 const ChemicalReagents = () => {
+  // State
   const [reagents, setReagents] = useState([]);
+
+  // Filter values
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState([]);
   const [filterStatus, setFilterStatus] = useState([]);
   const [filterLocation, setFilterLocation] = useState([]);
-  const [showExpirationFilter, setShowExpirationFilter] = useState(false);
-  const [showForm, setShowForm] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
-  const [detailItem, setDetailItem] = useState(null);
-  const [editingRowId, setEditingRowId] = useState(null);
-  const [editingData, setEditingData] = useState({});
-  const [showCategoryFilter, setShowCategoryFilter] = useState(false);
-  const [showStatusFilter, setShowStatusFilter] = useState(false);
-  const [showLocationFilter, setShowLocationFilter] = useState(false);
-  const [expirationSortOrder, setExpirationSortOrder] = useState("");
 
-  const categoryRef = useRef(null);
-  const statusRef = useRef(null);
-  const locationRef = useRef(null);
-  const expirationRef = useRef(null);
-
+  // Predefined Filters
   const [categories, setCategories] = useState([
     "Lactic Acid",
     "Lactic Acid Fermentation",
@@ -42,7 +31,6 @@ const ChemicalReagents = () => {
     "Filtration and Purification",
     "Sugar Analysis",
   ]);
-
   const [statuses, setStatuses] = useState([
     "Opened",
     "Unopened",
@@ -50,99 +38,99 @@ const ChemicalReagents = () => {
     "EXPIRED: Unopened",
     "EXPIRED: Sealed",
   ]);
-
   const [locations, setLocations] = useState([
     "Table 2, Cabinet 4",
     "Shelf 2b",
     "Shelf 1d",
   ]);
-
   const [forms, setForms] = useState(["Solid", "Liquid"]);
-  
 
+  // UI Toggles
+  const [showForm, setShowForm] = useState(false);
+  const [showCategoryFilter, setShowCategoryFilter] = useState(false);
+  const [showStatusFilter, setShowStatusFilter] = useState(false);
+  const [showLocationFilter, setShowLocationFilter] = useState(false);
+  const [showExpirationFilter, setShowExpirationFilter] = useState(false);
+
+  // Sorting for expiration (if needed)
+  const [expirationSortOrder, setExpirationSortOrder] = useState("");
+
+  // Form and details
+  const [editingItem, setEditingItem] = useState(null);
+  const [detailItem, setDetailItem] = useState(null);
+
+  // Inline edit
+  const [editingRowId, setEditingRowId] = useState(null);
+  const [editingData, setEditingData] = useState({});
+
+  // Refs
+  const categoryRef = useRef(null);
+  const statusRef = useRef(null);
+  const locationRef = useRef(null);
+  const expirationRef = useRef(null);
+
+  // Effects
   useEffect(() => {
     fetchReagents();
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleClickOutside = (event) => {
-    if (categoryRef.current && !categoryRef.current.contains(event.target)) {
+  const handleClickOutside = (e) => {
+    if (categoryRef.current && !categoryRef.current.contains(e.target))
       setShowCategoryFilter(false);
-    }
-    if (statusRef.current && !statusRef.current.contains(event.target)) {
+    if (statusRef.current && !statusRef.current.contains(e.target))
       setShowStatusFilter(false);
-    }
-    if (locationRef.current && !locationRef.current.contains(event.target)) {
+    if (locationRef.current && !locationRef.current.contains(e.target))
       setShowLocationFilter(false);
-    }
-    if (
-      expirationRef.current &&
-      !expirationRef.current.contains(event.target)
-    ) {
+    if (expirationRef.current && !expirationRef.current.contains(e.target))
       setShowExpirationFilter(false);
-    }
   };
 
+  // Fetch data
   const fetchReagents = async () => {
     try {
       const res = await fetch(API_URL);
       const data = await res.json();
-      console.log("Fetched data:", data); // Check structure here
+      console.log("Fetched data:", data);
       setReagents(data);
     } catch (err) {
       console.error("Fetch failed:", err);
     }
   };
 
-  // const handleFilterChange = (type, value, checked) => {
-  //   if (type === "category") {
-  //     setFilterCategory((prev) =>
-  //       checked ? [...prev, value] : prev.filter((v) => v !== value)
-  //     );
-  //   } else if (type === "status") {
-  //     setFilterStatus((prev) =>
-  //       checked ? [...prev, value] : prev.filter((v) => v !== value)
-  //     );
-  //   } else if (type === "location") {
-  //     setFilterLocation((prev) =>
-  //       checked ? [...prev, value] : prev.filter((v) => v !== value)
-  //     );
-  //   }
-  // };
-
+  // Filtering
   const filteredReagents = reagents.filter((r) => {
     const matchesSearch =
-      r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.location.toLowerCase().includes(searchTerm.toLowerCase());
+      (r.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (r.category || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (r.location || "").toLowerCase().includes(searchTerm.toLowerCase());
+
     const matchesCategory =
       filterCategory.length === 0 || filterCategory.includes(r.category);
     const matchesStatus =
       filterStatus.length === 0 || filterStatus.includes(r.status);
     const matchesLocation =
       filterLocation.length === 0 || filterLocation.includes(r.location);
+
     return matchesSearch && matchesCategory && matchesStatus && matchesLocation;
   });
 
   const handleFilterChange = (filterType, value, checked) => {
+    const update = (prev) =>
+      checked ? [...prev, value] : prev.filter((item) => item !== value);
+
     switch (filterType) {
       case "category":
-        setFilterCategory((prev) =>
-          checked ? [...prev, value] : prev.filter((item) => item !== value)
-        );
+        setFilterCategory(update);
         setShowCategoryFilter(false);
         break;
       case "status":
-        setFilterStatus((prev) =>
-          checked ? [...prev, value] : prev.filter((item) => item !== value)
-        );
+        setFilterStatus(update);
         setShowStatusFilter(false);
         break;
       case "location":
-        setFilterLocation((prev) =>
-          checked ? [...prev, value] : prev.filter((item) => item !== value)
-        );
+        setFilterLocation(update);
         setShowLocationFilter(false);
         break;
       default:
@@ -150,87 +138,7 @@ const ChemicalReagents = () => {
     }
   };
 
-  const handleAdd = () => {
-    setEditingItem(null);
-    setShowForm(true);
-  };
-
-  const handleEdit = (reagent) => {
-    setEditingItem(reagent);
-    setShowForm(true);
-  };
-
-  // const handleSave = async (data) => {
-  //   const isFormData = data instanceof FormData;
-  //   const isEdit = !!editingItem;
-  //   const method = isEdit ? "PUT" : "POST";
-  //   const url = isEdit ? `${API_URL}/${editingItem.chemical_id}` : API_URL;
-
-  //   const res = await fetch(url, {
-  //     method,
-  //     ...(isFormData ? {} : { headers: { "Content-Type": "application/json" } }),
-  //     body: isFormData ? data : JSON.stringify(data),
-  //   });
-
-  //   if (res.ok) {
-  //     await fetchReagents();        // ✅ single source of truth
-  //     setShowForm(false);
-  //     setEditingItem(null);
-  //     setDetailItem(null);
-  //   } else {
-  //     console.error(await res.text());
-  //   }
-  // };
-  const handleSave = async () => {
-    await fetchReagents(); // ✅ refresh from DB
-    setShowForm(false);
-    setEditingItem(null);
-    setDetailItem(null);
-  };
-
-  const handleDelete = async (id) => {
-    if (window.confirm("Delete?")) {
-      const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
-      if (res.ok) fetchReagents();
-    }
-  };
-
-  const handleInlineEdit = (r) => {
-    setEditingRowId(r.chemical_id);
-    setEditingData({ ...r });
-  };
-
-  const handleSaveInlineEdit = async () => {
-    const res = await fetch(`${API_URL}/${editingRowId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(editingData),
-    });
-    if (res.ok) {
-      await fetchReagents();
-      setEditingRowId(null);
-      setEditingData({});
-    }
-  };
-
-  const handleCancelInlineEdit = () => {
-    setEditingRowId(null);
-    setEditingData({});
-  };
-
-  const handleInputChange = (field, value) => {
-    setEditingData({ ...editingData, [field]: value });
-  };
-
-  const handleViewDetails = (r) => {
-    setDetailItem(r);
-  };
-
-  const handleCancel = () => {
-    setShowForm(false);
-    setEditingItem(null);
-  };
-
+  // Color helpers
   const getStatusColor = (s) => {
     switch (s) {
       case "Opened":
@@ -248,14 +156,138 @@ const ChemicalReagents = () => {
     }
   };
 
+  const getExpirationColor = (expirationDate) => {
+    if (!expirationDate) return "N/A";
+    const today = new Date();
+    const expDate = new Date(expirationDate);
+    const diffDays = (expDate - today) / (1000 * 60 * 60 * 24);
+
+    if (diffDays < 0) return "exp-overdue";
+    if (diffDays <= 30) return "exp-due-soon";
+    return "exp-on-track";
+  };
+
+  // Date helpers
   const formatDatePretty = (isoDateStr) => {
     if (!isoDateStr) return "N/A";
     const date = new Date(isoDateStr);
+    if (isNaN(date)) return "N/A";
     return date.toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
       day: "numeric",
     });
+  };
+
+  // Dynamically compute status
+  const computeStatus = (item) => {
+    if (!item.expiration_date) return item.status;
+    const expDate = new Date(item.expiration_date);
+    const today = new Date();
+
+    if (expDate < today) {
+      if (item.status.includes("Opened")) return "EXPIRED: Opened";
+      if (item.status.includes("Unopened")) return "EXPIRED: Unopened";
+      if (item.status.includes("Sealed")) return "EXPIRED: Sealed";
+      return "EXPIRED: " + item.status;
+    }
+    if (item.status.startsWith("EXPIRED: ")) {
+      return item.status.replace("EXPIRED: ", "");
+    }
+    return item.status;
+  };
+
+  // Handlers
+  const handleAdd = () => {
+    setEditingItem(null);
+    setShowForm(true);
+  };
+
+  const handleEdit = (reagent) => {
+    setEditingItem(reagent);
+    setShowForm(true);
+  };
+
+  const handleSave = async () => {
+    // before saving, compute proper status
+    const expDate = new Date(
+      editingItem?.expiration_date || editingData?.expiration_date
+    );
+    const today = new Date();
+    let statusToSave = editingItem?.status || editingData?.status;
+
+    if (expDate < today) {
+      if (statusToSave.includes("Opened")) statusToSave = "EXPIRED: Opened";
+      else if (statusToSave.includes("Unopened"))
+        statusToSave = "EXPIRED: Unopened";
+      else if (statusToSave.includes("Sealed"))
+        statusToSave = "EXPIRED: Sealed";
+      else statusToSave = "EXPIRED: " + statusToSave;
+    } else if (statusToSave?.startsWith("EXPIRED: ")) {
+      statusToSave = statusToSave.replace("EXPIRED: ", "");
+    }
+
+    // include statusToSave in your payload before sending to backend
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm("Delete?")) {
+      const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+      if (res.ok) fetchReagents();
+    }
+  };
+
+  const handleInlineEdit = (r) => {
+    setEditingRowId(r.chemical_id);
+    setEditingData({ ...r });
+  };
+
+  const handleSaveInlineEdit = async () => {
+    // compute status before saving
+    let updatedStatus = editingData.status;
+    if (editingData.expiration_date) {
+      const expDate = new Date(editingData.expiration_date);
+      const today = new Date();
+      if (expDate < today) {
+        if (updatedStatus.includes("Opened")) updatedStatus = "EXPIRED: Opened";
+        else if (updatedStatus.includes("Unopened"))
+          updatedStatus = "EXPIRED: Unopened";
+        else if (updatedStatus.includes("Sealed"))
+          updatedStatus = "EXPIRED: Sealed";
+        else updatedStatus = "EXPIRED: " + updatedStatus;
+      } else if (updatedStatus.startsWith("EXPIRED: ")) {
+        updatedStatus = updatedStatus.replace("EXPIRED: ", "");
+      }
+    }
+
+    const payload = { ...editingData, status: updatedStatus };
+    const res = await fetch(`${API_URL}/${editingRowId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      await fetchReagents();
+      setEditingRowId(null);
+      setEditingData({});
+    }
+  };
+
+  const handleCancelInlineEdit = () => {
+    setEditingRowId(null);
+    setEditingData({});
+  };
+
+  const handleInputChange = (field, value) => {
+    setEditingData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleViewDetails = (r) => setDetailItem(r);
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditingItem(null);
   };
 
   return (
@@ -308,6 +340,7 @@ const ChemicalReagents = () => {
               />
             </div>
           ) : (
+            <div className="table-responsive">
             <div className="modern-table">
               <div className="table-header">
                 {/* Existing Headers */}
@@ -350,10 +383,9 @@ const ChemicalReagents = () => {
                     </div>
                   )}
                 </div>
-                <div className="header-cell">
+                <div className="header-cell hide-mobile">
                   <span className="text-center">Date Opened</span>
                 </div>
-                {/* Expiration Date Header */}
                 {/* Expiration Date Header */}
                 <div className="header-cell filter-header" ref={expirationRef}>
                   <div
@@ -409,7 +441,7 @@ const ChemicalReagents = () => {
                   )}
                 </div>
 
-                <div className="header-cell">
+                <div className="header-cell hide-mobile">
                   <span className="text-center">Container Size</span>
                 </div>
                 <div className="header-cell filter-header" ref={locationRef}>
@@ -530,7 +562,7 @@ const ChemicalReagents = () => {
                         </div>
 
                         {/* Category */}
-                        <div className="row-cell flex-[1.2]">
+                        <div className="row-cell flex-[1.2]" data-label="Category">
                           {editingRowId === reagent.chemical_id ? (
                             <select
                               value={editingData.category}
@@ -553,7 +585,7 @@ const ChemicalReagents = () => {
                         </div>
 
                         {/* Date Opened */}
-                        <div className="row-cell flex-[1]">
+                        <div className="row-cell flex-[1] hide-mobile">
                           {editingRowId === reagent.chemical_id ? (
                             <input
                               type="date"
@@ -572,7 +604,7 @@ const ChemicalReagents = () => {
                         </div>
 
                         {/* Expiration Date */}
-                        <div className="row-cell flex-[1]">
+                        <div className="row-cell flex-[1]" data-label="Exp. Date">
                           {editingRowId === reagent.chemical_id ? (
                             <input
                               type="date"
@@ -586,14 +618,18 @@ const ChemicalReagents = () => {
                               className="inline-edit-input"
                             />
                           ) : (
-                            <span className="text-left">
+                            <span
+                              className={`expiration-badge ${getExpirationColor(
+                                reagent.expiration_date
+                              )}`}
+                            >
                               {formatDatePretty(reagent.expiration_date)}
                             </span>
                           )}
                         </div>
 
                         {/* Container Size */}
-                        <div className="row-cell flex-[0.8]">
+                        <div className="row-cell flex-[0.8] hide-mobile">
                           {editingRowId === reagent.chemical_id ? (
                             <input
                               type="text"
@@ -614,7 +650,7 @@ const ChemicalReagents = () => {
                         </div>
 
                         {/* Location */}
-                        <div className="row-cell flex-[1]">
+                        <div className="row-cell flex-[1]" data-label="Location">
                           {editingRowId === reagent.chemical_id ? (
                             <select
                               value={editingData.location}
@@ -637,7 +673,7 @@ const ChemicalReagents = () => {
                         </div>
 
                         {/* Status */}
-                        <div className="row-cell flex-[1]">
+                        <div className="row-cell flex-[1]" data-label="Status">
                           {editingRowId === reagent.chemical_id ? (
                             <select
                               value={editingData.status}
@@ -655,10 +691,10 @@ const ChemicalReagents = () => {
                           ) : (
                             <span
                               className={`status-badge ${getStatusColor(
-                                reagent.status
+                                computeStatus(reagent)
                               )}`}
                             >
-                              {reagent.status}
+                              {computeStatus(reagent)}
                             </span>
                           )}
                         </div>
@@ -707,6 +743,7 @@ const ChemicalReagents = () => {
                     ))}
                 </div>
               </div>
+            </div>
             </div>
           )}
           {detailItem && (

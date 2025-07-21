@@ -13,13 +13,15 @@ import DetailPopup from "./DetailPopup";
 
 const API_URL = "http://localhost:5000/api/consumable";
 
+// Helpers
 const formatDateInput = (dateStr) =>
   typeof dateStr === "string" ? dateStr.slice(0, 10) : "";
 
 const formatDateReadable = (dateStr) => {
-  if (!dateStr) return "";
+  if (!dateStr) return "N/A";
   const [year, month, day] = dateStr.slice(0, 10).split("-");
   const date = new Date(`${year}-${month}-${day}T00:00:00`);
+  if (isNaN(date)) return "N/A";
   return date.toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -27,25 +29,51 @@ const formatDateReadable = (dateStr) => {
   });
 };
 
+
+// Decide the color class based on expiry
+const getExpiryColorClass = (dateStr) => {
+  if (!dateStr) return "N/A";
+  const today = new Date();
+  const expDate = new Date(dateStr);
+  if (isNaN(expDate)) return "N/A";
+  if (expDate < today) return "exp-overdue";
+  const diffDays = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
+  if (diffDays <= 30) return "exp-due-soon";
+  return "exp-on-track";
+};
+
+
 const Consumables = () => {
+  // State
+  const [consumables, setConsumables] = useState([]);
+  const [locations, setLocations] = useState([]);
+
+  // Filters
   const [searchTerm, setSearchTerm] = useState("");
   const [filterLocation, setFilterLocation] = useState([]);
-  const [showExpirationFilter, setShowExpirationFilter] = useState(false);
+  const [expirationSortOrder, setExpirationSortOrder] = useState("");
+
+  // UI Toggles
   const [showForm, setShowForm] = useState(false);
+  const [showLocationFilter, setShowLocationFilter] = useState(false);
+  const [showExpirationFilter, setShowExpirationFilter] = useState(false);
+
+  // Editing & Details
   const [editingItem, setEditingItem] = useState(null);
   const [detailItem, setDetailItem] = useState(null);
   const [editingRowId, setEditingRowId] = useState(null);
   const [editingData, setEditingData] = useState({});
-  const [showLocationFilter, setShowLocationFilter] = useState(false);
-  const [expirationSortOrder, setExpirationSortOrder] = useState("");
-  const [locations, setLocations] = useState([]);
-  const [consumables, setConsumables] = useState([]);
-  
 
+  // Refs
+  const locationRef = useRef(null);
+  const expirationRef = useRef(null);
+
+  // Fetch Data
   const fetchConsumables = async () => {
     try {
       const res = await fetch(API_URL);
       const data = await res.json();
+
       const formatted = data.map((item) => ({
         id: item.supply_id,
         supplyItem: item.name,
@@ -65,8 +93,11 @@ const Consumables = () => {
         supplier: item.supplier,
         location: item.location,
       }));
+
       setConsumables(formatted);
-      setLocations([...new Set(formatted.map((item) => item.location))]); // <-- update locations
+      setLocations([
+        ...new Set(formatted.map((item) => item.location).filter(Boolean)),
+      ]);
     } catch (err) {
       console.error("Fetch error:", err);
     }
@@ -74,6 +105,7 @@ const Consumables = () => {
 
   useEffect(() => {
     fetchConsumables();
+
     const handleClickOutside = (event) => {
       if (locationRef.current && !locationRef.current.contains(event.target)) {
         setShowLocationFilter(false);
@@ -85,15 +117,20 @@ const Consumables = () => {
         setShowExpirationFilter(false);
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  // Filtering
   const filteredConsumables = consumables.filter((item) => {
     const matchesSearch =
-      item.supplyItem.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.location.toLowerCase().includes(searchTerm.toLowerCase());
+      (item.supplyItem || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      (item.location || "").toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesLocation =
       filterLocation.length === 0 || filterLocation.includes(item.location);
@@ -101,6 +138,7 @@ const Consumables = () => {
     return matchesSearch && matchesLocation;
   });
 
+  // Handlers
   const handleAdd = () => {
     setEditingItem(null);
     setShowForm(true);
@@ -109,6 +147,7 @@ const Consumables = () => {
   const handleSave = async (formData) => {
     const method = editingItem ? "PUT" : "POST";
     const url = editingItem ? `${API_URL}/${editingItem.id}` : API_URL;
+
     const payload = {
       name: formData.supplyItem,
       category: formData.category || "Consumable",
@@ -182,12 +221,10 @@ const Consumables = () => {
   };
 
   const handleInputChange = (field, value) => {
-    setEditingData({ ...editingData, [field]: value });
+    setEditingData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleViewDetails = (item) => {
-    setDetailItem(item);
-  };
+  const handleViewDetails = (item) => setDetailItem(item);
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this consumable?")) {
@@ -208,9 +245,6 @@ const Consumables = () => {
       );
     }
   };
-
-  const locationRef = useRef(null);
-  const expirationRef = useRef(null);
 
   return (
     <div className="content-section">
@@ -251,6 +285,7 @@ const Consumables = () => {
             />
           </div>
         ) : (
+          <div className="table-responsive">
           <div className="modern-table">
             <div className="table-header">
               <div className="header-cell">
@@ -259,10 +294,10 @@ const Consumables = () => {
               <div className="header-cell">
                 <span>Remaining Quantity</span>
               </div>
-              <div className="header-cell">
+              <div className="header-cell hide-mobile">
                 <span>Total Quantity</span>
               </div>
-              <div className="header-cell">
+              <div className="header-cell hide-mobile">
                 <span>Date Opened</span>
               </div>
               <div className="header-cell filter-header" ref={expirationRef}>
@@ -367,7 +402,7 @@ const Consumables = () => {
                         new Date(a.expirationDate || 0)
                       );
                     } else {
-                      // default alphabetical
+                      // alphabetical
                       return a.supplyItem.localeCompare(b.supplyItem);
                     }
                   })
@@ -390,7 +425,7 @@ const Consumables = () => {
                           <div className="item-brand">{item.brand}</div>
                         </div>
                       </div>
-                      <div className="row-cell">
+                      <div className="row-cell" data-label="Rem. Quantity">
                         {editingRowId === item.id ? (
                           <input
                             type="number"
@@ -407,7 +442,7 @@ const Consumables = () => {
                           item.remainingQuantity
                         )}
                       </div>
-                      <div className="row-cell">
+                      <div className="row-cell hide-mobile">
                         {editingRowId === item.id ? (
                           <input
                             type="number"
@@ -421,7 +456,7 @@ const Consumables = () => {
                           item.quantity
                         )}
                       </div>
-                      <div className="row-cell">
+                      <div className="row-cell hide-mobile">
                         {editingRowId === item.id ? (
                           <input
                             type="date"
@@ -439,7 +474,7 @@ const Consumables = () => {
                         )}
                       </div>
 
-                      <div className="row-cell">
+                      <div className="row-cell" data-label="Exp. Date">
                         {editingRowId === item.id ? (
                           <input
                             type="date"
@@ -453,13 +488,17 @@ const Consumables = () => {
                             className="inline-edit-input"
                           />
                         ) : (
-                          <span className="text-left">
-                            {formatDateReadable(item.expirationDate)}
+                          <span
+                            className={`expiration-badge ${getExpiryColorClass(
+                              item.expirationDate
+                            )}`}
+                          >
+                            {formatDateReadable(item.expirationDate) || "—"}
                           </span>
                         )}
                       </div>
 
-                      <div className="row-cell">
+                      <div className="row-cell" data-label="Location">
                         {editingRowId === item.id ? (
                           <select
                             value={editingData.location}
@@ -519,6 +558,7 @@ const Consumables = () => {
                   ))}
               </div>
             </div>
+          </div>
           </div>
         )}
         {detailItem && (
@@ -586,23 +626,25 @@ const Consumables = () => {
                 value: detailItem.location,
               },
             ]}
-            onSave={async (updatedFields) => {
+            onSave={async (formData) => {
+              const raw = Object.fromEntries(formData.entries());
+
               const payload = {
-                name: updatedFields.supplyItem, // ✅ now using the updated value
+                name: raw.supplyItem,
                 category: detailItem.category || "Consumable",
-                brand: updatedFields.brand,
-                description: updatedFields.description,
-                quantity: Number(updatedFields.quantity),
-                remaining_qty: Number(updatedFields.remainingQuantity),
-                date_received: formatDateInput(updatedFields.dateReceived),
-                date_opened: formatDateInput(updatedFields.dateOpened),
-                expiration_date: formatDateInput(updatedFields.expirationDate),
-                po_no: updatedFields.poNo,
-                unit_price: parseFloat(updatedFields.price),
-                total_price: parseFloat(updatedFields.totalPrice),
-                received_by: updatedFields.receivedBy,
-                supplier: updatedFields.supplier,
-                location: updatedFields.location,
+                brand: raw.brand,
+                description: raw.description,
+                quantity: Number(raw.quantity),
+                remaining_qty: Number(raw.remainingQuantity),
+                date_received: formatDateInput(raw.dateReceived),
+                date_opened: formatDateInput(raw.dateOpened),
+                expiration_date: formatDateInput(raw.expirationDate),
+                po_no: raw.poNo,
+                unit_price: parseFloat(raw.price),
+                total_price: parseFloat(raw.totalPrice),
+                received_by: raw.receivedBy,
+                supplier: raw.supplier,
+                location: raw.location,
                 unit: detailItem.unit,
               };
 

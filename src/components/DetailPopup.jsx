@@ -13,7 +13,8 @@ const DetailPopup = ({ item, onClose, fields, title, onSave }) => {
     setEditedFields(fields);
     setErrors({});
     setIsEditing(false);
-  }, [fields]);
+  }, [item]); // 🔁 was [fields]
+
 
   const validateField = (field, value) => {
     if (field.type === "number" && isNaN(Number(value))) {

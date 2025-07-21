@@ -16,10 +16,18 @@ const API_URL = "http://localhost:5000/api/equipment";
 const Equipment = () => {
   const [equipment, setEquipment] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Filters
   const [filterStatus, setFilterStatus] = useState([]);
   const [filterLocation, setFilterLocation] = useState([]);
   const [filterLastMaintenance, setFilterLastMaintenance] = useState("");
   const [filterLastCalibration, setFilterLastCalibration] = useState("");
+  const [filterNextMaintenanceStatus, setFilterNextMaintenanceStatus] =
+    useState("");
+  const [filterNextCalibrationStatus, setFilterNextCalibrationStatus] =
+    useState("");
+
+  // UI toggles
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [detailItem, setDetailItem] = useState(null);
@@ -28,11 +36,19 @@ const Equipment = () => {
   const [showStatusFilter, setShowStatusFilter] = useState(false);
   const [showLocationFilter, setShowLocationFilter] = useState(false);
   const [showScheduleFilter, setShowScheduleFilter] = useState(null);
-  const [filterNextMaintenanceStatus, setFilterNextMaintenanceStatus] =
-    useState("");
-  const [filterNextCalibrationStatus, setFilterNextCalibrationStatus] =
-    useState("");
 
+  // Lists for filter options
+  const [statusList, setStatusList] = useState([]);
+  const [locationList, setLocationList] = useState([]);
+
+  const locationRef = useRef(null);
+  const statusRef = useRef(null);
+  const lastMaintRef = useRef(null);
+  const nextMaintRef = useRef(null);
+  const lastCalibRef = useRef(null);
+  const nextCalibRef = useRef(null);
+
+  // Helpers
   const formatDatePretty = (iso) => {
     if (!iso) return "N/A";
     const date = new Date(iso);
@@ -44,16 +60,56 @@ const Equipment = () => {
     });
   };
 
-  const [statusList, setStatusList] = useState([]);
-  const [locationList, setLocationList] = useState([]);
+  const matchesUpcomingCategory = (dateValue, category) => {
+    if (!category) return true;
+    if (!dateValue) return false;
 
-  const locationRef = useRef(null);
-  const statusRef = useRef(null);
-  const lastMaintRef = useRef(null);
-  const nextMaintRef = useRef(null);
-  const lastCalibRef = useRef(null);
-  const nextCalibRef = useRef(null);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
+    const target = new Date(dateValue);
+    if (isNaN(target.getTime())) return false;
+    target.setHours(0, 0, 0, 0);
+
+    const diffDays = (target - today) / (1000 * 60 * 60 * 24);
+
+    if (category === "Overdue") return target < today;
+    if (category === "Due Soon") return diffDays > 0 && diffDays <= 30;
+    if (category === "On Track") return diffDays > 30;
+
+    return true; // Fallback
+  };
+
+
+  const getStatusColor = (status) => {
+    return status === "Working"
+      ? "status-working"
+      : status === "To be fixed"
+      ? "status-tobefixed"
+      : "";
+  };
+
+  // Extra helpers
+  const isOverdue = (dateStr) => {
+    if (!dateStr) return false;
+    const target = new Date(dateStr);
+    if (isNaN(target.getTime())) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize
+    return target < today;
+  };
+
+  const isDueSoon = (dateStr) => {
+    if (!dateStr) return false;
+    const target = new Date(dateStr);
+    if (isNaN(target.getTime())) return false;
+    const today = new Date();
+    const diffDays = (target - today) / (1000 * 60 * 60 * 24);
+    return diffDays > 0 && diffDays <= 30;
+  };
+
+
+  // Fetch Data
   const fetchEquipment = async () => {
     try {
       const res = await fetch(API_URL);
@@ -68,12 +124,6 @@ const Equipment = () => {
     } catch (err) {
       console.error("Fetch equipment error:", err);
     }
-  };
-
-  const closeAllFilters = () => {
-    setShowLocationFilter(false);
-    setShowStatusFilter(false);
-    setShowScheduleFilter(null);
   };
 
   useEffect(() => {
@@ -96,28 +146,13 @@ const Equipment = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const matchesUpcomingCategory = (dateValue, category) => {
-    if (!category) return true; // no filter selected
-    if (!dateValue) return false;
-
-    const today = new Date();
-    const target = new Date(dateValue);
-    if (isNaN(target.getTime())) return false;
-
-    const diffDays = (target - today) / (1000 * 60 * 60 * 24);
-
-    switch (category) {
-      case "Overdue":
-        return target < today;
-      case "Due Soon":
-        return diffDays >= 0 && diffDays <= 30;
-      case "On Track":
-        return diffDays > 30;
-      default:
-        return true;
-    }
+  const closeAllFilters = () => {
+    setShowLocationFilter(false);
+    setShowStatusFilter(false);
+    setShowScheduleFilter(null);
   };
 
+  // Filtering
   const filteredEquipment = equipment.filter((item) => {
     const matchesSearch =
       (item.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -152,19 +187,12 @@ const Equipment = () => {
     );
   });
 
+  // Handlers
   const handleFilterChange = (type, value, checked) => {
     const updater = (prev) =>
       checked ? [...prev, value] : prev.filter((i) => i !== value);
     if (type === "status") setFilterStatus(updater);
     if (type === "location") setFilterLocation(updater);
-  };
-
-  const getStatusColor = (status) => {
-    return status === "Working"
-      ? "status-working"
-      : status === "To be fixed"
-      ? "status-tobefixed"
-      : "";
   };
 
   const handleAdd = () => {
@@ -178,11 +206,7 @@ const Equipment = () => {
   };
 
   const handleSaveInlineEdit = async () => {
-    const payload = {
-      ...editingData,
-      // manual_available: editingData.manual_available ? 1 : 0,
-    };
-
+    const payload = { ...editingData };
     const res = await fetch(`${API_URL}/${editingRowId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -207,9 +231,7 @@ const Equipment = () => {
     setEditingData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleViewDetails = (item) => {
-    setDetailItem(item);
-  };
+  const handleViewDetails = (item) => setDetailItem(item);
 
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this equipment?")) {
@@ -218,9 +240,9 @@ const Equipment = () => {
       else console.error(await res.text());
     }
   };
-  // ✅ PARENT
+
   const handleSave = (saved) => {
-    console.log("✅ Parent got:", saved);
+    console.log("Parent got:", saved);
     setEquipment((prev) => [...prev, saved]);
     setShowForm(false);
     setEditingItem(null);
@@ -272,496 +294,530 @@ const Equipment = () => {
               />
             </div>
           ) : (
-            <div className="modern-table">
-              <div className="table-header">
-                <div className="header-cell">
-                  <span>Equipment</span>
-                </div>
-                <div className="header-cell">
-                  <span>Code</span>
-                </div>
-                <div className="header-cell">
-                  <span>Model</span>
-                </div>
-                <div className="header-cell filter-header" ref={locationRef}>
+            <div className="table-responsive">
+              <div className="modern-table">
+                <div className="table-header">
+                  <div className="header-cell">
+                    <span>Equipment</span>
+                  </div>
+                  <div className="header-cell hide-mobile">
+                    <span>Code</span>
+                  </div>
+                  <div className="header-cell hide-mobile">
+                    <span>Model</span>
+                  </div>
+                  <div className="header-cell filter-header" ref={locationRef}>
+                    <div
+                      onClick={() => {
+                        setShowStatusFilter(false);
+                        setShowScheduleFilter(null);
+                        setShowLocationFilter((prev) => !prev);
+                      }}
+                    >
+                      <span className="text-center">Location</span>
+                      <ChevronDown
+                        size={16}
+                        className={`filter-arrow ${
+                          showLocationFilter ? "rotated" : ""
+                        }`}
+                      />
+                    </div>
+                    {showLocationFilter && (
+                      <div
+                        className="filter-dropdown"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {locationList.map((loc, i) => (
+                          <label
+                            key={`filter-location-${loc}-${i}`}
+                            className="filter-option"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={filterLocation.includes(loc)}
+                              onChange={(e) =>
+                                handleFilterChange(
+                                  "location",
+                                  loc,
+                                  e.target.checked
+                                )
+                              }
+                            />
+                            {loc}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   <div
+                    className="header-cell filter-header hide-mobile"
+                    ref={lastMaintRef}
+                  >
+                    <div
+                      onClick={() =>
+                        setShowScheduleFilter(
+                          showScheduleFilter === "Last Maint."
+                            ? null
+                            : "Last Maint."
+                        )
+                      }
+                    >
+                      <span>Last Maint.</span>
+                      <ChevronDown
+                        size={16}
+                        className={`filter-arrow ${
+                          showScheduleFilter === "Last Maint." ? "rotated" : ""
+                        }`}
+                      />
+                    </div>
+                    {showScheduleFilter === "Last Maint." && (
+                      <div
+                        className="filter-dropdown"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          type="month"
+                          value={filterLastMaintenance}
+                          onChange={(e) => {
+                            setFilterLastMaintenance(e.target.value);
+                            setShowScheduleFilter(null);
+                          }}
+                          className="month-input"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="header-cell filter-header" ref={nextMaintRef}>
+                    <div
+                      onClick={() =>
+                        setShowScheduleFilter(
+                          showScheduleFilter === "Next Maint."
+                            ? null
+                            : "Next Maint."
+                        )
+                      }
+                    >
+                      <span>Next Maint.</span>
+                      <ChevronDown
+                        size={16}
+                        className={`filter-arrow ${
+                          showScheduleFilter === "Next Maint." ? "rotated" : ""
+                        }`}
+                      />
+                    </div>
+                    {showScheduleFilter === "Next Maint." && (
+                      <div
+                        className="filter-dropdown"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {["Overdue", "Due Soon", "On Track"].map((option) => (
+                          <label key={option} className="filter-option">
+                            <input
+                              type="checkbox"
+                              checked={filterNextMaintenanceStatus === option}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setFilterNextMaintenanceStatus(option);
+                                } else {
+                                  // unchecking clears
+                                  setFilterNextMaintenanceStatus("");
+                                }
+                                setShowScheduleFilter(null);
+                              }}
+                            />
+                            {option}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div
+                    className="header-cell filter-header hide-mobile"
+                    ref={lastCalibRef}
+                  >
+                    <div
+                      onClick={() =>
+                        setShowScheduleFilter(
+                          showScheduleFilter === "Last Calib."
+                            ? null
+                            : "Last Calib."
+                        )
+                      }
+                    >
+                      <span>Last Calib.</span>
+                      <ChevronDown
+                        size={16}
+                        className={`filter-arrow ${
+                          showScheduleFilter === "Last Calib." ? "rotated" : ""
+                        }`}
+                      />
+                    </div>
+                    {showScheduleFilter === "Last Calib." && (
+                      <div
+                        className="filter-dropdown"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          type="month"
+                          value={filterLastCalibration}
+                          onChange={(e) => {
+                            setFilterLastCalibration(e.target.value);
+                            setShowScheduleFilter(null);
+                          }}
+                          className="month-input"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="header-cell filter-header" ref={nextCalibRef}>
+                    <div
+                      onClick={() =>
+                        setShowScheduleFilter(
+                          showScheduleFilter === "Next Calib."
+                            ? null
+                            : "Next Calib."
+                        )
+                      }
+                    >
+                      <span>Next Calib.</span>
+                      <ChevronDown
+                        size={16}
+                        className={`filter-arrow ${
+                          showScheduleFilter === "Next Calib." ? "rotated" : ""
+                        }`}
+                      />
+                    </div>
+                    {showScheduleFilter === "Next Calib." && (
+                      <div
+                        className="filter-dropdown"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {["Overdue", "Due Soon", "On Track"].map((option) => (
+                          <label key={option} className="filter-option">
+                            <input
+                              type="checkbox"
+                              checked={filterNextCalibrationStatus === option}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setFilterNextCalibrationStatus(option);
+                                } else {
+                                  // unchecking clears
+                                  setFilterNextCalibrationStatus("");
+                                }
+                                setShowScheduleFilter(null);
+                              }}
+                            />
+                            {option}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div
+                    className="header-cell filter-header"
+                    ref={statusRef}
                     onClick={() => {
-                      setShowStatusFilter(false);
+                      setShowStatusFilter((prev) => !prev);
+                      setShowLocationFilter(false);
                       setShowScheduleFilter(null);
-                      setShowLocationFilter((prev) => !prev);
                     }}
                   >
-                    <span className="text-center">Location</span>
+                    <span>Status</span>
                     <ChevronDown
                       size={16}
                       className={`filter-arrow ${
-                        showLocationFilter ? "rotated" : ""
+                        showStatusFilter ? "rotated" : ""
                       }`}
                     />
-                  </div>
-                  {showLocationFilter && (
-                    <div
-                      className="filter-dropdown"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {locationList.map((loc, i) => (
-                        <label
-                          key={`filter-location-${loc}-${i}`}
-                          className="filter-option"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={filterLocation.includes(loc)}
-                            onChange={(e) =>
-                              handleFilterChange(
-                                "location",
-                                loc,
-                                e.target.checked
-                              )
-                            }
-                          />
-                          {loc}
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="header-cell filter-header" ref={lastMaintRef}>
-                  <div
-                    onClick={() =>
-                      setShowScheduleFilter(
-                        showScheduleFilter === "Last Maint."
-                          ? null
-                          : "Last Maint."
-                      )
-                    }
-                  >
-                    <span>Last Maint.</span>
-                    <ChevronDown
-                      size={16}
-                      className={`filter-arrow ${
-                        showScheduleFilter === "Last Maint." ? "rotated" : ""
-                      }`}
-                    />
-                  </div>
-                  {showScheduleFilter === "Last Maint." && (
-                    <div
-                      className="filter-dropdown"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <input
-                        type="month"
-                        value={filterLastMaintenance}
-                        onChange={(e) => {
-                          setFilterLastMaintenance(e.target.value);
-                          setShowScheduleFilter(null);
-                        }}
-                        className="month-input"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div className="header-cell filter-header" ref={nextMaintRef}>
-                  <div
-                    onClick={() =>
-                      setShowScheduleFilter(
-                        showScheduleFilter === "Next Maint."
-                          ? null
-                          : "Next Maint."
-                      )
-                    }
-                  >
-                    <span>Next Maint.</span>
-                    <ChevronDown
-                      size={16}
-                      className={`filter-arrow ${
-                        showScheduleFilter === "Next Maint." ? "rotated" : ""
-                      }`}
-                    />
-                  </div>
-                  {showScheduleFilter === "Next Maint." && (
-                    <div
-                      className="filter-dropdown"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {["Overdue", "Due Soon", "On Track"].map((option) => (
-                        <label key={option} className="filter-option">
-                          <input
-                            type="checkbox"
-                            checked={filterNextMaintenanceStatus === option}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setFilterNextMaintenanceStatus(option);
-                              } else {
-                                // unchecking clears
-                                setFilterNextMaintenanceStatus("");
-                              }
-                              setShowScheduleFilter(null);
-                            }}
-                          />
-                          {option}
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="header-cell filter-header" ref={lastCalibRef}>
-                  <div
-                    onClick={() =>
-                      setShowScheduleFilter(
-                        showScheduleFilter === "Last Calib."
-                          ? null
-                          : "Last Calib."
-                      )
-                    }
-                  >
-                    <span>Last Calib.</span>
-                    <ChevronDown
-                      size={16}
-                      className={`filter-arrow ${
-                        showScheduleFilter === "Last Calib." ? "rotated" : ""
-                      }`}
-                    />
-                  </div>
-                  {showScheduleFilter === "Last Calib." && (
-                    <div
-                      className="filter-dropdown"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <input
-                        type="month"
-                        value={filterLastCalibration}
-                        onChange={(e) => {
-                          setFilterLastCalibration(e.target.value);
-                          setShowScheduleFilter(null);
-                        }}
-                        className="month-input"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div className="header-cell filter-header" ref={nextCalibRef}>
-                  <div
-                    onClick={() =>
-                      setShowScheduleFilter(
-                        showScheduleFilter === "Next Calib."
-                          ? null
-                          : "Next Calib."
-                      )
-                    }
-                  >
-                    <span>Next Calib.</span>
-                    <ChevronDown
-                      size={16}
-                      className={`filter-arrow ${
-                        showScheduleFilter === "Next Calib." ? "rotated" : ""
-                      }`}
-                    />
-                  </div>
-                  {showScheduleFilter === "Next Calib." && (
-                    <div
-                      className="filter-dropdown"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {["Overdue", "Due Soon", "On Track"].map((option) => (
-                        <label key={option} className="filter-option">
-                          <input
-                            type="checkbox"
-                            checked={filterNextCalibrationStatus === option}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setFilterNextCalibrationStatus(option);
-                              } else {
-                                // unchecking clears
-                                setFilterNextCalibrationStatus("");
-                              }
-                              setShowScheduleFilter(null);
-                            }}
-                          />
-                          {option}
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div
-                  className="header-cell filter-header"
-                  ref={statusRef}
-                  onClick={() => {
-                    setShowStatusFilter((prev) => !prev);
-                    setShowLocationFilter(false);
-                    setShowScheduleFilter(null);
-                  }}
-                >
-                  <span>Status</span>
-                  <ChevronDown
-                    size={16}
-                    className={`filter-arrow ${
-                      showStatusFilter ? "rotated" : ""
-                    }`}
-                  />
-                  {showStatusFilter && (
-                    <div
-                      className="filter-dropdown"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {statusList.map((status, i) => (
-                        <label
-                          key={`filter-status-${status}-${i}`}
-                          className="filter-option"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={filterStatus.includes(status)}
-                            onChange={(e) =>
-                              handleFilterChange(
-                                "status",
-                                status,
-                                e.target.checked
-                              )
-                            }
-                          />
-                          {status}
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="header-cell">
-                  <span>Actions</span>
-                </div>
-              </div>
-              <div className="table-scroll-body">
-                <div className="table-body">
-                  {filteredEquipment
-                    .sort((a, b) => {
-                      const aName = a.name?.trim() || "";
-                      const bName = b.name?.trim() || "";
-                      if (!aName && !bName) return 0;
-                      if (!aName) return 1;
-                      if (!bName) return -1;
-                      return aName.localeCompare(bName);
-                    })
-                    .map((item) => (
+                    {showStatusFilter && (
                       <div
-                        key={item.equipment_id}
-                        className={`table-row ${
-                          editingRowId === item.equipment_id
-                            ? "editing-row"
-                            : ""
-                        }`}
+                        className="filter-dropdown"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        {/* Equipment Name */}
-                        <div className="row-cell">
-                          <div className="item-details">
-                            <button
-                              className="item-name"
-                              onClick={() => handleViewDetails(item)}
-                            >
-                              {item.name}
-                            </button>
+                        {statusList.map((status, i) => (
+                          <label
+                            key={`filter-status-${status}-${i}`}
+                            className="filter-option"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={filterStatus.includes(status)}
+                              onChange={(e) =>
+                                handleFilterChange(
+                                  "status",
+                                  status,
+                                  e.target.checked
+                                )
+                              }
+                            />
+                            {status}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="header-cell">
+                    <span>Actions</span>
+                  </div>
+                </div>
+                <div className="table-scroll-body">
+                  <div className="table-body">
+                    {filteredEquipment
+                      .sort((a, b) => {
+                        const aName = a.name?.trim() || "";
+                        const bName = b.name?.trim() || "";
+                        if (!aName && !bName) return 0;
+                        if (!aName) return 1;
+                        if (!bName) return -1;
+                        return aName.localeCompare(bName);
+                      })
+                      .map((item) => (
+                        <div
+                          key={item.equipment_id}
+                          className={`table-row ${
+                            editingRowId === item.equipment_id
+                              ? "editing-row"
+                              : ""
+                          }`}
+                        >
+                          {/* Equipment Name */}
+                          <div className="row-cell">
+                            <div className="item-details">
+                              <button
+                                className="item-name"
+                                onClick={() => handleViewDetails(item)}
+                              >
+                                {item.name}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Code */}
+                          <div className="row-cell hide-mobile">
+                            {item.equipment_code}
+                          </div>
+
+                          {/* Model */}
+                          <div className="row-cell hide-mobile">
+                            {editingRowId === item.equipment_id ? (
+                              <input
+                                type="text"
+                                value={editingData.model}
+                                onChange={(e) =>
+                                  handleInputChange("model", e.target.value)
+                                }
+                                className="inline-edit-input"
+                              />
+                            ) : (
+                              item.model
+                            )}
+                          </div>
+
+                          {/* Location */}
+                          <div className="row-cell" data-label="Location">
+                            {editingRowId === item.equipment_id ? (
+                              <select
+                                value={editingData.location}
+                                onChange={(e) =>
+                                  handleInputChange("location", e.target.value)
+                                }
+                                className="inline-edit-select"
+                              >
+                                {[...new Set(locationList)]
+                                  .filter(Boolean)
+                                  .map((loc, i) => (
+                                    <option
+                                      key={`option-location-${loc}-${i}`}
+                                      value={loc}
+                                    >
+                                      {loc}
+                                    </option>
+                                  ))}
+                              </select>
+                            ) : (
+                              item.location
+                            )}
+                          </div>
+
+                          {/* Last Maintenance */}
+                          <div className="row-cell hide-mobile">
+                            {editingRowId === item.equipment_id ? (
+                              <input
+                                type="date"
+                                value={editingData.last_updated || ""}
+                                onChange={(e) =>
+                                  handleInputChange(
+                                    "last_updated",
+                                    e.target.value
+                                  )
+                                }
+                                className="inline-edit-input"
+                              />
+                            ) : (
+                              formatDatePretty(item.last_updated)
+                            )}
+                          </div>
+
+                          {/* Next Maintenance */}
+                          <div className="row-cell" data-label="Next Maint.">
+                            {editingRowId === item.equipment_id ? (
+                              <input
+                                type="date"
+                                value={editingData.maintenance_schedule || ""}
+                                onChange={(e) =>
+                                  handleInputChange(
+                                    "maintenance_schedule",
+                                    e.target.value
+                                  )
+                                }
+                                className="inline-edit-input"
+                              />
+                            ) : (
+                              <span
+                                className={`expiration-badge ${
+                                  isOverdue(item.maintenance_schedule)
+                                    ? "exp-overdue"
+                                    : isDueSoon(item.maintenance_schedule)
+                                    ? "exp-due-soon"
+                                    : "exp-on-track"
+                                }`}
+                              >
+                                {formatDatePretty(item.maintenance_schedule) ||
+                                  "—"}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Last Calibration */}
+                          <div className="row-cell hide-mobile">
+                            {editingRowId === item.equipment_id ? (
+                              <input
+                                type="date"
+                                value={editingData.last_calibration_date || ""}
+                                onChange={(e) =>
+                                  handleInputChange(
+                                    "last_calibration_date",
+                                    e.target.value
+                                  )
+                                }
+                                className="inline-edit-input"
+                              />
+                            ) : (
+                              formatDatePretty(item.last_calibration_date)
+                            )}
+                          </div>
+
+                          {/* Next Calibration */}
+                          <div className="row-cell" data-label="Next Calib.">
+                            {editingRowId === item.equipment_id ? (
+                              <input
+                                type="date"
+                                value={editingData.next_calibration_date || ""}
+                                onChange={(e) =>
+                                  handleInputChange(
+                                    "next_calibration_date",
+                                    e.target.value
+                                  )
+                                }
+                                className="inline-edit-input"
+                              />
+                            ) : (
+                              <span
+                                className={`expiration-badge ${
+                                  isOverdue(item.next_calibration_date)
+                                    ? "exp-overdue"
+                                    : isDueSoon(item.next_calibration_date)
+                                    ? "exp-due-soon"
+                                    : "exp-on-track"
+                                }`}
+                              >
+                                {formatDatePretty(item.next_calibration_date) ||
+                                  "—"}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Status */}
+                          <div className="row-cell" data-label="Status">
+                            {editingRowId === item.equipment_id ? (
+                              <select
+                                value={editingData.status}
+                                onChange={(e) =>
+                                  handleInputChange("status", e.target.value)
+                                }
+                                className="inline-edit-select"
+                              >
+                                {[...new Set(statusList)]
+                                  .filter(Boolean)
+                                  .map((status, i) => (
+                                    <option
+                                      key={`option-status-${status}-${i}`}
+                                      value={status}
+                                    >
+                                      {status}
+                                    </option>
+                                  ))}
+                              </select>
+                            ) : (
+                              <span
+                                className={`status-badge ${getStatusColor(
+                                  item.status
+                                )}`}
+                              >
+                                {item.status}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Actions */}
+                          <div className="row-cell">
+                            {editingRowId === item.equipment_id ? (
+                              <div className="editing-actions">
+                                <button
+                                  className="btn-icon btn-save"
+                                  onClick={handleSaveInlineEdit}
+                                  title="Save"
+                                >
+                                  <Check size={16} />
+                                </button>
+                                <button
+                                  className="btn-icon btn-cancel"
+                                  onClick={handleCancelInlineEdit}
+                                  title="Cancel"
+                                >
+                                  <X size={16} />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="action-buttons">
+                                <button
+                                  className="btn-icon"
+                                  onClick={() => handleInlineEdit(item)}
+                                  title="Edit"
+                                >
+                                  <Edit size={16} />
+                                </button>
+                                <button
+                                  className="btn-icon delete"
+                                  onClick={() =>
+                                    handleDelete(item.equipment_id)
+                                  }
+                                  title="Delete"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
-
-                        {/* Code */}
-                        <div className="row-cell">{item.equipment_code}</div>
-
-                        {/* Model */}
-                        <div className="row-cell">
-                          {editingRowId === item.equipment_id ? (
-                            <input
-                              type="text"
-                              value={editingData.model}
-                              onChange={(e) =>
-                                handleInputChange("model", e.target.value)
-                              }
-                              className="inline-edit-input"
-                            />
-                          ) : (
-                            item.model
-                          )}
-                        </div>
-
-                        {/* Location */}
-                        <div className="row-cell">
-                          {editingRowId === item.equipment_id ? (
-                            <select
-                              value={editingData.location}
-                              onChange={(e) =>
-                                handleInputChange("location", e.target.value)
-                              }
-                              className="inline-edit-select"
-                            >
-                              {[...new Set(locationList)]
-                                .filter(Boolean)
-                                .map((loc, i) => (
-                                  <option
-                                    key={`option-location-${loc}-${i}`}
-                                    value={loc}
-                                  >
-                                    {loc}
-                                  </option>
-                                ))}
-                            </select>
-                          ) : (
-                            item.location
-                          )}
-                        </div>
-
-                        {/* Last Maintenance */}
-                        <div className="row-cell">
-                          {editingRowId === item.equipment_id ? (
-                            <input
-                              type="date"
-                              value={editingData.last_updated || ""}
-                              onChange={(e) =>
-                                handleInputChange(
-                                  "last_updated",
-                                  e.target.value
-                                )
-                              }
-                              className="inline-edit-input"
-                            />
-                          ) : (
-                            formatDatePretty(item.last_updated)
-                          )}
-                        </div>
-
-                        {/* Next Maintenance */}
-                        <div className="row-cell">
-                          {editingRowId === item.equipment_id ? (
-                            <input
-                              type="date"
-                              value={editingData.maintenance_schedule || ""}
-                              onChange={(e) =>
-                                handleInputChange(
-                                  "maintenance_schedule",
-                                  e.target.value
-                                )
-                              }
-                              className="inline-edit-input"
-                            />
-                          ) : (
-                            formatDatePretty(item.maintenance_schedule)
-                          )}
-                        </div>
-
-                        {/* Last Calibration */}
-                        <div className="row-cell">
-                          {editingRowId === item.equipment_id ? (
-                            <input
-                              type="date"
-                              value={editingData.last_calibration_date || ""}
-                              onChange={(e) =>
-                                handleInputChange(
-                                  "last_calibration_date",
-                                  e.target.value
-                                )
-                              }
-                              className="inline-edit-input"
-                            />
-                          ) : (
-                            formatDatePretty(item.last_calibration_date)
-                          )}
-                        </div>
-
-                        {/* Next Calibration */}
-                        <div className="row-cell">
-                          {editingRowId === item.equipment_id ? (
-                            <input
-                              type="date"
-                              value={editingData.next_calibration_date || ""}
-                              onChange={(e) =>
-                                handleInputChange(
-                                  "next_calibration_date",
-                                  e.target.value
-                                )
-                              }
-                              className="inline-edit-input"
-                            />
-                          ) : (
-                            formatDatePretty(item.next_calibration_date)
-                          )}
-                        </div>
-
-                        {/* Status */}
-                        <div className="row-cell">
-                          {editingRowId === item.equipment_id ? (
-                            <select
-                              value={editingData.status}
-                              onChange={(e) =>
-                                handleInputChange("status", e.target.value)
-                              }
-                              className="inline-edit-select"
-                            >
-                              {[...new Set(statusList)]
-                                .filter(Boolean)
-                                .map((status, i) => (
-                                  <option
-                                    key={`option-status-${status}-${i}`}
-                                    value={status}
-                                  >
-                                    {status}
-                                  </option>
-                                ))}
-                            </select>
-                          ) : (
-                            <span
-                              className={`status-badge ${getStatusColor(
-                                item.status
-                              )}`}
-                            >
-                              {item.status}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Actions */}
-                        <div className="row-cell">
-                          {editingRowId === item.equipment_id ? (
-                            <div className="editing-actions">
-                              <button
-                                className="btn-icon btn-save"
-                                onClick={handleSaveInlineEdit}
-                                title="Save"
-                              >
-                                <Check size={16} />
-                              </button>
-                              <button
-                                className="btn-icon btn-cancel"
-                                onClick={handleCancelInlineEdit}
-                                title="Cancel"
-                              >
-                                <X size={16} />
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="action-buttons">
-                              <button
-                                className="btn-icon"
-                                onClick={() => handleInlineEdit(item)}
-                                title="Edit"
-                              >
-                                <Edit size={16} />
-                              </button>
-                              <button
-                                className="btn-icon delete"
-                                onClick={() => handleDelete(item.equipment_id)}
-                                title="Delete"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -912,13 +968,6 @@ const Equipment = () => {
                   name: "supplier_contact",
                   type: "text",
                 },
-                // {
-                //   label: "Manual Available",
-                //   value: detailItem.manual_available ? "Yes" : "No",
-                //   name: "manual_available",
-                //   type: "select",
-                //   options: ["Yes", "No"],
-                // },
                 {
                   label: "Manual File (PDF)",
                   value: detailItem.manual_file || "",

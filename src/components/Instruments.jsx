@@ -14,36 +14,49 @@ import DetailPopup from "./DetailPopup";
 const API_URL = "http://localhost:5000/api/instrument";
 
 const Instruments = () => {
+  // State
+  const [instruments, setInstruments] = useState([]);
+
+  // Filter values
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState([]);
   const [filterCondition, setFilterCondition] = useState([]);
   const [filterLocation, setFilterLocation] = useState([]);
-  const [showForm, setShowForm] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
-  const [detailItem, setDetailItem] = useState(null);
-  const [editingRowId, setEditingRowId] = useState(null);
-  const [editingData, setEditingData] = useState({});
+
+  // Filter options
+  const [statusList, setStatusList] = useState([]);
+  const [conditionList, setConditionList] = useState([]);
+  const [locationList, setLocationList] = useState([]);
+
+  // UI Toggles
   const [showFilters, setShowFilters] = useState({
     location: false,
     status: false,
     condition: false,
   });
-  const [instruments, setInstruments] = useState([]);
 
-  const [statusList, setStatusList] = useState([]);
-  const [conditionList, setConditionList] = useState([]);
-  const [locationList, setLocationList] = useState([]);
+  // Form and details
+  const [showForm, setShowForm] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [detailItem, setDetailItem] = useState(null);
 
+  // Inline edit
+  const [editingRowId, setEditingRowId] = useState(null);
+  const [editingData, setEditingData] = useState({});
+
+  // Refs
   const filterRefs = {
     location: useRef(null),
     status: useRef(null),
     condition: useRef(null),
   };
 
+  // Fetch Data
   const fetchInstruments = async () => {
     try {
       const res = await fetch(API_URL);
       const data = await res.json();
+
       const formatted = data.map((item) => ({
         id: item.instrument_id,
         instrument: item.name,
@@ -56,6 +69,7 @@ const Instruments = () => {
         condition: item.condition,
         remarks: item.remarks,
       }));
+
       setInstruments(formatted);
 
       // dynamically build unique filter options
@@ -83,17 +97,21 @@ const Instruments = () => {
         }
       });
     };
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const locations = [...new Set(instruments.map((item) => item.location))];
-
+  // Filtering
   const filteredInstruments = instruments.filter((item) => {
     const matchesSearch =
-      item.instrument.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.location.toLowerCase().includes(searchTerm.toLowerCase());
+      (item.instrument || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      (item.description || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      (item.location || "").toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus =
       filterStatus.length === 0 || filterStatus.includes(item.status);
@@ -107,28 +125,7 @@ const Instruments = () => {
     );
   });
 
-  const handleFilterChange = (filterType, value, checked) => {
-    switch (filterType) {
-      case "status":
-        setFilterStatus((prev) =>
-          checked ? [...prev, value] : prev.filter((v) => v !== value)
-        );
-        break;
-      case "condition":
-        setFilterCondition((prev) =>
-          checked ? [...prev, value] : prev.filter((v) => v !== value)
-        );
-        break;
-      case "location":
-        setFilterLocation((prev) =>
-          checked ? [...prev, value] : prev.filter((v) => v !== value)
-        );
-        break;
-      default:
-        break;
-    }
-  };
-
+  // Color helpers
   const getStatusColor = (status) => {
     switch (status) {
       case "Opened":
@@ -163,6 +160,16 @@ const Instruments = () => {
     }
   };
 
+  // Handlers
+  const handleFilterChange = (filterType, value, checked) => {
+    const update = (prev) =>
+      checked ? [...prev, value] : prev.filter((v) => v !== value);
+
+    if (filterType === "status") setFilterStatus(update);
+    if (filterType === "condition") setFilterCondition(update);
+    if (filterType === "location") setFilterLocation(update);
+  };
+
   const handleAdd = () => {
     setEditingItem(null);
     setShowForm(true);
@@ -177,14 +184,12 @@ const Instruments = () => {
       description: formData.description,
       location: formData.location,
       quantity: parseInt(formData.quantity),
-      unit: formData.unit || "pcs", // fallback if unit is missing
+      unit: formData.unit || "pcs",
       capacity: formData.capacity,
       status: formData.status,
       condition: formData.condition,
       remarks: formData.remarks,
     };
-
-    console.log("Saving payload:", payload);
 
     const res = await fetch(url, {
       method,
@@ -219,7 +224,7 @@ const Instruments = () => {
       description: editingData.description,
       location: editingData.location,
       quantity: parseInt(editingData.quantity),
-      unit: editingData.unit || "pcs", // fallback
+      unit: editingData.unit || "pcs",
       capacity: editingData.capacity,
       status: editingData.status,
       condition: editingData.condition,
@@ -247,12 +252,10 @@ const Instruments = () => {
   };
 
   const handleInputChange = (field, value) => {
-    setEditingData({ ...editingData, [field]: value });
+    setEditingData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleViewDetails = (item) => {
-    setDetailItem(item);
-  };
+  const handleViewDetails = (item) => setDetailItem(item);
 
   const handleCancel = () => {
     setShowForm(false);
@@ -299,289 +302,304 @@ const Instruments = () => {
             />
           </div>
         ) : (
-          <div className="modern-table instruments-table">
-            <div className="table-header">
-              <div className="header-cell">
-                <span>Instrument</span>
-              </div>
-              <div className="header-cell">
-                <span>Quantity</span>
-              </div>
-              <div className="header-cell">
-                <span>Description</span>
-              </div>
-              <div
-                className="header-cell filter-header"
-                ref={filterRefs.location}
-                onClick={() =>
-                  setShowFilters((prev) => ({
-                    ...prev,
-                    location: !prev.location,
-                  }))
-                }
-              >
-                <span>Location</span>
-                <ChevronDown
-                  size={16}
-                  className={`filter-arrow ${
-                    showFilters.location ? "rotated" : ""
-                  }`}
-                />
-                {showFilters.location && (
-                  <div className="filter-dropdown">
-                    {locations.map((loc) => (
-                      <label key={loc} className="filter-option">
-                        <input
-                          type="checkbox"
-                          checked={filterLocation.includes(loc)}
-                          onChange={(e) =>
-                            handleFilterChange(
-                              "location",
-                              loc,
-                              e.target.checked
-                            )
-                          }
-                        />
-                        <span>{loc}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
+          <div className="table-responsive">
+            <div className="modern-table instruments-table">
+              <div className="table-header">
+                <div className="header-cell">
+                  <span>Instrument</span>
+                </div>
+                <div className="header-cell hide-mobile">
+                  <span>Quantity</span>
+                </div>
+                <div className="header-cell hide-mobile">
+                  <span>Description</span>
+                </div>
+                <div
+                  className="header-cell filter-header"
+                  ref={filterRefs.location}
+                  onClick={() =>
+                    setShowFilters((prev) => ({
+                      ...prev,
+                      location: !prev.location,
+                    }))
+                  }
+                >
+                  <span>Location</span>
+                  <ChevronDown
+                    size={16}
+                    className={`filter-arrow ${
+                      showFilters.location ? "rotated" : ""
+                    }`}
+                  />
+                  {showFilters.location && (
+                    <div className="filter-dropdown">
+                      {locationList.map((loc) => (
+                        <label key={loc} className="filter-option">
+                          <input
+                            type="checkbox"
+                            checked={filterLocation.includes(loc)}
+                            onChange={(e) =>
+                              handleFilterChange(
+                                "location",
+                                loc,
+                                e.target.checked
+                              )
+                            }
+                          />
+                          <span>{loc}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-              <div
-                className="header-cell filter-header"
-                ref={filterRefs.status}
-                onClick={() =>
-                  setShowFilters((prev) => ({
-                    ...prev,
-                    status: !prev.status,
-                  }))
-                }
-              >
-                <span>Status</span>
-                <ChevronDown
-                  size={16}
-                  className={`filter-arrow ${
-                    showFilters.status ? "rotated" : ""
-                  }`}
-                />
-                {showFilters.status && (
-                  <div className="filter-dropdown">
-                    {statusList.map((status) => (
-                      <label key={status} className="filter-option">
-                        <input
-                          type="checkbox"
-                          checked={filterStatus.includes(status)}
-                          onChange={(e) =>
-                            handleFilterChange(
-                              "status",
-                              status,
-                              e.target.checked
-                            )
-                          }
-                        />
-                        <span>{status}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
+                <div
+                  className="header-cell filter-header"
+                  ref={filterRefs.status}
+                  onClick={() =>
+                    setShowFilters((prev) => ({
+                      ...prev,
+                      status: !prev.status,
+                    }))
+                  }
+                >
+                  <span>Status</span>
+                  <ChevronDown
+                    size={16}
+                    className={`filter-arrow ${
+                      showFilters.status ? "rotated" : ""
+                    }`}
+                  />
+                  {showFilters.status && (
+                    <div className="filter-dropdown">
+                      {statusList.map((status) => (
+                        <label key={status} className="filter-option">
+                          <input
+                            type="checkbox"
+                            checked={filterStatus.includes(status)}
+                            onChange={(e) =>
+                              handleFilterChange(
+                                "status",
+                                status,
+                                e.target.checked
+                              )
+                            }
+                          />
+                          <span>{status}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div
+                  className="header-cell filter-header"
+                  ref={filterRefs.condition}
+                  onClick={() =>
+                    setShowFilters((prev) => ({
+                      ...prev,
+                      condition: !prev.condition,
+                    }))
+                  }
+                >
+                  <span>Condition</span>
+                  <ChevronDown
+                    size={16}
+                    className={`filter-arrow ${
+                      showFilters.condition ? "rotated" : ""
+                    }`}
+                  />
+                  {showFilters.condition && (
+                    <div className="filter-dropdown">
+                      {conditionList.map((cond) => (
+                        <label key={cond} className="filter-option">
+                          <input
+                            type="checkbox"
+                            checked={filterCondition.includes(cond)}
+                            onChange={(e) =>
+                              handleFilterChange(
+                                "condition",
+                                cond,
+                                e.target.checked
+                              )
+                            }
+                          />
+                          <span>{cond}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="header-cell">
+                  <span>Actions</span>
+                </div>
               </div>
-              <div
-                className="header-cell filter-header"
-                ref={filterRefs.condition}
-                onClick={() =>
-                  setShowFilters((prev) => ({
-                    ...prev,
-                    condition: !prev.condition,
-                  }))
-                }
-              >
-                <span>Condition</span>
-                <ChevronDown
-                  size={16}
-                  className={`filter-arrow ${
-                    showFilters.condition ? "rotated" : ""
-                  }`}
-                />
-                {showFilters.condition && (
-                  <div className="filter-dropdown">
-                    {conditionList.map((cond) => (
-                      <label key={cond} className="filter-option">
-                        <input
-                          type="checkbox"
-                          checked={filterCondition.includes(cond)}
-                          onChange={(e) =>
-                            handleFilterChange(
-                              "condition",
-                              cond,
-                              e.target.checked
-                            )
-                          }
-                        />
-                        <span>{cond}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="header-cell">
-                <span>Actions</span>
-              </div>
-            </div>
-            <div className="table-scroll-body">
-              <div className="table-body">
-                {filteredInstruments
-                  .sort((a, b) => {
-                    const aName = a.instrument?.trim() || "";
-                    const bName = b.instrument?.trim() || "";
-                    if (!aName && !bName) return 0;
-                    if (!aName) return 1;
-                    if (!bName) return -1;
-                    return aName.localeCompare(bName);
-                  })
+              <div className="table-scroll-body">
+                <div className="table-body">
+                  {filteredInstruments
+                    .sort((a, b) => {
+                      const aName = a.instrument?.trim() || "";
+                      const bName = b.instrument?.trim() || "";
+                      if (!aName && !bName) return 0;
+                      if (!aName) return 1;
+                      if (!bName) return -1;
+                      return aName.localeCompare(bName);
+                    })
 
-                  .map((item) => (
-                    <div
-                      key={item.id}
-                      className={`table-row ${
-                        editingRowId === item.id ? "editing-row" : ""
-                      }`}
-                    >
-                      <div className="row-cell">
-                        <div className="item-details">
-                          <button
-                            className="item-name"
-                            onClick={() => handleViewDetails(item)}
-                          >
-                            {item.instrument}
-                          </button>
+                    .map((item) => (
+                      <div
+                        key={item.id}
+                        className={`table-row ${
+                          editingRowId === item.id ? "editing-row" : ""
+                        }`}
+                      >
+                        <div className="row-cell">
+                          <div className="item-details">
+                            <button
+                              className="item-name"
+                              onClick={() => handleViewDetails(item)}
+                            >
+                              {item.instrument}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="row-cell  hide-mobile">
+                          {editingRowId === item.id ? (
+                            <input
+                              type="number"
+                              value={editingData.quantity}
+                              onChange={(e) =>
+                                handleInputChange("quantity", e.target.value)
+                              }
+                              className="inline-edit-input"
+                            />
+                          ) : (
+                            item.quantity
+                          )}
+                        </div>
+                        <div className="row-cell  hide-mobile">
+                          {item.description}
+                        </div>
+                        <div className="row-cell" data-label="Location">
+                          {editingRowId === item.id ? (
+                            <select
+                              value={editingData.location}
+                              onChange={(e) =>
+                                handleInputChange("location", e.target.value)
+                              }
+                              className="inline-edit-select"
+                            >
+                              {locationList.map((loc) => (
+                                <label key={loc} className="filter-option">
+                                  <input
+                                    type="checkbox"
+                                    checked={filterLocation.includes(loc)}
+                                    onChange={(e) =>
+                                      handleFilterChange(
+                                        "location",
+                                        loc,
+                                        e.target.checked
+                                      )
+                                    }
+                                  />
+                                  <span>{loc}</span>
+                                </label>
+                              ))}
+                            </select>
+                          ) : (
+                            item.location
+                          )}
+                        </div>
+
+                        <div className="row-cell" data-label="Status">
+                          {editingRowId === item.id ? (
+                            <select
+                              value={editingData.status}
+                              onChange={(e) =>
+                                handleInputChange("status", e.target.value)
+                              }
+                              className="inline-edit-select"
+                            >
+                              {statusList.map((status) => (
+                                <option key={status} value={status}>
+                                  {status}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span
+                              className={`status-badge ${getStatusColor(
+                                item.status
+                              )}`}
+                            >
+                              {item.status}
+                            </span>
+                          )}
+                        </div>
+                        <div className="row-cell" data-label="Condition">
+                          {editingRowId === item.id ? (
+                            <select
+                              value={editingData.condition}
+                              onChange={(e) =>
+                                handleInputChange("condition", e.target.value)
+                              }
+                              className="inline-edit-select"
+                            >
+                              {conditionList.map((condition) => (
+                                <option key={condition} value={condition}>
+                                  {condition}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span
+                              className={`status-badge ${getConditionColor(
+                                item.condition
+                              )}`}
+                            >
+                              {item.condition}
+                            </span>
+                          )}
+                        </div>
+                        <div className="row-cell">
+                          {editingRowId === item.id ? (
+                            <div className="editing-actions">
+                              <button
+                                className="btn-icon btn-save"
+                                onClick={handleSaveInlineEdit}
+                                title="Save"
+                              >
+                                <Check size={16} />
+                              </button>
+                              <button
+                                className="btn-icon btn-cancel"
+                                onClick={handleCancelInlineEdit}
+                                title="Cancel"
+                              >
+                                <X size={16} />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="action-buttons">
+                              <button
+                                className="btn-icon"
+                                onClick={() => handleInlineEdit(item)}
+                                title="Edit"
+                              >
+                                <Edit size={16} />
+                              </button>
+                              <button
+                                className="btn-icon delete"
+                                onClick={() => handleDelete(item.id)}
+                                title="Delete"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
-                      <div className="row-cell">
-                        {editingRowId === item.id ? (
-                          <input
-                            type="number"
-                            value={editingData.quantity}
-                            onChange={(e) =>
-                              handleInputChange("quantity", e.target.value)
-                            }
-                            className="inline-edit-input"
-                          />
-                        ) : (
-                          item.quantity
-                        )}
-                      </div>
-                      <div className="row-cell">{item.description}</div>
-                      <div className="row-cell">
-                        {editingRowId === item.id ? (
-                          <select
-                            value={editingData.location}
-                            onChange={(e) =>
-                              handleInputChange("location", e.target.value)
-                            }
-                            className="inline-edit-select"
-                          >
-                            {locations.map((loc) => (
-                              <option key={loc} value={loc}>
-                                {loc}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          item.location
-                        )}
-                      </div>
-
-                      <div className="row-cell">
-                        {editingRowId === item.id ? (
-                          <select
-                            value={editingData.status}
-                            onChange={(e) =>
-                              handleInputChange("status", e.target.value)
-                            }
-                            className="inline-edit-select"
-                          >
-                            {statusList.map((status) => (
-                              <option key={status} value={status}>
-                                {status}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <span
-                            className={`status-badge ${getStatusColor(
-                              item.status
-                            )}`}
-                          >
-                            {item.status}
-                          </span>
-                        )}
-                      </div>
-                      <div className="row-cell">
-                        {editingRowId === item.id ? (
-                          <select
-                            value={editingData.condition}
-                            onChange={(e) =>
-                              handleInputChange("condition", e.target.value)
-                            }
-                            className="inline-edit-select"
-                          >
-                            {conditionList.map((condition) => (
-                              <option key={condition} value={condition}>
-                                {condition}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <span
-                            className={`status-badge ${getConditionColor(
-                              item.condition
-                            )}`}
-                          >
-                            {item.condition}
-                          </span>
-                        )}
-                      </div>
-                      <div className="row-cell">
-                        {editingRowId === item.id ? (
-                          <div className="editing-actions">
-                            <button
-                              className="btn-icon btn-save"
-                              onClick={handleSaveInlineEdit}
-                              title="Save"
-                            >
-                              <Check size={16} />
-                            </button>
-                            <button
-                              className="btn-icon btn-cancel"
-                              onClick={handleCancelInlineEdit}
-                              title="Cancel"
-                            >
-                              <X size={16} />
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="action-buttons">
-                            <button
-                              className="btn-icon"
-                              onClick={() => handleInlineEdit(item)}
-                              title="Edit"
-                            >
-                              <Edit size={16} />
-                            </button>
-                            <button
-                              className="btn-icon delete"
-                              onClick={() => handleDelete(item.id)}
-                              title="Delete"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                </div>
               </div>
             </div>
           </div>
@@ -642,17 +660,19 @@ const Instruments = () => {
                 type: "text",
               },
             ]}
-            onSave={async (updatedFields) => {
+            onSave={async (formData) => {
+              const raw = Object.fromEntries(formData.entries());
+
               const payload = {
-                name: updatedFields.instrument,
-                description: updatedFields.description,
-                location: updatedFields.location,
-                quantity: parseInt(updatedFields.quantity),
+                name: raw.instrument,
+                description: raw.description,
+                location: raw.location,
+                quantity: parseInt(raw.quantity),
                 unit: detailItem.unit || "pcs",
-                capacity: updatedFields.capacity,
-                status: updatedFields.status,
-                condition: updatedFields.condition,
-                remarks: updatedFields.remarks,
+                capacity: raw.capacity,
+                status: raw.status,
+                condition: raw.condition,
+                remarks: raw.remarks,
               };
 
               const res = await fetch(`${API_URL}/${detailItem.id}`, {
