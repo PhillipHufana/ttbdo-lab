@@ -19,6 +19,7 @@ router.post("/", async (req, res) => {
   try {
     const {
       name,
+      brand,
       description,
       location,
       quantity,
@@ -30,12 +31,22 @@ router.post("/", async (req, res) => {
     } = req.body;
 
     const [result] = await db.query(
-  `INSERT INTO instruments 
-    (name, description, location, quantity, unit, capacity, status, \`condition\`, remarks)
-   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  [name, description, location, quantity, unit, capacity, status, condition, remarks]
-);
-
+      `INSERT INTO instruments 
+        (name, brand, description, location, quantity, unit, capacity, status, \`condition\`, remarks)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        name,
+        brand,
+        description,
+        location,
+        quantity,
+        unit,
+        capacity,
+        status,
+        condition,
+        remarks,
+      ]
+    );
 
     res.status(201).json({ instrument_id: result.insertId });
   } catch (err) {
@@ -64,7 +75,9 @@ router.put("/:id", async (req, res) => {
 router.delete("/:id", async (req, res) => {
   try {
     const instrumentId = req.params.id;
-    await db.query("DELETE FROM instruments WHERE instrument_id = ?", [instrumentId]);
+    await db.query("DELETE FROM instruments WHERE instrument_id = ?", [
+      instrumentId,
+    ]);
     res.status(200).json({ message: "Deleted" });
   } catch (err) {
     res.status(500).json({ error: err.message });

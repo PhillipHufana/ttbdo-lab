@@ -669,7 +669,9 @@ const Instruments = () => {
                 value: detailItem.instrument,
                 type: "text",
               },
-              { name: "brand", label: "Brand", value: detailItem.brand },
+              { name: "brand", 
+                label: "Brand", 
+                value: detailItem.brand },
               {
                 label: "Description",
                 name: "description",

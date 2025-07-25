@@ -625,6 +625,7 @@ const Equipment = () => {
                               >
                                 {item.name}
                               </button>
+                              <div className="item-brand">{item.brand}</div>
                             </div>
                           </div>
 
