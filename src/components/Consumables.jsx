@@ -29,7 +29,6 @@ const formatDateReadable = (dateStr) => {
   });
 };
 
-
 // Decide the color class based on expiry
 const getExpiryColorClass = (dateStr) => {
   if (!dateStr) return "N/A";
@@ -41,7 +40,6 @@ const getExpiryColorClass = (dateStr) => {
   if (diffDays <= 30) return "exp-due-soon";
   return "exp-on-track";
 };
-
 
 const Consumables = () => {
   // State
@@ -95,9 +93,18 @@ const Consumables = () => {
       }));
 
       setConsumables(formatted);
-      setLocations([
-        ...new Set(formatted.map((item) => item.location).filter(Boolean)),
-      ]);
+
+      const locationMap = {};
+      data.forEach((r) => {
+        if (r.location) {
+          const key = r.location.trim().toLowerCase();
+          if (!locationMap[key]) {
+            locationMap[key] = r.location.trim();
+          }
+        }
+      });
+      const uniqueLocations = Object.values(locationMap);
+      setLocations(uniqueLocations);
     } catch (err) {
       console.error("Fetch error:", err);
     }
@@ -286,279 +293,287 @@ const Consumables = () => {
           </div>
         ) : (
           <div className="table-responsive">
-          <div className="modern-table">
-            <div className="table-header">
-              <div className="header-cell">
-                <span>Supply Item</span>
-              </div>
-              <div className="header-cell">
-                <span>Remaining Quantity</span>
-              </div>
-              <div className="header-cell hide-mobile">
-                <span>Total Quantity</span>
-              </div>
-              <div className="header-cell hide-mobile">
-                <span>Date Opened</span>
-              </div>
-              <div className="header-cell filter-header" ref={expirationRef}>
-                <div
-                  onClick={() => setShowExpirationFilter(!showExpirationFilter)}
-                >
-                  <span className="text-center">Expiration Date</span>
-                  <ChevronDown
-                    size={16}
-                    className={`filter-arrow ${
-                      showExpirationFilter ? "rotated" : ""
-                    }`}
-                  />
+            <div className="modern-table">
+              <div className="table-header">
+                <div className="header-cell">
+                  <span>Supply Item</span>
                 </div>
-                {showExpirationFilter && (
+                <div className="header-cell">
+                  <span>Remaining Quantity</span>
+                </div>
+                <div className="header-cell hide-mobile">
+                  <span>Total Quantity</span>
+                </div>
+                <div className="header-cell hide-mobile">
+                  <span>Date Opened</span>
+                </div>
+                <div className="header-cell filter-header" ref={expirationRef}>
                   <div
-                    className="filter-dropdown"
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={() =>
+                      setShowExpirationFilter(!showExpirationFilter)
+                    }
                   >
-                    <label className="filter-option">
-                      <input
-                        type="checkbox"
-                        checked={expirationSortOrder === "soonest"}
-                        onChange={() => {
-                          setExpirationSortOrder(
-                            expirationSortOrder === "soonest" ? "" : "soonest"
-                          );
-                          setShowExpirationFilter(false);
-                        }}
-                      />
-                      <span>Soonest to Expire</span>
-                    </label>
-
-                    <label className="filter-option">
-                      <input
-                        type="checkbox"
-                        checked={expirationSortOrder === "farthest"}
-                        onChange={() => {
-                          setExpirationSortOrder(
-                            expirationSortOrder === "farthest" ? "" : "farthest"
-                          );
-                          setShowExpirationFilter(false);
-                        }}
-                      />
-                      <span>Farthest to Expire</span>
-                    </label>
+                    <span className="text-center">Expiration Date</span>
+                    <ChevronDown
+                      size={16}
+                      className={`filter-arrow ${
+                        showExpirationFilter ? "rotated" : ""
+                      }`}
+                    />
                   </div>
-                )}
-              </div>
-
-              <div className="header-cell filter-header" ref={locationRef}>
-                <div onClick={() => setShowLocationFilter(!showLocationFilter)}>
-                  <span className="text-center">Location</span>
-                  <ChevronDown
-                    size={16}
-                    className={`filter-arrow ${
-                      showLocationFilter ? "rotated" : ""
-                    }`}
-                  />
-                </div>
-                {showLocationFilter && (
-                  <div
-                    className="filter-dropdown"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {locations.map((location) => (
-                      <label key={location} className="filter-option">
+                  {showExpirationFilter && (
+                    <div
+                      className="filter-dropdown"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <label className="filter-option">
                         <input
                           type="checkbox"
-                          checked={filterLocation.includes(location)}
-                          onChange={(e) => {
-                            handleFilterChange(
-                              "location",
-                              location,
-                              e.target.checked
+                          checked={expirationSortOrder === "soonest"}
+                          onChange={() => {
+                            setExpirationSortOrder(
+                              expirationSortOrder === "soonest" ? "" : "soonest"
                             );
-                            setShowLocationFilter(false);
+                            setShowExpirationFilter(false);
                           }}
                         />
-                        <span>{location}</span>
+                        <span>Soonest to Expire</span>
                       </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="header-cell">
-                <span>Actions</span>
-              </div>
-            </div>
-            <div className="table-scroll-body">
-              <div className="table-body">
-                {[...filteredConsumables]
-                  .sort((a, b) => {
-                    if (expirationSortOrder === "soonest") {
-                      return (
-                        new Date(a.expirationDate || 0) -
-                        new Date(b.expirationDate || 0)
-                      );
-                    } else if (expirationSortOrder === "farthest") {
-                      return (
-                        new Date(b.expirationDate || 0) -
-                        new Date(a.expirationDate || 0)
-                      );
-                    } else {
-                      // alphabetical
-                      return a.supplyItem.localeCompare(b.supplyItem);
-                    }
-                  })
 
-                  .map((item) => (
-                    <div
-                      key={item.id}
-                      className={`table-row ${
-                        editingRowId === item.id ? "editing-row" : ""
+                      <label className="filter-option">
+                        <input
+                          type="checkbox"
+                          checked={expirationSortOrder === "farthest"}
+                          onChange={() => {
+                            setExpirationSortOrder(
+                              expirationSortOrder === "farthest"
+                                ? ""
+                                : "farthest"
+                            );
+                            setShowExpirationFilter(false);
+                          }}
+                        />
+                        <span>Farthest to Expire</span>
+                      </label>
+                    </div>
+                  )}
+                </div>
+
+                <div className="header-cell filter-header" ref={locationRef}>
+                  <div
+                    onClick={() => setShowLocationFilter(!showLocationFilter)}
+                  >
+                    <span className="text-center">Location</span>
+                    <ChevronDown
+                      size={16}
+                      className={`filter-arrow ${
+                        showLocationFilter ? "rotated" : ""
                       }`}
+                    />
+                  </div>
+                  {showLocationFilter && (
+                    <div
+                      className="filter-dropdown"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <div className="row-cell">
-                        <div className="item-details">
-                          <button
-                            className="item-name"
-                            onClick={() => handleViewDetails(item)}
-                          >
-                            {item.supplyItem}
-                          </button>
-                          <div className="item-brand">{item.brand}</div>
+                      {locations.map((location) => (
+                        <label key={location} className="filter-option">
+                          <input
+                            type="checkbox"
+                            checked={filterLocation.includes(location)}
+                            onChange={(e) => {
+                              handleFilterChange(
+                                "location",
+                                location,
+                                e.target.checked
+                              );
+                              setShowLocationFilter(false);
+                            }}
+                          />
+                          <span>{location}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="header-cell">
+                  <span>Actions</span>
+                </div>
+              </div>
+              <div className="table-scroll-body">
+                <div className="table-body">
+                  {[...filteredConsumables]
+                    .sort((a, b) => {
+                      if (expirationSortOrder === "soonest") {
+                        return (
+                          new Date(a.expirationDate || 0) -
+                          new Date(b.expirationDate || 0)
+                        );
+                      } else if (expirationSortOrder === "farthest") {
+                        return (
+                          new Date(b.expirationDate || 0) -
+                          new Date(a.expirationDate || 0)
+                        );
+                      } else {
+                        // alphabetical
+                        return a.supplyItem.localeCompare(b.supplyItem);
+                      }
+                    })
+
+                    .map((item) => (
+                      <div
+                        key={item.id}
+                        className={`table-row ${
+                          editingRowId === item.id ? "editing-row" : ""
+                        }`}
+                      >
+                        <div className="row-cell">
+                          <div className="item-details">
+                            <button
+                              className="item-name"
+                              onClick={() => handleViewDetails(item)}
+                            >
+                              {item.supplyItem}
+                            </button>
+                            <div className="item-brand">{item.brand}</div>
+                          </div>
+                        </div>
+                        <div className="row-cell" data-label="Rem. Quantity">
+                          {editingRowId === item.id ? (
+                            <input
+                              type="number"
+                              value={editingData.remainingQuantity}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  "remainingQuantity",
+                                  e.target.value
+                                )
+                              }
+                              className="inline-edit-input"
+                            />
+                          ) : (
+                            item.remainingQuantity
+                          )}
+                        </div>
+                        <div className="row-cell hide-mobile">
+                          {editingRowId === item.id ? (
+                            <input
+                              type="number"
+                              value={editingData.quantity}
+                              onChange={(e) =>
+                                handleInputChange("quantity", e.target.value)
+                              }
+                              className="inline-edit-input"
+                            />
+                          ) : (
+                            item.quantity
+                          )}
+                        </div>
+                        <div className="row-cell hide-mobile">
+                          {editingRowId === item.id ? (
+                            <input
+                              type="date"
+                              value={formatDateInput(editingData.dateOpened)}
+                              onChange={(e) =>
+                                handleInputChange("dateOpened", e.target.value)
+                              }
+                              className="inline-edit-input"
+                            />
+                          ) : (
+                            <span>
+                              {formatDateReadable(item.dateOpened) ||
+                                "Not opened"}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="row-cell" data-label="Exp. Date">
+                          {editingRowId === item.id ? (
+                            <input
+                              type="date"
+                              value={formatDateInput(
+                                editingData.expirationDate
+                              )}
+                              onChange={(e) =>
+                                handleInputChange(
+                                  "expirationDate",
+                                  e.target.value
+                                )
+                              }
+                              className="inline-edit-input"
+                            />
+                          ) : (
+                            <span
+                              className={`expiration-badge ${getExpiryColorClass(
+                                item.expirationDate
+                              )}`}
+                            >
+                              {formatDateReadable(item.expirationDate) || "—"}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="row-cell" data-label="Location">
+                          {editingRowId === item.id ? (
+                            <select
+                              value={editingData.location}
+                              onChange={(e) =>
+                                handleInputChange("location", e.target.value)
+                              }
+                              className="inline-edit-select"
+                            >
+                              {locations.map((loc) => (
+                                <option key={loc} value={loc}>
+                                  {loc}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <span className="text-left">{item.location}</span>
+                          )}
+                        </div>
+                        <div className="row-cell">
+                          {editingRowId === item.id ? (
+                            <div className="action-buttons">
+                              <button
+                                className="btn-icon btn-save"
+                                onClick={handleSaveInlineEdit}
+                                title="Save"
+                              >
+                                <Check size={16} />
+                              </button>
+                              <button
+                                className="btn-icon btn-cancel"
+                                onClick={handleCancelInlineEdit}
+                                title="Cancel"
+                              >
+                                <X size={16} />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="action-buttons">
+                              <button
+                                className="btn-icon btn-edit"
+                                onClick={() => handleInlineEdit(item)}
+                                title="Edit"
+                              >
+                                <Edit size={16} />
+                              </button>
+                              <button
+                                className="btn-icon btn-delete"
+                                onClick={() => handleDelete(item.id)}
+                                title="Delete"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
-                      <div className="row-cell" data-label="Rem. Quantity">
-                        {editingRowId === item.id ? (
-                          <input
-                            type="number"
-                            value={editingData.remainingQuantity}
-                            onChange={(e) =>
-                              handleInputChange(
-                                "remainingQuantity",
-                                e.target.value
-                              )
-                            }
-                            className="inline-edit-input"
-                          />
-                        ) : (
-                          item.remainingQuantity
-                        )}
-                      </div>
-                      <div className="row-cell hide-mobile">
-                        {editingRowId === item.id ? (
-                          <input
-                            type="number"
-                            value={editingData.quantity}
-                            onChange={(e) =>
-                              handleInputChange("quantity", e.target.value)
-                            }
-                            className="inline-edit-input"
-                          />
-                        ) : (
-                          item.quantity
-                        )}
-                      </div>
-                      <div className="row-cell hide-mobile">
-                        {editingRowId === item.id ? (
-                          <input
-                            type="date"
-                            value={formatDateInput(editingData.dateOpened)}
-                            onChange={(e) =>
-                              handleInputChange("dateOpened", e.target.value)
-                            }
-                            className="inline-edit-input"
-                          />
-                        ) : (
-                          <span>
-                            {formatDateReadable(item.dateOpened) ||
-                              "Not opened"}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="row-cell" data-label="Exp. Date">
-                        {editingRowId === item.id ? (
-                          <input
-                            type="date"
-                            value={formatDateInput(editingData.expirationDate)}
-                            onChange={(e) =>
-                              handleInputChange(
-                                "expirationDate",
-                                e.target.value
-                              )
-                            }
-                            className="inline-edit-input"
-                          />
-                        ) : (
-                          <span
-                            className={`expiration-badge ${getExpiryColorClass(
-                              item.expirationDate
-                            )}`}
-                          >
-                            {formatDateReadable(item.expirationDate) || "—"}
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="row-cell" data-label="Location">
-                        {editingRowId === item.id ? (
-                          <select
-                            value={editingData.location}
-                            onChange={(e) =>
-                              handleInputChange("location", e.target.value)
-                            }
-                            className="inline-edit-select"
-                          >
-                            {locations.map((loc) => (
-                              <option key={loc} value={loc}>
-                                {loc}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <span className="text-left">{item.location}</span>
-                        )}
-                      </div>
-                      <div className="row-cell">
-                        {editingRowId === item.id ? (
-                          <div className="action-buttons">
-                            <button
-                              className="btn-icon btn-save"
-                              onClick={handleSaveInlineEdit}
-                              title="Save"
-                            >
-                              <Check size={16} />
-                            </button>
-                            <button
-                              className="btn-icon btn-cancel"
-                              onClick={handleCancelInlineEdit}
-                              title="Cancel"
-                            >
-                              <X size={16} />
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="action-buttons">
-                            <button
-                              className="btn-icon btn-edit"
-                              onClick={() => handleInlineEdit(item)}
-                              title="Edit"
-                            >
-                              <Edit size={16} />
-                            </button>
-                            <button
-                              className="btn-icon btn-delete"
-                              onClick={() => handleDelete(item.id)}
-                              title="Delete"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                </div>
               </div>
             </div>
-          </div>
           </div>
         )}
         {detailItem && (

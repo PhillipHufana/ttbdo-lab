@@ -80,7 +80,6 @@ const Equipment = () => {
     return true; // Fallback
   };
 
-
   const getStatusColor = (status) => {
     return status === "Working"
       ? "status-working"
@@ -108,19 +107,34 @@ const Equipment = () => {
     return diffDays > 0 && diffDays <= 30;
   };
 
-
   // Fetch Data
   const fetchEquipment = async () => {
     try {
       const res = await fetch(API_URL);
       const data = await res.json();
       setEquipment(data);
-      setStatusList([
-        ...new Set(data.map((item) => item.status).filter(Boolean)),
-      ]);
-      setLocationList([
-        ...new Set(data.map((item) => item.location).filter(Boolean)),
-      ]);
+
+      const statusMap = {};
+      data.forEach((item) => {
+        if (item.status) {
+          const key = item.status.trim().toLowerCase();
+          if (!statusMap[key]) {
+            statusMap[key] = item.status.trim();
+          }
+        }
+      });
+      setStatusList(Object.values(statusMap));
+
+      const locationMap = {};
+      data.forEach((item) => {
+        if (item.location) {
+          const key = item.location.trim().toLowerCase();
+          if (!locationMap[key]) {
+            locationMap[key] = item.location.trim();
+          }
+        }
+      });
+      setLocationList(Object.values(locationMap));
     } catch (err) {
       console.error("Fetch equipment error:", err);
     }

@@ -73,16 +73,38 @@ const Instruments = () => {
 
       setInstruments(formatted);
 
-      // dynamically build unique filter options
-      setLocationList([
-        ...new Set(formatted.map((i) => i.location).filter(Boolean)),
-      ]);
-      setStatusList([
-        ...new Set(formatted.map((i) => i.status).filter(Boolean)),
-      ]);
-      setConditionList([
-        ...new Set(formatted.map((i) => i.condition).filter(Boolean)),
-      ]);
+      const locationMap = {};
+      data.forEach((r) => {
+        if (r.location) {
+          const key = r.location.trim().toLowerCase();
+          if (!locationMap[key]) {
+            locationMap[key] = r.location.trim();
+          }
+        }
+      });
+      setLocationList(Object.values(locationMap));
+
+      const statusMap = {};
+      data.forEach((r) => {
+        if (r.status) {
+          const key = r.status.trim().toLowerCase();
+          if (!statusMap[key]) {
+            statusMap[key] = r.status.trim();
+          }
+        }
+      });
+      setStatusList(Object.values(statusMap));
+
+      const conditionMap = {};
+      data.forEach((r) => {
+        if (r.condition) {
+          const key = r.condition.trim().toLowerCase();
+          if (!conditionMap[key]) {
+            conditionMap[key] = r.condition.trim();
+          }
+        }
+      });
+      setConditionList(Object.values(conditionMap));
     } catch (err) {
       console.error("Fetch error:", err);
     }
@@ -109,9 +131,7 @@ const Instruments = () => {
       (item.instrument || "")
         .toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
-      (item.brand || "")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
+      (item.brand || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       (item.description || "")
         .toLowerCase()
         .includes(searchTerm.toLowerCase()) ||

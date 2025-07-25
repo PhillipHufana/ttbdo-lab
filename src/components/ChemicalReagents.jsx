@@ -24,9 +24,9 @@ const ChemicalReagents = () => {
   const [filterLocation, setFilterLocation] = useState([]);
 
   // Predefined Filters
-const [categories, setCategories] = useState([]);
-const [statuses, setStatuses] = useState([]);
-const [locations, setLocations] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [statuses, setStatuses] = useState([]);
+  const [locations, setLocations] = useState([]);
 
   const [forms, setForms] = useState(["Solid", "Liquid"]);
 
@@ -78,20 +78,59 @@ const [locations, setLocations] = useState([]);
       const res = await fetch(API_URL);
       const data = await res.json();
 
-      // Extract unique dynamic filters
-      const uniqueCategories = [...new Set(data.map((r) => r.category).filter(Boolean))];
-      const uniqueStatuses = [...new Set(data.map((r) => computeStatus(r)).filter(Boolean))];
-      const uniqueLocations = [...new Set(data.map((r) => r.location).filter(Boolean))];
+      const formatted = data.map((item) => ({
+        id: item.chemical_id,
+        name: item.name,
+        brand: item.brand,
+        category: item.category,
+        status: item.status,
+        description: item.description,
+        dateOpened: item.date_opened,
+        expirationDate: item.expiration_date,
+        containerSize: item.container_size,
+        location: item.location,
+      }));
 
-      setReagents(data);
+      setReagents(formatted);
+
+      const categoryMap = {};
+      data.forEach((r) => {
+        if (r.category) {
+          const key = r.category.trim().toLowerCase();
+          if (!categoryMap[key]) {
+            categoryMap[key] = r.category.trim();
+          }
+        }
+      });
+      const uniqueCategories = Object.values(categoryMap);
       setCategories(uniqueCategories);
-      setStatuses(uniqueStatuses);
+
+      const locationMap = {};
+      data.forEach((r) => {
+        if (r.location) {
+          const key = r.location.trim().toLowerCase();
+          if (!locationMap[key]) {
+            locationMap[key] = r.location.trim();
+          }
+        }
+      });
+      const uniqueLocations = Object.values(locationMap);
       setLocations(uniqueLocations);
+      const statusMap = {};
+      data.forEach((r) => {
+        if (r.status) {
+          const key = r.status.trim().toLowerCase();
+          if (!statusMap[key]) {
+            statusMap[key] = r.status.trim();
+          }
+        }
+      });
+      const uniqueStatuses = Object.values(statusMap);
+      setStatuses(uniqueStatuses);
     } catch (err) {
-      console.error("Fetch failed:", err);
+      console.error("Fetch error:", err);
     }
   };
-
 
   // Filtering
   const filteredReagents = reagents.filter((r) => {
@@ -111,8 +150,13 @@ const [locations, setLocations] = useState([]);
   });
 
   const handleFilterChange = (filterType, value, checked) => {
-    const update = (prev) =>
-      checked ? [...prev, value] : prev.filter((item) => item !== value);
+    const update = (prev) => {
+      if (checked) {
+        return prev.includes(value) ? prev : [...prev, value];
+      } else {
+        return prev.filter((item) => item !== value);
+      }
+    };
 
     switch (filterType) {
       case "category":
@@ -212,8 +256,10 @@ const [locations, setLocations] = useState([]);
 
     if (expDate < today) {
       if (statusToSave.includes("Opened")) statusToSave = "EXPIRED: Opened";
-      else if (statusToSave.includes("Unopened")) statusToSave = "EXPIRED: Unopened";
-      else if (statusToSave.includes("Sealed")) statusToSave = "EXPIRED: Sealed";
+      else if (statusToSave.includes("Unopened"))
+        statusToSave = "EXPIRED: Unopened";
+      else if (statusToSave.includes("Sealed"))
+        statusToSave = "EXPIRED: Sealed";
       else statusToSave = "EXPIRED: " + statusToSave;
     } else if (statusToSave?.startsWith("EXPIRED: ")) {
       statusToSave = statusToSave.replace("EXPIRED: ", "");
@@ -226,7 +272,6 @@ const [locations, setLocations] = useState([]);
     setShowForm(false);
     setEditingItem(null);
   };
-
 
   const handleDelete = async (id) => {
     if (window.confirm("Delete?")) {
@@ -339,410 +384,429 @@ const [locations, setLocations] = useState([]);
             </div>
           ) : (
             <div className="table-responsive">
-            <div className="modern-table">
-              <div className="table-header">
-                {/* Existing Headers */}
-                <div className="header-cell">
-                  <span className="text-center">Chemical Name</span>
-                </div>
-                <div className="header-cell filter-header" ref={categoryRef}>
-                  <div
-                    onClick={() => setShowCategoryFilter(!showCategoryFilter)}
-                  >
-                    <span className="text-center">Category</span>
-                    <ChevronDown
-                      size={16}
-                      className={`filter-arrow ${
-                        showCategoryFilter ? "rotated" : ""
-                      }`}
-                    />
+              <div className="modern-table">
+                <div className="table-header">
+                  {/* Existing Headers */}
+                  <div className="header-cell">
+                    <span className="text-center">Chemical Name</span>
                   </div>
-                  {showCategoryFilter && (
+                  <div className="header-cell filter-header" ref={categoryRef}>
                     <div
-                       className="filter-dropdown absolute z-50 bg-white border border-gray-300 rounded p-2 shadow-lg max-h-60 overflow-y-auto min-w-[180px]"
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={() => setShowCategoryFilter(!showCategoryFilter)}
                     >
-                      {categories.map((category) => (
-                        <label key={category} className="filter-option">
-                          <input
-                            type="checkbox"
-                            checked={filterCategory.includes(category)}
-                            onChange={(e) =>
-                              handleFilterChange(
-                                "category",
-                                category,
-                                e.target.checked
-                              )
-                            }
-                          />
-                          <span>{category}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                  
-                </div>
-                <div className="header-cell hide-mobile">
-                  <span className="text-center">Date Opened</span>
-                </div>
-                {/* Expiration Date Header */}
-                <div className="header-cell filter-header" ref={expirationRef}>
-                  <div
-                    onClick={() =>
-                      setShowExpirationFilter(!showExpirationFilter)
-                    }
-                  >
-                    <span className="text-center">Expiration Date</span>
-                    <ChevronDown
-                      size={16}
-                      className={`filter-arrow ${
-                        showExpirationFilter ? "rotated" : ""
-                      }`}
-                    />
-                  </div>
-
-                  {showExpirationFilter && (
-                    <div
-                      className="filter-dropdown"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <label className="filter-option">
-                        <input
-                          type="checkbox"
-                          checked={expirationSortOrder === "soonest"}
-                          onChange={(e) => {
-                            // if already selected, unselect; otherwise select
-                            setExpirationSortOrder(
-                              expirationSortOrder === "soonest" ? "" : "soonest"
-                            );
-                            setShowExpirationFilter(false);
-                          }}
-                        />
-                        <span>Soonest to Expire</span>
-                      </label>
-
-                      <label className="filter-option">
-                        <input
-                          type="checkbox"
-                          checked={expirationSortOrder === "farthest"}
-                          onChange={(e) => {
-                            setExpirationSortOrder(
-                              expirationSortOrder === "farthest"
-                                ? ""
-                                : "farthest"
-                            );
-                            setShowExpirationFilter(false);
-                          }}
-                        />
-                        <span>Farthest to Expire</span>
-                      </label>
-                    </div>
-                  )}
-                </div>
-
-                <div className="header-cell hide-mobile">
-                  <span className="text-center">Container Size</span>
-                </div>
-                <div className="header-cell filter-header" ref={locationRef}>
-                  <div
-                    onClick={() => setShowLocationFilter(!showLocationFilter)}
-                  >
-                    <span className="text-center">Location</span>
-                    <ChevronDown
-                      size={16}
-                      className={`filter-arrow ${
-                        showLocationFilter ? "rotated" : ""
-                      }`}
-                    />
-                  </div>
-                  {showLocationFilter && (
-                    <div
-                      className="filter-dropdown"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {locations.map((location) => (
-                        <label key={location} className="filter-option">
-                          <input
-                            type="checkbox"
-                            checked={filterLocation.includes(location)}
-                            onChange={(e) =>
-                              handleFilterChange(
-                                "location",
-                                location,
-                                e.target.checked
-                              )
-                            }
-                          />
-                          <span>{location}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="header-cell filter-header" ref={statusRef}>
-                  <div onClick={() => setShowStatusFilter(!showStatusFilter)}>
-                    <span className="text-center">Status</span>
-                    <ChevronDown
-                      size={16}
-                      className={`filter-arrow ${
-                        showStatusFilter ? "rotated" : ""
-                      }`}
-                    />
-                  </div>
-                  {showStatusFilter && (
-                    <div
-                      className="filter-dropdown"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {statuses.map((status) => (
-                        <label key={status} className="filter-option">
-                          <input
-                            type="checkbox"
-                            checked={filterStatus.includes(status)}
-                            onChange={(e) =>
-                              handleFilterChange(
-                                "status",
-                                status,
-                                e.target.checked
-                              )
-                            }
-                          />
-                          <span>{status}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="header-cell">
-                  <span className="text-center">Actions</span>
-                </div>
-              </div>
-              {/* Table Body */}
-              <div className="table-scroll-body">
-                <div className="table-body">
-                  {filteredReagents
-                    .slice() // make a shallow copy before sorting
-                    .sort((a, b) => {
-                      if (expirationSortOrder === "soonest") {
-                        return (
-                          new Date(a.expiration_date || 0) -
-                          new Date(b.expiration_date || 0)
-                        );
-                      } else if (expirationSortOrder === "farthest") {
-                        return (
-                          new Date(b.expiration_date || 0) -
-                          new Date(a.expiration_date || 0)
-                        );
-                      } else {
-                        // default sort (by name, or leave as-is)
-                        return a.name.localeCompare(b.name);
-                      }
-                    })
-                    .map((reagent) => (
-                      <div
-                        key={reagent.chemical_id}
-                        className={`table-row ${
-                          editingRowId === reagent.chemical_id
-                            ? "editing-row"
-                            : ""
+                      <span className="text-center">Category</span>
+                      <ChevronDown
+                        size={16}
+                        className={`filter-arrow ${
+                          showCategoryFilter ? "rotated" : ""
                         }`}
+                      />
+                    </div>
+                    {showCategoryFilter && (
+                      <div
+                        className="filter-dropdown absolute z-50 bg-white border border-gray-300 rounded p-2 shadow-lg max-h-60 overflow-y-auto min-w-[180px]"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        {/* Chemical Name */}
-                        <div className="row-cell flex-[2]">
-                          <div className="item-details">
-                            <button
-                              className="item-name"
-                              onClick={() => handleViewDetails(reagent)}
-                            >
-                              {reagent.name}
-                            </button>
-                            <div className="item-brand">{reagent.brand}</div>
+                        {categories.map((category) => (
+                          <label key={category} className="filter-option">
+                            <input
+                              type="checkbox"
+                              checked={filterCategory.includes(category)}
+                              onChange={(e) =>
+                                handleFilterChange(
+                                  "category",
+                                  category,
+                                  e.target.checked
+                                )
+                              }
+                            />
+                            <span>{category}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="header-cell hide-mobile">
+                    <span className="text-center">Date Opened</span>
+                  </div>
+                  {/* Expiration Date Header */}
+                  <div
+                    className="header-cell filter-header"
+                    ref={expirationRef}
+                  >
+                    <div
+                      onClick={() =>
+                        setShowExpirationFilter(!showExpirationFilter)
+                      }
+                    >
+                      <span className="text-center">Expiration Date</span>
+                      <ChevronDown
+                        size={16}
+                        className={`filter-arrow ${
+                          showExpirationFilter ? "rotated" : ""
+                        }`}
+                      />
+                    </div>
+
+                    {showExpirationFilter && (
+                      <div
+                        className="filter-dropdown"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <label className="filter-option">
+                          <input
+                            type="checkbox"
+                            checked={expirationSortOrder === "soonest"}
+                            onChange={(e) => {
+                              // if already selected, unselect; otherwise select
+                              setExpirationSortOrder(
+                                expirationSortOrder === "soonest"
+                                  ? ""
+                                  : "soonest"
+                              );
+                              setShowExpirationFilter(false);
+                            }}
+                          />
+                          <span>Soonest to Expire</span>
+                        </label>
+
+                        <label className="filter-option">
+                          <input
+                            type="checkbox"
+                            checked={expirationSortOrder === "farthest"}
+                            onChange={(e) => {
+                              setExpirationSortOrder(
+                                expirationSortOrder === "farthest"
+                                  ? ""
+                                  : "farthest"
+                              );
+                              setShowExpirationFilter(false);
+                            }}
+                          />
+                          <span>Farthest to Expire</span>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="header-cell hide-mobile">
+                    <span className="text-center">Container Size</span>
+                  </div>
+                  <div className="header-cell filter-header" ref={locationRef}>
+                    <div
+                      onClick={() => setShowLocationFilter(!showLocationFilter)}
+                    >
+                      <span className="text-center">Location</span>
+                      <ChevronDown
+                        size={16}
+                        className={`filter-arrow ${
+                          showLocationFilter ? "rotated" : ""
+                        }`}
+                      />
+                    </div>
+                    {showLocationFilter && (
+                      <div
+                        className="filter-dropdown"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {locations.map((location) => (
+                          <label key={location} className="filter-option">
+                            <input
+                              type="checkbox"
+                              checked={filterLocation.includes(location)}
+                              onChange={(e) =>
+                                handleFilterChange(
+                                  "location",
+                                  location,
+                                  e.target.checked
+                                )
+                              }
+                            />
+                            <span>{location}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="header-cell filter-header" ref={statusRef}>
+                    <div onClick={() => setShowStatusFilter(!showStatusFilter)}>
+                      <span className="text-center">Status</span>
+                      <ChevronDown
+                        size={16}
+                        className={`filter-arrow ${
+                          showStatusFilter ? "rotated" : ""
+                        }`}
+                      />
+                    </div>
+                    {showStatusFilter && (
+                      <div
+                        className="filter-dropdown"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {statuses.map((status) => (
+                          <label key={status} className="filter-option">
+                            <input
+                              type="checkbox"
+                              checked={filterStatus.includes(status)}
+                              onChange={(e) =>
+                                handleFilterChange(
+                                  "status",
+                                  status,
+                                  e.target.checked
+                                )
+                              }
+                            />
+                            <span>{status}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="header-cell">
+                    <span className="text-center">Actions</span>
+                  </div>
+                </div>
+                {/* Table Body */}
+                <div className="table-scroll-body">
+                  <div className="table-body">
+                    {filteredReagents
+                      .slice() // make a shallow copy before sorting
+                      .sort((a, b) => {
+                        if (expirationSortOrder === "soonest") {
+                          return (
+                            new Date(a.expiration_date || 0) -
+                            new Date(b.expiration_date || 0)
+                          );
+                        } else if (expirationSortOrder === "farthest") {
+                          return (
+                            new Date(b.expiration_date || 0) -
+                            new Date(a.expiration_date || 0)
+                          );
+                        } else {
+                          // default sort (by name, or leave as-is)
+                          return a.name.localeCompare(b.name);
+                        }
+                      })
+                      .map((reagent) => (
+                        <div
+                          key={reagent.chemical_id}
+                          className={`table-row ${
+                            editingRowId === reagent.chemical_id
+                              ? "editing-row"
+                              : ""
+                          }`}
+                        >
+                          {/* Chemical Name */}
+                          <div className="row-cell flex-[2]">
+                            <div className="item-details">
+                              <button
+                                className="item-name"
+                                onClick={() => handleViewDetails(reagent)}
+                              >
+                                {reagent.name}
+                              </button>
+                              <div className="item-brand">{reagent.brand}</div>
+                            </div>
+                          </div>
+
+                          {/* Category */}
+                          <div
+                            className="row-cell flex-[1.2]"
+                            data-label="Category"
+                          >
+                            {editingRowId === reagent.chemical_id ? (
+                              <select
+                                value={editingData.category}
+                                onChange={(e) =>
+                                  handleInputChange("category", e.target.value)
+                                }
+                                className="inline-edit-select"
+                              >
+                                {categories.map((cat) => (
+                                  <option key={cat} value={cat}>
+                                    {cat}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span className="text-left">
+                                {reagent.category}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Date Opened */}
+                          <div className="row-cell flex-[1] hide-mobile">
+                            {editingRowId === reagent.chemical_id ? (
+                              <input
+                                type="date"
+                                value={editingData.date_opened || ""}
+                                onChange={(e) =>
+                                  handleInputChange(
+                                    "date_opened",
+                                    e.target.value
+                                  )
+                                }
+                                className="inline-edit-input"
+                              />
+                            ) : (
+                              <span className="text-left">
+                                {formatDatePretty(reagent.date_opened) ||
+                                  "Not opened"}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Expiration Date */}
+                          <div
+                            className="row-cell flex-[1]"
+                            data-label="Exp. Date"
+                          >
+                            {editingRowId === reagent.chemical_id ? (
+                              <input
+                                type="date"
+                                value={editingData.expiration_date || ""}
+                                onChange={(e) =>
+                                  handleInputChange(
+                                    "expiration_date",
+                                    e.target.value
+                                  )
+                                }
+                                className="inline-edit-input"
+                              />
+                            ) : (
+                              <span
+                                className={`expiration-badge ${getExpirationColor(
+                                  reagent.expiration_date
+                                )}`}
+                              >
+                                {formatDatePretty(reagent.expiration_date)}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Container Size */}
+                          <div className="row-cell flex-[0.8] hide-mobile">
+                            {editingRowId === reagent.chemical_id ? (
+                              <input
+                                type="text"
+                                value={editingData.container_size || ""}
+                                onChange={(e) =>
+                                  handleInputChange(
+                                    "container_size",
+                                    e.target.value
+                                  )
+                                }
+                                className="inline-edit-input"
+                              />
+                            ) : (
+                              <span className="text-left">
+                                {reagent.container_size}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Location */}
+                          <div
+                            className="row-cell flex-[1]"
+                            data-label="Location"
+                          >
+                            {editingRowId === reagent.chemical_id ? (
+                              <select
+                                value={editingData.location}
+                                onChange={(e) =>
+                                  handleInputChange("location", e.target.value)
+                                }
+                                className="inline-edit-select"
+                              >
+                                {locations.map((loc) => (
+                                  <option key={loc} value={loc}>
+                                    {loc}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span className="text-left">
+                                {reagent.location}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Status */}
+                          <div
+                            className="row-cell flex-[1]"
+                            data-label="Status"
+                          >
+                            {editingRowId === reagent.chemical_id ? (
+                              <select
+                                value={editingData.status}
+                                onChange={(e) =>
+                                  handleInputChange("status", e.target.value)
+                                }
+                                className="inline-edit-select"
+                              >
+                                {statuses.map((status) => (
+                                  <option key={status} value={status}>
+                                    {status}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span
+                                className={`status-badge ${getStatusColor(
+                                  computeStatus(reagent)
+                                )}`}
+                              >
+                                {computeStatus(reagent)}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Actions */}
+                          <div className="row-cell flex-[1]">
+                            {editingRowId === reagent.chemical_id ? (
+                              <div className="action-buttons">
+                                <button
+                                  className="btn-icon btn-save"
+                                  onClick={handleSaveInlineEdit}
+                                  title="Save"
+                                >
+                                  <Check size={16} />
+                                </button>
+                                <button
+                                  className="btn-icon btn-cancel"
+                                  onClick={handleCancelInlineEdit}
+                                  title="Cancel"
+                                >
+                                  <X size={16} />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="action-buttons">
+                                <button
+                                  className="btn-icon btn-edit"
+                                  onClick={() => handleInlineEdit(reagent)}
+                                  title="Edit"
+                                >
+                                  <Edit size={16} />
+                                </button>
+                                <button
+                                  className="btn-icon btn-delete"
+                                  onClick={() =>
+                                    handleDelete(reagent.chemical_id)
+                                  }
+                                  title="Delete"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
-
-                        {/* Category */}
-                        <div className="row-cell flex-[1.2]" data-label="Category">
-                          {editingRowId === reagent.chemical_id ? (
-                            <select
-                              value={editingData.category}
-                              onChange={(e) =>
-                                handleInputChange("category", e.target.value)
-                              }
-                              className="inline-edit-select"
-                            >
-                              {categories.map((cat) => (
-                                <option key={cat} value={cat}>
-                                  {cat}
-                                </option>
-                              ))}
-                            </select>
-                          ) : (
-                            <span className="text-left">
-                              {reagent.category}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Date Opened */}
-                        <div className="row-cell flex-[1] hide-mobile">
-                          {editingRowId === reagent.chemical_id ? (
-                            <input
-                              type="date"
-                              value={editingData.date_opened || ""}
-                              onChange={(e) =>
-                                handleInputChange("date_opened", e.target.value)
-                              }
-                              className="inline-edit-input"
-                            />
-                          ) : (
-                            <span className="text-left">
-                              {formatDatePretty(reagent.date_opened) ||
-                                "Not opened"}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Expiration Date */}
-                        <div className="row-cell flex-[1]" data-label="Exp. Date">
-                          {editingRowId === reagent.chemical_id ? (
-                            <input
-                              type="date"
-                              value={editingData.expiration_date || ""}
-                              onChange={(e) =>
-                                handleInputChange(
-                                  "expiration_date",
-                                  e.target.value
-                                )
-                              }
-                              className="inline-edit-input"
-                            />
-                          ) : (
-                            <span
-                              className={`expiration-badge ${getExpirationColor(
-                                reagent.expiration_date
-                              )}`}
-                            >
-                              {formatDatePretty(reagent.expiration_date)}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Container Size */}
-                        <div className="row-cell flex-[0.8] hide-mobile">
-                          {editingRowId === reagent.chemical_id ? (
-                            <input
-                              type="text"
-                              value={editingData.container_size || ""}
-                              onChange={(e) =>
-                                handleInputChange(
-                                  "container_size",
-                                  e.target.value
-                                )
-                              }
-                              className="inline-edit-input"
-                            />
-                          ) : (
-                            <span className="text-left">
-                              {reagent.container_size}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Location */}
-                        <div className="row-cell flex-[1]" data-label="Location">
-                          {editingRowId === reagent.chemical_id ? (
-                            <select
-                              value={editingData.location}
-                              onChange={(e) =>
-                                handleInputChange("location", e.target.value)
-                              }
-                              className="inline-edit-select"
-                            >
-                              {locations.map((loc) => (
-                                <option key={loc} value={loc}>
-                                  {loc}
-                                </option>
-                              ))}
-                            </select>
-                          ) : (
-                            <span className="text-left">
-                              {reagent.location}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Status */}
-                        <div className="row-cell flex-[1]" data-label="Status">
-                          {editingRowId === reagent.chemical_id ? (
-                            <select
-                              value={editingData.status}
-                              onChange={(e) =>
-                                handleInputChange("status", e.target.value)
-                              }
-                              className="inline-edit-select"
-                            >
-                              {statuses.map((status) => (
-                                <option key={status} value={status}>
-                                  {status}
-                                </option>
-                              ))}
-                            </select>
-                          ) : (
-                            <span
-                              className={`status-badge ${getStatusColor(
-                                computeStatus(reagent)
-                              )}`}
-                            >
-                              {computeStatus(reagent)}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Actions */}
-                        <div className="row-cell flex-[1]">
-                          {editingRowId === reagent.chemical_id ? (
-                            <div className="action-buttons">
-                              <button
-                                className="btn-icon btn-save"
-                                onClick={handleSaveInlineEdit}
-                                title="Save"
-                              >
-                                <Check size={16} />
-                              </button>
-                              <button
-                                className="btn-icon btn-cancel"
-                                onClick={handleCancelInlineEdit}
-                                title="Cancel"
-                              >
-                                <X size={16} />
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="action-buttons">
-                              <button
-                                className="btn-icon btn-edit"
-                                onClick={() => handleInlineEdit(reagent)}
-                                title="Edit"
-                              >
-                                <Edit size={16} />
-                              </button>
-                              <button
-                                className="btn-icon btn-delete"
-                                onClick={() =>
-                                  handleDelete(reagent.chemical_id)
-                                }
-                                title="Delete"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                  </div>
                 </div>
               </div>
-            </div>
             </div>
           )}
           {detailItem && (
