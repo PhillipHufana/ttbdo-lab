@@ -51,6 +51,12 @@ const Instruments = () => {
     condition: useRef(null),
   };
 
+  const normalize = (val) => (val || "").toLowerCase().trim();
+
+  const toTitleCase = (str) =>
+    (str || "").replace(/\w\S*/g, (txt) => txt[0].toUpperCase() + txt.slice(1).toLowerCase());
+
+
   // Fetch Data
   const fetchInstruments = async () => {
     try {
@@ -75,14 +81,15 @@ const Instruments = () => {
 
       // dynamically build unique filter options
       setLocationList([
-        ...new Set(formatted.map((i) => i.location).filter(Boolean)),
+        ...new Set(formatted.map((i) => normalize(i.location)).filter(Boolean)),
       ]);
       setStatusList([
-        ...new Set(formatted.map((i) => i.status).filter(Boolean)),
+        ...new Set(formatted.map((i) => normalize(i.status)).filter(Boolean)),
       ]);
       setConditionList([
-        ...new Set(formatted.map((i) => i.condition).filter(Boolean)),
+        ...new Set(formatted.map((i) => normalize(i.condition)).filter(Boolean)),
       ]);
+
     } catch (err) {
       console.error("Fetch error:", err);
     }
@@ -105,29 +112,40 @@ const Instruments = () => {
 
   // Filtering
   const filteredInstruments = instruments.filter((item) => {
+    const instrument = normalize(item.instrument);
+    const brand = normalize(item.brand);
+    const desc = normalize(item.description);
+    const location = normalize(item.location);
+    const status = normalize(item.status);
+    const condition = normalize(item.condition);
+    const search = normalize(searchTerm);
+
     const matchesSearch =
-      (item.instrument || "")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      (item.brand || "")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      (item.description || "")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      (item.location || "").toLowerCase().includes(searchTerm.toLowerCase());
+      instrument.includes(search) ||
+      brand.includes(search) ||
+      desc.includes(search) ||
+      location.includes(search);
 
     const matchesStatus =
-      filterStatus.length === 0 || filterStatus.includes(item.status);
+      filterStatus.length === 0 ||
+      filterStatus.some((s) => normalize(s) === status);
+
     const matchesCondition =
-      filterCondition.length === 0 || filterCondition.includes(item.condition);
+      filterCondition.length === 0 ||
+      filterCondition.some((c) => normalize(c) === condition);
+
     const matchesLocation =
-      filterLocation.length === 0 || filterLocation.includes(item.location);
+      filterLocation.length === 0 ||
+      filterLocation.some((l) => normalize(l) === location);
 
     return (
-      matchesSearch && matchesStatus && matchesCondition && matchesLocation
+      matchesSearch &&
+      matchesStatus &&
+      matchesCondition &&
+      matchesLocation
     );
   });
+
 
   // Color helpers
   const getStatusColor = (status) => {
@@ -345,14 +363,10 @@ const Instruments = () => {
                             type="checkbox"
                             checked={filterLocation.includes(loc)}
                             onChange={(e) =>
-                              handleFilterChange(
-                                "location",
-                                loc,
-                                e.target.checked
-                              )
+                              handleFilterChange("location", loc, e.target.checked)
                             }
                           />
-                          <span>{loc}</span>
+                          <span>{toTitleCase(loc.trim())}</span>
                         </label>
                       ))}
                     </div>
@@ -384,14 +398,10 @@ const Instruments = () => {
                             type="checkbox"
                             checked={filterStatus.includes(status)}
                             onChange={(e) =>
-                              handleFilterChange(
-                                "status",
-                                status,
-                                e.target.checked
-                              )
+                              handleFilterChange("status", status, e.target.checked)
                             }
                           />
-                          <span>{status}</span>
+                          <span>{toTitleCase(status.trim())}</span>
                         </label>
                       ))}
                     </div>
@@ -422,14 +432,10 @@ const Instruments = () => {
                             type="checkbox"
                             checked={filterCondition.includes(cond)}
                             onChange={(e) =>
-                              handleFilterChange(
-                                "condition",
-                                cond,
-                                e.target.checked
-                              )
+                              handleFilterChange("condition", cond, e.target.checked)
                             }
                           />
-                          <span>{cond}</span>
+                          <span>{toTitleCase(cond.trim())}</span>
                         </label>
                       ))}
                     </div>

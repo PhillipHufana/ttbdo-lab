@@ -48,6 +48,9 @@ const Equipment = () => {
   const lastCalibRef = useRef(null);
   const nextCalibRef = useRef(null);
 
+  const normalize = (val) => (val || "").toLowerCase().trim();
+
+
   // Helpers
   const formatDatePretty = (iso) => {
     if (!iso) return "N/A";
@@ -114,12 +117,15 @@ const Equipment = () => {
     try {
       const res = await fetch(API_URL);
       const data = await res.json();
+
       setEquipment(data);
+
       setStatusList([
-        ...new Set(data.map((item) => item.status).filter(Boolean)),
+        ...new Set(data.map((item) => normalize(item.status)).filter(Boolean)),
       ]);
+
       setLocationList([
-        ...new Set(data.map((item) => item.location).filter(Boolean)),
+        ...new Set(data.map((item) => normalize(item.location)).filter(Boolean)),
       ]);
     } catch (err) {
       console.error("Fetch equipment error:", err);
@@ -154,21 +160,29 @@ const Equipment = () => {
 
   // Filtering
   const filteredEquipment = equipment.filter((item) => {
+    const name = normalize(item.name);
+    const code = normalize(item.equipment_code);
+    const location = normalize(item.location);
+    const model = normalize(item.model);
+    const status = normalize(item.status);
+    const search = normalize(searchTerm);
+
     const matchesSearch =
-      (item.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.equipment_code || "")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      (item.location || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.model || "").toLowerCase().includes(searchTerm.toLowerCase());
+      name.includes(search) ||
+      code.includes(search) ||
+      location.includes(search) ||
+      model.includes(search);
 
     const matchesStatus =
-      filterStatus.length === 0 || filterStatus.includes(item.status);
+      filterStatus.length === 0 ||
+      filterStatus.some((f) => normalize(f) === status);
+
     const matchesLocation =
-      filterLocation.length === 0 || filterLocation.includes(item.location);
+      filterLocation.length === 0 ||
+      filterLocation.some((f) => normalize(f) === location);
 
     const dateFilter = (filter, date) =>
-      !filter || (date && date.startsWith(filter));
+      !filter || (date && normalize(date).startsWith(normalize(filter)));
 
     return (
       matchesSearch &&
@@ -186,6 +200,9 @@ const Equipment = () => {
       )
     );
   });
+
+  const toTitleCase = (str) =>
+    (str || "").replace(/\w\S*/g, (txt) => txt[0].toUpperCase() + txt.slice(1).toLowerCase());
 
   // Handlers
   const handleFilterChange = (type, value, checked) => {
@@ -336,14 +353,10 @@ const Equipment = () => {
                               type="checkbox"
                               checked={filterLocation.includes(loc)}
                               onChange={(e) =>
-                                handleFilterChange(
-                                  "location",
-                                  loc,
-                                  e.target.checked
-                                )
+                                handleFilterChange("location", loc, e.target.checked)
                               }
                             />
-                            {loc}
+                            {toTitleCase(loc.trim())}
                           </label>
                         ))}
                       </div>
@@ -548,14 +561,10 @@ const Equipment = () => {
                               type="checkbox"
                               checked={filterStatus.includes(status)}
                               onChange={(e) =>
-                                handleFilterChange(
-                                  "status",
-                                  status,
-                                  e.target.checked
-                                )
+                                handleFilterChange("status", status, e.target.checked)
                               }
                             />
-                            {status}
+                            {toTitleCase(status.trim())}
                           </label>
                         ))}
                       </div>

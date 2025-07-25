@@ -13,6 +13,8 @@ import DetailPopup from "./DetailPopup";
 
 const API_URL = "http://localhost:5000/api/consumable";
 
+const normalize = (val) => (val || "").toLowerCase().trim();
+
 // Helpers
 const formatDateInput = (dateStr) =>
   typeof dateStr === "string" ? dateStr.slice(0, 10) : "";
@@ -67,6 +69,8 @@ const Consumables = () => {
   // Refs
   const locationRef = useRef(null);
   const expirationRef = useRef(null);
+  const toTitleCase = (str) =>
+    str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
 
   // Fetch Data
   const fetchConsumables = async () => {
@@ -96,8 +100,10 @@ const Consumables = () => {
 
       setConsumables(formatted);
       setLocations([
-        ...new Set(formatted.map((item) => item.location).filter(Boolean)),
-      ]);
+      ...new Set(
+        formatted.map((item) => normalize(item.location)).filter(Boolean)
+      ),
+    ]);
     } catch (err) {
       console.error("Fetch error:", err);
     }
@@ -126,17 +132,20 @@ const Consumables = () => {
 
   // Filtering
   const filteredConsumables = consumables.filter((item) => {
+    const supplyItem = normalize(item.supplyItem);
+    const location = normalize(item.location);
+    const search = normalize(searchTerm);
+
     const matchesSearch =
-      (item.supplyItem || "")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      (item.location || "").toLowerCase().includes(searchTerm.toLowerCase());
+      supplyItem.includes(search) || location.includes(search);
 
     const matchesLocation =
-      filterLocation.length === 0 || filterLocation.includes(item.location);
+      filterLocation.length === 0 ||
+      filterLocation.some((f) => normalize(f) === location);
 
     return matchesSearch && matchesLocation;
   });
+
 
   // Handlers
   const handleAdd = () => {
@@ -509,7 +518,7 @@ const Consumables = () => {
                           >
                             {locations.map((loc) => (
                               <option key={loc} value={loc}>
-                                {loc}
+                                {toTitleCase(loc)}
                               </option>
                             ))}
                           </select>
