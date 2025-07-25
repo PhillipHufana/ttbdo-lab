@@ -245,40 +245,40 @@ const ConsumableForm = ({ initialData, onSave, onCancel, onAddLocation }) => {
         {/* Dates */}
         <div className="form-group">
           <label>
-            Date Received <span className="required">*</span>
+            Date Received 
           </label>
           <input
             type="date"
             name="dateReceived"
             value={formData.dateReceived}
             onChange={handleChange}
-            required
+            // required
           />
         </div>
 
         <div className="form-group">
           <label>
-            Date Opened <span className="required">*</span>
+            Date Opened 
           </label>
           <input
             type="date"
             name="dateOpened"
             value={formData.dateOpened}
             onChange={handleChange}
-            required
+            // required
           />
         </div>
 
         <div className="form-group">
           <label>
-            Expiration Date <span className="required">*</span>
+            Expiration Date 
           </label>
           <input
             type="date"
             name="expirationDate"
             value={formData.expirationDate}
             onChange={handleChange}
-            required
+            // required
           />
         </div>
 

@@ -287,27 +287,27 @@ const ChemicalReagentForm = ({
         {/* Dates */}
         <div className="form-group">
           <label>
-            Date Received <span className="required">*</span>
+            Date Received 
           </label>
           <input
             type="date"
             name="date_received"
             value={formData.date_received}
             onChange={handleChange}
-            required
+            // required
           />
         </div>
 
         <div className="form-group">
           <label>
-            Expiration Date <span className="required">*</span>
+            Expiration Date
           </label>
           <input
             type="date"
             name="expiration_date"
             value={formData.expiration_date}
             onChange={handleChange}
-            required
+            // required
           />
         </div>
 

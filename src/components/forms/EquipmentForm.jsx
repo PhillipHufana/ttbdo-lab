@@ -294,13 +294,13 @@ const EquipmentForm = ({
         {renderDropdown("Status", "status", statusList)}
 
         <div className="form-group">
-          <label>Date Received *</label>
+          <label>Date Received </label>
           <input
             type="date"
             name="date_received"
             value={formData.date_received || ""}
             onChange={handleChange}
-            required
+            // required
           />
         </div>
 
@@ -366,13 +366,13 @@ const EquipmentForm = ({
         </div>
 
         <div className="form-group">
-          <label>Last Maintenance *</label>
+          <label>Last Maintenance </label>
           <input
             type="date"
             name="last_updated"
             value={formData.last_updated || ""}
             onChange={handleChange}
-            required
+            // required
           />
         </div>
 
@@ -387,13 +387,13 @@ const EquipmentForm = ({
         </div>
 
         <div className="form-group">
-          <label>Last Calibration *</label>
+          <label>Last Calibration</label>
           <input
             type="date"
             name="last_calibration_date"
             value={formData.last_calibration_date || ""}
             onChange={handleChange}
-            required
+            // required
           />
         </div>
 
