@@ -169,6 +169,16 @@ body {
   flex: 1;
 }
 
+.no-data-message {
+  text-align: center;
+  padding: 2rem;
+  font-size: 0.95rem;
+  color: #6b7280;
+  background: #f1f5f9;
+  border-radius: 8px;
+}
+
+
 /* Controls Section - Updated for right-aligned button */
 .controls-section {
   display: flex;

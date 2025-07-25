@@ -598,256 +598,269 @@ const Equipment = () => {
                 </div>
                 <div className="table-scroll-body">
                   <div className="table-body">
-                    {filteredEquipment
-                      .sort((a, b) => {
-                        const aName = a.name?.trim() || "";
-                        const bName = b.name?.trim() || "";
-                        if (!aName && !bName) return 0;
-                        if (!aName) return 1;
-                        if (!bName) return -1;
-                        return aName.localeCompare(bName);
-                      })
-                      .map((item) => (
-                        <div
-                          key={item.equipment_id}
-                          className={`table-row ${
-                            editingRowId === item.equipment_id
-                              ? "editing-row"
-                              : ""
-                          }`}
-                        >
-                          {/* Equipment Name */}
-                          <div className="row-cell">
-                            <div className="item-details">
-                              <button
-                                className="item-name"
-                                onClick={() => handleViewDetails(item)}
-                              >
-                                {item.name}
-                              </button>
-                              <div className="item-brand">{item.brand}</div>
+                    {filteredEquipment.length === 0 ? (
+                      <div className="no-data-message">No data to display.</div>
+                    ) : (
+                      filteredEquipment
+                        .sort((a, b) => {
+                          const aName = a.name?.trim() || "";
+                          const bName = b.name?.trim() || "";
+                          if (!aName && !bName) return 0;
+                          if (!aName) return 1;
+                          if (!bName) return -1;
+                          return aName.localeCompare(bName);
+                        })
+                        .map((item) => (
+                          <div
+                            key={item.equipment_id}
+                            className={`table-row ${
+                              editingRowId === item.equipment_id
+                                ? "editing-row"
+                                : ""
+                            }`}
+                          >
+                            {/* Equipment Name */}
+                            <div className="row-cell">
+                              <div className="item-details">
+                                <button
+                                  className="item-name"
+                                  onClick={() => handleViewDetails(item)}
+                                >
+                                  {item.name}
+                                </button>
+                                <div className="item-brand">{item.brand}</div>
+                              </div>
+                            </div>
+
+                            {/* Code */}
+                            <div className="row-cell hide-mobile">
+                              {item.equipment_code}
+                            </div>
+
+                            {/* Model */}
+                            <div className="row-cell hide-mobile">
+                              {editingRowId === item.equipment_id ? (
+                                <input
+                                  type="text"
+                                  value={editingData.model}
+                                  onChange={(e) =>
+                                    handleInputChange("model", e.target.value)
+                                  }
+                                  className="inline-edit-input"
+                                />
+                              ) : (
+                                item.model
+                              )}
+                            </div>
+
+                            {/* Location */}
+                            <div className="row-cell" data-label="Location">
+                              {editingRowId === item.equipment_id ? (
+                                <select
+                                  value={editingData.location}
+                                  onChange={(e) =>
+                                    handleInputChange(
+                                      "location",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="inline-edit-select"
+                                >
+                                  {[...new Set(locationList)]
+                                    .filter(Boolean)
+                                    .map((loc, i) => (
+                                      <option
+                                        key={`option-location-${loc}-${i}`}
+                                        value={loc}
+                                      >
+                                        {loc}
+                                      </option>
+                                    ))}
+                                </select>
+                              ) : (
+                                item.location
+                              )}
+                            </div>
+
+                            {/* Last Maintenance */}
+                            <div className="row-cell hide-mobile">
+                              {editingRowId === item.equipment_id ? (
+                                <input
+                                  type="date"
+                                  value={editingData.last_updated || ""}
+                                  onChange={(e) =>
+                                    handleInputChange(
+                                      "last_updated",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="inline-edit-input"
+                                />
+                              ) : (
+                                formatDatePretty(item.last_updated)
+                              )}
+                            </div>
+
+                            {/* Next Maintenance */}
+                            <div className="row-cell" data-label="Next Maint.">
+                              {editingRowId === item.equipment_id ? (
+                                <input
+                                  type="date"
+                                  value={editingData.maintenance_schedule || ""}
+                                  onChange={(e) =>
+                                    handleInputChange(
+                                      "maintenance_schedule",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="inline-edit-input"
+                                />
+                              ) : (
+                                <span
+                                  className={`expiration-badge ${
+                                    isOverdue(item.maintenance_schedule)
+                                      ? "exp-overdue"
+                                      : isDueSoon(item.maintenance_schedule)
+                                      ? "exp-due-soon"
+                                      : "exp-on-track"
+                                  }`}
+                                >
+                                  {formatDatePretty(
+                                    item.maintenance_schedule
+                                  ) || "—"}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Last Calibration */}
+                            <div className="row-cell hide-mobile">
+                              {editingRowId === item.equipment_id ? (
+                                <input
+                                  type="date"
+                                  value={
+                                    editingData.last_calibration_date || ""
+                                  }
+                                  onChange={(e) =>
+                                    handleInputChange(
+                                      "last_calibration_date",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="inline-edit-input"
+                                />
+                              ) : (
+                                formatDatePretty(item.last_calibration_date)
+                              )}
+                            </div>
+
+                            {/* Next Calibration */}
+                            <div className="row-cell" data-label="Next Calib.">
+                              {editingRowId === item.equipment_id ? (
+                                <input
+                                  type="date"
+                                  value={
+                                    editingData.next_calibration_date || ""
+                                  }
+                                  onChange={(e) =>
+                                    handleInputChange(
+                                      "next_calibration_date",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="inline-edit-input"
+                                />
+                              ) : (
+                                <span
+                                  className={`expiration-badge ${
+                                    isOverdue(item.next_calibration_date)
+                                      ? "exp-overdue"
+                                      : isDueSoon(item.next_calibration_date)
+                                      ? "exp-due-soon"
+                                      : "exp-on-track"
+                                  }`}
+                                >
+                                  {formatDatePretty(
+                                    item.next_calibration_date
+                                  ) || "—"}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Status */}
+                            <div className="row-cell" data-label="Status">
+                              {editingRowId === item.equipment_id ? (
+                                <select
+                                  value={editingData.status}
+                                  onChange={(e) =>
+                                    handleInputChange("status", e.target.value)
+                                  }
+                                  className="inline-edit-select"
+                                >
+                                  {[...new Set(statusList)]
+                                    .filter(Boolean)
+                                    .map((status, i) => (
+                                      <option
+                                        key={`option-status-${status}-${i}`}
+                                        value={status}
+                                      >
+                                        {status}
+                                      </option>
+                                    ))}
+                                </select>
+                              ) : (
+                                <span
+                                  className={`status-badge ${getStatusColor(
+                                    item.status
+                                  )}`}
+                                >
+                                  {item.status}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Actions */}
+                            <div className="row-cell">
+                              {editingRowId === item.equipment_id ? (
+                                <div className="editing-actions">
+                                  <button
+                                    className="btn-icon btn-save"
+                                    onClick={handleSaveInlineEdit}
+                                    title="Save"
+                                  >
+                                    <Check size={16} />
+                                  </button>
+                                  <button
+                                    className="btn-icon btn-cancel"
+                                    onClick={handleCancelInlineEdit}
+                                    title="Cancel"
+                                  >
+                                    <X size={16} />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="action-buttons">
+                                  <button
+                                    className="btn-icon"
+                                    onClick={() => handleInlineEdit(item)}
+                                    title="Edit"
+                                  >
+                                    <Edit size={16} />
+                                  </button>
+                                  <button
+                                    className="btn-icon delete"
+                                    onClick={() =>
+                                      handleDelete(item.equipment_id)
+                                    }
+                                    title="Delete"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           </div>
-
-                          {/* Code */}
-                          <div className="row-cell hide-mobile">
-                            {item.equipment_code}
-                          </div>
-
-                          {/* Model */}
-                          <div className="row-cell hide-mobile">
-                            {editingRowId === item.equipment_id ? (
-                              <input
-                                type="text"
-                                value={editingData.model}
-                                onChange={(e) =>
-                                  handleInputChange("model", e.target.value)
-                                }
-                                className="inline-edit-input"
-                              />
-                            ) : (
-                              item.model
-                            )}
-                          </div>
-
-                          {/* Location */}
-                          <div className="row-cell" data-label="Location">
-                            {editingRowId === item.equipment_id ? (
-                              <select
-                                value={editingData.location}
-                                onChange={(e) =>
-                                  handleInputChange("location", e.target.value)
-                                }
-                                className="inline-edit-select"
-                              >
-                                {[...new Set(locationList)]
-                                  .filter(Boolean)
-                                  .map((loc, i) => (
-                                    <option
-                                      key={`option-location-${loc}-${i}`}
-                                      value={loc}
-                                    >
-                                      {loc}
-                                    </option>
-                                  ))}
-                              </select>
-                            ) : (
-                              item.location
-                            )}
-                          </div>
-
-                          {/* Last Maintenance */}
-                          <div className="row-cell hide-mobile">
-                            {editingRowId === item.equipment_id ? (
-                              <input
-                                type="date"
-                                value={editingData.last_updated || ""}
-                                onChange={(e) =>
-                                  handleInputChange(
-                                    "last_updated",
-                                    e.target.value
-                                  )
-                                }
-                                className="inline-edit-input"
-                              />
-                            ) : (
-                              formatDatePretty(item.last_updated)
-                            )}
-                          </div>
-
-                          {/* Next Maintenance */}
-                          <div className="row-cell" data-label="Next Maint.">
-                            {editingRowId === item.equipment_id ? (
-                              <input
-                                type="date"
-                                value={editingData.maintenance_schedule || ""}
-                                onChange={(e) =>
-                                  handleInputChange(
-                                    "maintenance_schedule",
-                                    e.target.value
-                                  )
-                                }
-                                className="inline-edit-input"
-                              />
-                            ) : (
-                              <span
-                                className={`expiration-badge ${
-                                  isOverdue(item.maintenance_schedule)
-                                    ? "exp-overdue"
-                                    : isDueSoon(item.maintenance_schedule)
-                                    ? "exp-due-soon"
-                                    : "exp-on-track"
-                                }`}
-                              >
-                                {formatDatePretty(item.maintenance_schedule) ||
-                                  "—"}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Last Calibration */}
-                          <div className="row-cell hide-mobile">
-                            {editingRowId === item.equipment_id ? (
-                              <input
-                                type="date"
-                                value={editingData.last_calibration_date || ""}
-                                onChange={(e) =>
-                                  handleInputChange(
-                                    "last_calibration_date",
-                                    e.target.value
-                                  )
-                                }
-                                className="inline-edit-input"
-                              />
-                            ) : (
-                              formatDatePretty(item.last_calibration_date)
-                            )}
-                          </div>
-
-                          {/* Next Calibration */}
-                          <div className="row-cell" data-label="Next Calib.">
-                            {editingRowId === item.equipment_id ? (
-                              <input
-                                type="date"
-                                value={editingData.next_calibration_date || ""}
-                                onChange={(e) =>
-                                  handleInputChange(
-                                    "next_calibration_date",
-                                    e.target.value
-                                  )
-                                }
-                                className="inline-edit-input"
-                              />
-                            ) : (
-                              <span
-                                className={`expiration-badge ${
-                                  isOverdue(item.next_calibration_date)
-                                    ? "exp-overdue"
-                                    : isDueSoon(item.next_calibration_date)
-                                    ? "exp-due-soon"
-                                    : "exp-on-track"
-                                }`}
-                              >
-                                {formatDatePretty(item.next_calibration_date) ||
-                                  "—"}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Status */}
-                          <div className="row-cell" data-label="Status">
-                            {editingRowId === item.equipment_id ? (
-                              <select
-                                value={editingData.status}
-                                onChange={(e) =>
-                                  handleInputChange("status", e.target.value)
-                                }
-                                className="inline-edit-select"
-                              >
-                                {[...new Set(statusList)]
-                                  .filter(Boolean)
-                                  .map((status, i) => (
-                                    <option
-                                      key={`option-status-${status}-${i}`}
-                                      value={status}
-                                    >
-                                      {status}
-                                    </option>
-                                  ))}
-                              </select>
-                            ) : (
-                              <span
-                                className={`status-badge ${getStatusColor(
-                                  item.status
-                                )}`}
-                              >
-                                {item.status}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Actions */}
-                          <div className="row-cell">
-                            {editingRowId === item.equipment_id ? (
-                              <div className="editing-actions">
-                                <button
-                                  className="btn-icon btn-save"
-                                  onClick={handleSaveInlineEdit}
-                                  title="Save"
-                                >
-                                  <Check size={16} />
-                                </button>
-                                <button
-                                  className="btn-icon btn-cancel"
-                                  onClick={handleCancelInlineEdit}
-                                  title="Cancel"
-                                >
-                                  <X size={16} />
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="action-buttons">
-                                <button
-                                  className="btn-icon"
-                                  onClick={() => handleInlineEdit(item)}
-                                  title="Edit"
-                                >
-                                  <Edit size={16} />
-                                </button>
-                                <button
-                                  className="btn-icon delete"
-                                  onClick={() =>
-                                    handleDelete(item.equipment_id)
-                                  }
-                                  title="Delete"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                        ))
+                    )}
                   </div>
                 </div>
               </div>

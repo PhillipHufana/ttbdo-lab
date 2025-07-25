@@ -581,241 +581,253 @@ const ChemicalReagents = () => {
                 {/* Table Body */}
                 <div className="table-scroll-body">
                   <div className="table-body">
-                    {filteredReagents
-                      .slice() // make a shallow copy before sorting
-                      .sort((a, b) => {
-                        if (expirationSortOrder === "soonest") {
-                          return (
-                            new Date(a.expiration_date || 0) -
-                            new Date(b.expiration_date || 0)
-                          );
-                        } else if (expirationSortOrder === "farthest") {
-                          return (
-                            new Date(b.expiration_date || 0) -
-                            new Date(a.expiration_date || 0)
-                          );
-                        } else {
-                          // default sort (by name, or leave as-is)
-                          return a.name.localeCompare(b.name);
-                        }
-                      })
-                      .map((reagent) => (
-                        <div
-                          key={reagent.chemical_id}
-                          className={`table-row ${
-                            editingRowId === reagent.chemical_id
-                              ? "editing-row"
-                              : ""
-                          }`}
-                        >
-                          {/* Chemical Name */}
-                          <div className="row-cell flex-[2]">
-                            <div className="item-details">
-                              <button
-                                className="item-name"
-                                onClick={() => handleViewDetails(reagent)}
-                              >
-                                {reagent.name}
-                              </button>
-                              <div className="item-brand">{reagent.brand}</div>
+                    {filteredReagents.length === 0 ? (
+                      <div className="no-data-message">No data to display.</div>
+                    ) : (
+                      filteredReagents
+                        .slice()
+                        .sort((a, b) => {
+                          if (expirationSortOrder === "soonest") {
+                            return (
+                              new Date(a.expiration_date || 0) -
+                              new Date(b.expiration_date || 0)
+                            );
+                          } else if (expirationSortOrder === "farthest") {
+                            return (
+                              new Date(b.expiration_date || 0) -
+                              new Date(a.expiration_date || 0)
+                            );
+                          } else {
+                            // default sort (by name, or leave as-is)
+                            return a.name.localeCompare(b.name);
+                          }
+                        })
+                        .map((reagent) => (
+                          <div
+                            key={reagent.chemical_id}
+                            className={`table-row ${
+                              editingRowId === reagent.chemical_id
+                                ? "editing-row"
+                                : ""
+                            }`}
+                          >
+                            {/* Chemical Name */}
+                            <div className="row-cell flex-[2]">
+                              <div className="item-details">
+                                <button
+                                  className="item-name"
+                                  onClick={() => handleViewDetails(reagent)}
+                                >
+                                  {reagent.name}
+                                </button>
+                                <div className="item-brand">
+                                  {reagent.brand}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Category */}
+                            <div
+                              className="row-cell flex-[1.2]"
+                              data-label="Category"
+                            >
+                              {editingRowId === reagent.chemical_id ? (
+                                <select
+                                  value={editingData.category}
+                                  onChange={(e) =>
+                                    handleInputChange(
+                                      "category",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="inline-edit-select"
+                                >
+                                  {categories.map((cat) => (
+                                    <option key={cat} value={cat}>
+                                      {cat}
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <span className="text-left">
+                                  {reagent.category}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Date Opened */}
+                            <div className="row-cell flex-[1] hide-mobile">
+                              {editingRowId === reagent.chemical_id ? (
+                                <input
+                                  type="date"
+                                  value={editingData.date_opened || ""}
+                                  onChange={(e) =>
+                                    handleInputChange(
+                                      "date_opened",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="inline-edit-input"
+                                />
+                              ) : (
+                                <span className="text-left">
+                                  {formatDatePretty(reagent.date_opened) ||
+                                    "Not opened"}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Expiration Date */}
+                            <div
+                              className="row-cell flex-[1]"
+                              data-label="Exp. Date"
+                            >
+                              {editingRowId === reagent.chemical_id ? (
+                                <input
+                                  type="date"
+                                  value={editingData.expiration_date || ""}
+                                  onChange={(e) =>
+                                    handleInputChange(
+                                      "expiration_date",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="inline-edit-input"
+                                />
+                              ) : (
+                                <span
+                                  className={`expiration-badge ${getExpirationColor(
+                                    reagent.expiration_date
+                                  )}`}
+                                >
+                                  {formatDatePretty(reagent.expiration_date)}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Container Size */}
+                            <div className="row-cell flex-[0.8] hide-mobile">
+                              {editingRowId === reagent.chemical_id ? (
+                                <input
+                                  type="text"
+                                  value={editingData.container_size || ""}
+                                  onChange={(e) =>
+                                    handleInputChange(
+                                      "container_size",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="inline-edit-input"
+                                />
+                              ) : (
+                                <span className="text-left">
+                                  {reagent.container_size}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Location */}
+                            <div
+                              className="row-cell flex-[1]"
+                              data-label="Location"
+                            >
+                              {editingRowId === reagent.chemical_id ? (
+                                <select
+                                  value={editingData.location}
+                                  onChange={(e) =>
+                                    handleInputChange(
+                                      "location",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="inline-edit-select"
+                                >
+                                  {locations.map((loc) => (
+                                    <option key={loc} value={loc}>
+                                      {loc}
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <span className="text-left">
+                                  {reagent.location}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Status */}
+                            <div
+                              className="row-cell flex-[1]"
+                              data-label="Status"
+                            >
+                              {editingRowId === reagent.chemical_id ? (
+                                <select
+                                  value={editingData.status}
+                                  onChange={(e) =>
+                                    handleInputChange("status", e.target.value)
+                                  }
+                                  className="inline-edit-select"
+                                >
+                                  {statuses.map((status) => (
+                                    <option key={status} value={status}>
+                                      {status}
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <span
+                                  className={`status-badge ${getStatusColor(
+                                    computeStatus(reagent)
+                                  )}`}
+                                >
+                                  {computeStatus(reagent)}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Actions */}
+                            <div className="row-cell flex-[1]">
+                              {editingRowId === reagent.chemical_id ? (
+                                <div className="action-buttons">
+                                  <button
+                                    className="btn-icon btn-save"
+                                    onClick={handleSaveInlineEdit}
+                                    title="Save"
+                                  >
+                                    <Check size={16} />
+                                  </button>
+                                  <button
+                                    className="btn-icon btn-cancel"
+                                    onClick={handleCancelInlineEdit}
+                                    title="Cancel"
+                                  >
+                                    <X size={16} />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="action-buttons">
+                                  <button
+                                    className="btn-icon btn-edit"
+                                    onClick={() => handleInlineEdit(reagent)}
+                                    title="Edit"
+                                  >
+                                    <Edit size={16} />
+                                  </button>
+                                  <button
+                                    className="btn-icon btn-delete"
+                                    onClick={() =>
+                                      handleDelete(reagent.chemical_id)
+                                    }
+                                    title="Delete"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           </div>
-
-                          {/* Category */}
-                          <div
-                            className="row-cell flex-[1.2]"
-                            data-label="Category"
-                          >
-                            {editingRowId === reagent.chemical_id ? (
-                              <select
-                                value={editingData.category}
-                                onChange={(e) =>
-                                  handleInputChange("category", e.target.value)
-                                }
-                                className="inline-edit-select"
-                              >
-                                {categories.map((cat) => (
-                                  <option key={cat} value={cat}>
-                                    {cat}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : (
-                              <span className="text-left">
-                                {reagent.category}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Date Opened */}
-                          <div className="row-cell flex-[1] hide-mobile">
-                            {editingRowId === reagent.chemical_id ? (
-                              <input
-                                type="date"
-                                value={editingData.date_opened || ""}
-                                onChange={(e) =>
-                                  handleInputChange(
-                                    "date_opened",
-                                    e.target.value
-                                  )
-                                }
-                                className="inline-edit-input"
-                              />
-                            ) : (
-                              <span className="text-left">
-                                {formatDatePretty(reagent.date_opened) ||
-                                  "Not opened"}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Expiration Date */}
-                          <div
-                            className="row-cell flex-[1]"
-                            data-label="Exp. Date"
-                          >
-                            {editingRowId === reagent.chemical_id ? (
-                              <input
-                                type="date"
-                                value={editingData.expiration_date || ""}
-                                onChange={(e) =>
-                                  handleInputChange(
-                                    "expiration_date",
-                                    e.target.value
-                                  )
-                                }
-                                className="inline-edit-input"
-                              />
-                            ) : (
-                              <span
-                                className={`expiration-badge ${getExpirationColor(
-                                  reagent.expiration_date
-                                )}`}
-                              >
-                                {formatDatePretty(reagent.expiration_date)}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Container Size */}
-                          <div className="row-cell flex-[0.8] hide-mobile">
-                            {editingRowId === reagent.chemical_id ? (
-                              <input
-                                type="text"
-                                value={editingData.container_size || ""}
-                                onChange={(e) =>
-                                  handleInputChange(
-                                    "container_size",
-                                    e.target.value
-                                  )
-                                }
-                                className="inline-edit-input"
-                              />
-                            ) : (
-                              <span className="text-left">
-                                {reagent.container_size}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Location */}
-                          <div
-                            className="row-cell flex-[1]"
-                            data-label="Location"
-                          >
-                            {editingRowId === reagent.chemical_id ? (
-                              <select
-                                value={editingData.location}
-                                onChange={(e) =>
-                                  handleInputChange("location", e.target.value)
-                                }
-                                className="inline-edit-select"
-                              >
-                                {locations.map((loc) => (
-                                  <option key={loc} value={loc}>
-                                    {loc}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : (
-                              <span className="text-left">
-                                {reagent.location}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Status */}
-                          <div
-                            className="row-cell flex-[1]"
-                            data-label="Status"
-                          >
-                            {editingRowId === reagent.chemical_id ? (
-                              <select
-                                value={editingData.status}
-                                onChange={(e) =>
-                                  handleInputChange("status", e.target.value)
-                                }
-                                className="inline-edit-select"
-                              >
-                                {statuses.map((status) => (
-                                  <option key={status} value={status}>
-                                    {status}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : (
-                              <span
-                                className={`status-badge ${getStatusColor(
-                                  computeStatus(reagent)
-                                )}`}
-                              >
-                                {computeStatus(reagent)}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Actions */}
-                          <div className="row-cell flex-[1]">
-                            {editingRowId === reagent.chemical_id ? (
-                              <div className="action-buttons">
-                                <button
-                                  className="btn-icon btn-save"
-                                  onClick={handleSaveInlineEdit}
-                                  title="Save"
-                                >
-                                  <Check size={16} />
-                                </button>
-                                <button
-                                  className="btn-icon btn-cancel"
-                                  onClick={handleCancelInlineEdit}
-                                  title="Cancel"
-                                >
-                                  <X size={16} />
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="action-buttons">
-                                <button
-                                  className="btn-icon btn-edit"
-                                  onClick={() => handleInlineEdit(reagent)}
-                                  title="Edit"
-                                >
-                                  <Edit size={16} />
-                                </button>
-                                <button
-                                  className="btn-icon btn-delete"
-                                  onClick={() =>
-                                    handleDelete(reagent.chemical_id)
-                                  }
-                                  title="Delete"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                        ))
+                    )}
                   </div>
                 </div>
               </div>
