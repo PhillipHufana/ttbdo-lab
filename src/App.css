@@ -269,7 +269,9 @@ body {
 
 .table-scroll-body {
   max-height: 400px;
+  min-height: 200px;
   overflow-y: auto;
+  position: relative;
 }
 
 .table-scroll-body::-webkit-scrollbar {
@@ -280,6 +282,13 @@ body {
   background-color: #b8bec6;
   border-radius: 4px;
 }
+
+.table-scroll-body:empty::after {
+  content: "";
+  display: block;
+  height: 150px;
+}
+
 
 .header-cell {
   padding: 0.5rem 0.3rem;
