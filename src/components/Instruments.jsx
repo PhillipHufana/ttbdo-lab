@@ -51,6 +51,14 @@ const Instruments = () => {
     condition: useRef(null),
   };
 
+  const normalize = (val) => (val || "").toLowerCase().trim();
+
+  const toTitleCase = (str) =>
+    (str || "").replace(
+      /\w\S*/g,
+      (txt) => txt[0].toUpperCase() + txt.slice(1).toLowerCase()
+    );
+
   // Fetch Data
   const fetchInstruments = async () => {
     try {
@@ -127,6 +135,14 @@ const Instruments = () => {
 
   // Filtering
   const filteredInstruments = instruments.filter((item) => {
+    const instrument = normalize(item.instrument);
+    const brand = normalize(item.brand);
+    const desc = normalize(item.description);
+    const location = normalize(item.location);
+    const status = normalize(item.status);
+    const condition = normalize(item.condition);
+    const search = normalize(searchTerm);
+
     const matchesSearch =
       (item.instrument || "")
         .toLowerCase()
@@ -136,13 +152,22 @@ const Instruments = () => {
         .toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
       (item.location || "").toLowerCase().includes(searchTerm.toLowerCase());
+    instrument.includes(search) ||
+      brand.includes(search) ||
+      desc.includes(search) ||
+      location.includes(search);
 
     const matchesStatus =
-      filterStatus.length === 0 || filterStatus.includes(item.status);
+      filterStatus.length === 0 ||
+      filterStatus.some((s) => normalize(s) === status);
+
     const matchesCondition =
-      filterCondition.length === 0 || filterCondition.includes(item.condition);
+      filterCondition.length === 0 ||
+      filterCondition.some((c) => normalize(c) === condition);
+
     const matchesLocation =
-      filterLocation.length === 0 || filterLocation.includes(item.location);
+      filterLocation.length === 0 ||
+      filterLocation.some((l) => normalize(l) === location);
 
     return (
       matchesSearch && matchesStatus && matchesCondition && matchesLocation
@@ -372,7 +397,7 @@ const Instruments = () => {
                               )
                             }
                           />
-                          <span>{loc}</span>
+                          <span>{toTitleCase(loc.trim())}</span>
                         </label>
                       ))}
                     </div>
@@ -411,7 +436,7 @@ const Instruments = () => {
                               )
                             }
                           />
-                          <span>{status}</span>
+                          <span>{toTitleCase(status.trim())}</span>
                         </label>
                       ))}
                     </div>
@@ -449,7 +474,7 @@ const Instruments = () => {
                               )
                             }
                           />
-                          <span>{cond}</span>
+                          <span>{toTitleCase(cond.trim())}</span>
                         </label>
                       ))}
                     </div>

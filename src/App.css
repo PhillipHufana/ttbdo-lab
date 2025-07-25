@@ -147,6 +147,7 @@ body {
   padding: 2rem;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
   border: 1px solid #e2e8f0;
+  overflow: visible;
 }
 
 .section-header {
@@ -256,7 +257,7 @@ body {
   width: 100%;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .table-header {

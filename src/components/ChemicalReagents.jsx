@@ -71,7 +71,23 @@ const ChemicalReagents = () => {
     if (expirationRef.current && !expirationRef.current.contains(e.target))
       setShowExpirationFilter(false);
   };
+  // Dynamically compute status
+  const computeStatus = (item) => {
+    if (!item.expiration_date) return item.status;
+    const expDate = new Date(item.expiration_date);
+    const today = new Date();
 
+    if (expDate < today) {
+      if (item.status.includes("Opened")) return "EXPIRED: Opened";
+      if (item.status.includes("Unopened")) return "EXPIRED: Unopened";
+      if (item.status.includes("Sealed")) return "EXPIRED: Sealed";
+      return "EXPIRED: " + item.status;
+    }
+    if (item.status.startsWith("EXPIRED: ")) {
+      return item.status.replace("EXPIRED: ", "");
+    }
+    return item.status;
+  };
   // Fetch data
   const fetchReagents = async () => {
     try {
@@ -116,6 +132,7 @@ const ChemicalReagents = () => {
       });
       const uniqueLocations = Object.values(locationMap);
       setLocations(uniqueLocations);
+
       const statusMap = {};
       data.forEach((r) => {
         if (r.status) {
@@ -133,18 +150,31 @@ const ChemicalReagents = () => {
   };
 
   // Filtering
+  const normalize = (val) => (val || "").toLowerCase().trim();
+
   const filteredReagents = reagents.filter((r) => {
+    const name = normalize(r.name);
+    const category = normalize(r.category);
+    const location = normalize(r.location);
+    const status = normalize(computeStatus(r));
+    const search = normalize(searchTerm);
+
     const matchesSearch =
-      (r.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (r.category || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (r.location || "").toLowerCase().includes(searchTerm.toLowerCase());
+      name.includes(search) ||
+      category.includes(search) ||
+      location.includes(search);
 
     const matchesCategory =
-      filterCategory.length === 0 || filterCategory.includes(r.category);
+      filterCategory.length === 0 ||
+      filterCategory.some((f) => normalize(f) === category);
+
     const matchesStatus =
-      filterStatus.length === 0 || filterStatus.includes(r.status);
+      filterStatus.length === 0 ||
+      filterStatus.some((f) => normalize(f) === status);
+
     const matchesLocation =
-      filterLocation.length === 0 || filterLocation.includes(r.location);
+      filterLocation.length === 0 ||
+      filterLocation.some((f) => normalize(f) === location);
 
     return matchesSearch && matchesCategory && matchesStatus && matchesLocation;
   });
@@ -215,24 +245,6 @@ const ChemicalReagents = () => {
       month: "long",
       day: "numeric",
     });
-  };
-
-  // Dynamically compute status
-  const computeStatus = (item) => {
-    if (!item.expiration_date) return item.status;
-    const expDate = new Date(item.expiration_date);
-    const today = new Date();
-
-    if (expDate < today) {
-      if (item.status.includes("Opened")) return "EXPIRED: Opened";
-      if (item.status.includes("Unopened")) return "EXPIRED: Unopened";
-      if (item.status.includes("Sealed")) return "EXPIRED: Sealed";
-      return "EXPIRED: " + item.status;
-    }
-    if (item.status.startsWith("EXPIRED: ")) {
-      return item.status.replace("EXPIRED: ", "");
-    }
-    return item.status;
   };
 
   // Handlers
