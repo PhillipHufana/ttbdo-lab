@@ -24,25 +24,10 @@ const ChemicalReagents = () => {
   const [filterLocation, setFilterLocation] = useState([]);
 
   // Predefined Filters
-  const [categories, setCategories] = useState([
-    "Lactic Acid",
-    "Lactic Acid Fermentation",
-    "Polymerization",
-    "Filtration and Purification",
-    "Sugar Analysis",
-  ]);
-  const [statuses, setStatuses] = useState([
-    "Opened",
-    "Unopened",
-    "EXPIRED: Opened",
-    "EXPIRED: Unopened",
-    "EXPIRED: Sealed",
-  ]);
-  const [locations, setLocations] = useState([
-    "Table 2, Cabinet 4",
-    "Shelf 2b",
-    "Shelf 1d",
-  ]);
+const [categories, setCategories] = useState([]);
+const [statuses, setStatuses] = useState([]);
+const [locations, setLocations] = useState([]);
+
   const [forms, setForms] = useState(["Solid", "Liquid"]);
 
   // UI Toggles
@@ -92,12 +77,21 @@ const ChemicalReagents = () => {
     try {
       const res = await fetch(API_URL);
       const data = await res.json();
-      console.log("Fetched data:", data);
+
+      // Extract unique dynamic filters
+      const uniqueCategories = [...new Set(data.map((r) => r.category).filter(Boolean))];
+      const uniqueStatuses = [...new Set(data.map((r) => computeStatus(r)).filter(Boolean))];
+      const uniqueLocations = [...new Set(data.map((r) => r.location).filter(Boolean))];
+
       setReagents(data);
+      setCategories(uniqueCategories);
+      setStatuses(uniqueStatuses);
+      setLocations(uniqueLocations);
     } catch (err) {
       console.error("Fetch failed:", err);
     }
   };
+
 
   // Filtering
   const filteredReagents = reagents.filter((r) => {
@@ -365,7 +359,7 @@ const ChemicalReagents = () => {
                   </div>
                   {showCategoryFilter && (
                     <div
-                      className="filter-dropdown"
+                       className="filter-dropdown absolute z-50 bg-white border border-gray-300 rounded p-2 shadow-lg max-h-60 overflow-y-auto min-w-[180px]"
                       onClick={(e) => e.stopPropagation()}
                     >
                       {categories.map((category) => (
@@ -386,6 +380,7 @@ const ChemicalReagents = () => {
                       ))}
                     </div>
                   )}
+                  
                 </div>
                 <div className="header-cell hide-mobile">
                   <span className="text-center">Date Opened</span>
