@@ -849,15 +849,15 @@ const Equipment = () => {
               }}
               fields={[
                 {
-                  label: "Equipment Code",
-                  value: detailItem.equipment_code,
-                  name: "equipment_code",
-                  type: "text",
-                },
-                {
                   label: "Name",
                   value: detailItem.name,
                   name: "name",
+                  type: "text",
+                },
+                {
+                  label: "Equipment Code",
+                  value: detailItem.equipment_code,
+                  name: "equipment_code",
                   type: "text",
                 },
                 {

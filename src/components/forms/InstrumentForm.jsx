@@ -14,6 +14,7 @@ const InstrumentForm = ({
 }) => {
   const [formData, setFormData] = useState({
     instrument: "",
+    brand: "",
     description: "",
     location: "",
     quantity: "",
@@ -212,6 +213,16 @@ const InstrumentForm = ({
             value={formData.instrument}
             onChange={handleChange}
             required
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Brand</label>
+          <input
+            type="text"
+            name="brand"
+            value={formData.brand}
+            onChange={handleChange}
           />
         </div>
 

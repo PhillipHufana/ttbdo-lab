@@ -60,6 +60,7 @@ const Instruments = () => {
       const formatted = data.map((item) => ({
         id: item.instrument_id,
         instrument: item.name,
+        brand: item.brand,
         description: item.description,
         location: item.location,
         quantity: item.quantity,
@@ -106,6 +107,9 @@ const Instruments = () => {
   const filteredInstruments = instruments.filter((item) => {
     const matchesSearch =
       (item.instrument || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      (item.brand || "")
         .toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
       (item.description || "")
@@ -181,6 +185,7 @@ const Instruments = () => {
 
     const payload = {
       name: formData.instrument,
+      brand: formData.brand,
       description: formData.description,
       location: formData.location,
       quantity: parseInt(formData.quantity),
@@ -221,6 +226,7 @@ const Instruments = () => {
   const handleSaveInlineEdit = async () => {
     const payload = {
       name: editingData.instrument,
+      brand: editingData.brand,
       description: editingData.description,
       location: editingData.location,
       quantity: parseInt(editingData.quantity),
@@ -460,6 +466,7 @@ const Instruments = () => {
                             >
                               {item.instrument}
                             </button>
+                            <div className="item-brand">{item.brand}</div>
                           </div>
                         </div>
                         <div className="row-cell  hide-mobile">
@@ -617,6 +624,7 @@ const Instruments = () => {
                 value: detailItem.instrument,
                 type: "text",
               },
+              { name: "brand", label: "Brand", value: detailItem.brand },
               {
                 label: "Description",
                 name: "description",
@@ -665,6 +673,7 @@ const Instruments = () => {
 
               const payload = {
                 name: raw.instrument,
+                brand: raw.brand,
                 description: raw.description,
                 location: raw.location,
                 quantity: parseInt(raw.quantity),
