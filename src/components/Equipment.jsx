@@ -118,25 +118,20 @@ const Equipment = () => {
 
       const statusMap = {};
       data.forEach((item) => {
-        if (item.status) {
-          const key = item.status.trim().toLowerCase();
-          if (!statusMap[key]) {
-            statusMap[key] = item.status.trim();
-          }
-        }
+        const rawStatus = (item.status || "").trim();
+        statusMap[rawStatus.toLowerCase()] = rawStatus;
       });
+
       setStatusList(Object.values(statusMap));
 
       const locationMap = {};
       data.forEach((item) => {
-        if (item.location) {
-          const key = item.location.trim().toLowerCase();
-          if (!locationMap[key]) {
-            locationMap[key] = item.location.trim();
-          }
-        }
+        const rawLoc = (item.location || "").trim();
+        locationMap[rawLoc.toLowerCase()] = rawLoc;
       });
+
       setLocationList(Object.values(locationMap));
+
     } catch (err) {
       console.error("Fetch equipment error:", err);
     }
@@ -370,21 +365,17 @@ const Equipment = () => {
                       >
                         {locationList.map((loc, i) => (
                           <label
-                            key={`filter-location-${loc}-${i}`}
+                            key={`filter-location-${loc || "__blank__"}-${i}`}
                             className="filter-option"
                           >
                             <input
                               type="checkbox"
                               checked={filterLocation.includes(loc)}
                               onChange={(e) =>
-                                handleFilterChange(
-                                  "location",
-                                  loc,
-                                  e.target.checked
-                                )
+                                handleFilterChange("location", loc, e.target.checked)
                               }
                             />
-                            {toTitleCase(loc.trim())}
+                            {loc ? toTitleCase(loc.trim()) : " "}
                           </label>
                         ))}
                       </div>
@@ -582,21 +573,17 @@ const Equipment = () => {
                       >
                         {statusList.map((status, i) => (
                           <label
-                            key={`filter-status-${status}-${i}`}
+                            key={`filter-status-${status || "__blank__"}-${i}`}
                             className="filter-option"
                           >
                             <input
                               type="checkbox"
                               checked={filterStatus.includes(status)}
                               onChange={(e) =>
-                                handleFilterChange(
-                                  "status",
-                                  status,
-                                  e.target.checked
-                                )
+                                handleFilterChange("status", status, e.target.checked)
                               }
                             />
-                            {toTitleCase(status.trim())}
+                            {status ? toTitleCase(status.trim()) : " "}
                           </label>
                         ))}
                       </div>
@@ -680,27 +667,17 @@ const Equipment = () => {
                               {editingRowId === item.equipment_id ? (
                                 <select
                                   value={editingData.location}
-                                  onChange={(e) =>
-                                    handleInputChange(
-                                      "location",
-                                      e.target.value
-                                    )
-                                  }
+                                  onChange={(e) => handleInputChange("location", e.target.value)}
                                   className="inline-edit-select"
                                 >
-                                  {[...new Set(locationList)]
-                                    .filter(Boolean)
-                                    .map((loc, i) => (
-                                      <option
-                                        key={`option-location-${loc}-${i}`}
-                                        value={loc}
-                                      >
-                                        {loc}
-                                      </option>
-                                    ))}
+                                  {[...new Set(locationList)].map((loc, i) => (
+                                    <option key={`option-location-${loc || "__blank__"}-${i}`} value={loc}>
+                                      {loc || " "}
+                                    </option>
+                                  ))}
                                 </select>
                               ) : (
-                                item.location
+                                <span>{item.location || " "}</span>
                               )}
                             </div>
 
@@ -813,29 +790,18 @@ const Equipment = () => {
                               {editingRowId === item.equipment_id ? (
                                 <select
                                   value={editingData.status}
-                                  onChange={(e) =>
-                                    handleInputChange("status", e.target.value)
-                                  }
+                                  onChange={(e) => handleInputChange("status", e.target.value)}
                                   className="inline-edit-select"
                                 >
-                                  {[...new Set(statusList)]
-                                    .filter(Boolean)
-                                    .map((status, i) => (
-                                      <option
-                                        key={`option-status-${status}-${i}`}
-                                        value={status}
-                                      >
-                                        {status}
-                                      </option>
-                                    ))}
+                                  {[...new Set(statusList)].map((status, i) => (
+                                    <option key={`option-status-${status || "__blank__"}-${i}`} value={status}>
+                                      {status || " "}
+                                    </option>
+                                  ))}
                                 </select>
                               ) : (
-                                <span
-                                  className={`status-badge ${getStatusColor(
-                                    item.status
-                                  )}`}
-                                >
-                                  {item.status}
+                                <span className={`status-badge ${getStatusColor(item.status)}`}>
+                                  {item.status || " "}
                                 </span>
                               )}
                             </div>

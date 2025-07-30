@@ -73,20 +73,24 @@ const ChemicalReagents = () => {
   };
   // Dynamically compute status
   const computeStatus = (item) => {
-    if (!item.expiration_date) return item.status;
+    if (!item.expiration_date) return item.status || "";
+
     const expDate = new Date(item.expiration_date);
     const today = new Date();
 
+    let status = item.status || "";
+
+    // Strip all "EXPIRED:" prefixes
+    status = status.replace(/^(\s*EXPIRED:\s*)+/gi, "").trim();
+
     if (expDate < today) {
-      if (item.status.includes("Opened")) return "EXPIRED: Opened";
-      if (item.status.includes("Unopened")) return "EXPIRED: Unopened";
-      if (item.status.includes("Sealed")) return "EXPIRED: Sealed";
-      return "EXPIRED: " + item.status;
+      if (status.includes("Opened")) return "EXPIRED: Opened";
+      if (status.includes("Unopened")) return "EXPIRED: Unopened";
+      if (status.includes("Sealed")) return "EXPIRED: Sealed";
+      return status ? "EXPIRED: " + status : "EXPIRED";
     }
-    if (item.status.startsWith("EXPIRED: ")) {
-      return item.status.replace("EXPIRED: ", "");
-    }
-    return item.status;
+
+    return status;
   };
   // Fetch data
   const fetchReagents = async () => {
@@ -101,45 +105,24 @@ const ChemicalReagents = () => {
 
       setReagents(formatted);
 
-      const categoryMap = {};
-      data.forEach((r) => {
-        if (r.category) {
-          const key = r.category.trim().toLowerCase();
-          if (!categoryMap[key]) {
-            categoryMap[key] = r.category.trim();
-          }
-        }
-      });
-      const uniqueCategories = Object.values(categoryMap);
-      setCategories(uniqueCategories);
+      const categorySet = new Set();
+      const locationSet = new Set();
+      const statusSet = new Set();
 
-      const locationMap = {};
       data.forEach((r) => {
-        if (r.location) {
-          const key = r.location.trim().toLowerCase();
-          if (!locationMap[key]) {
-            locationMap[key] = r.location.trim();
-          }
-        }
+        categorySet.add((r.category || "").trim());
+        locationSet.add((r.location || "").trim());
+        statusSet.add((r.status || "").trim());
       });
-      const uniqueLocations = Object.values(locationMap);
-      setLocations(uniqueLocations);
 
-      const statusMap = {};
-      data.forEach((r) => {
-        if (r.status) {
-          const key = r.status.trim().toLowerCase();
-          if (!statusMap[key]) {
-            statusMap[key] = r.status.trim();
-          }
-        }
-      });
-      const uniqueStatuses = Object.values(statusMap);
-      setStatuses(uniqueStatuses);
+      setCategories([...categorySet]);
+      setLocations([...locationSet]);
+      setStatuses([...statusSet]);
     } catch (err) {
       console.error("Fetch error:", err);
     }
   };
+
 
   // Filtering
   const normalize = (val) => (val || "").toLowerCase().trim();
@@ -152,9 +135,7 @@ const ChemicalReagents = () => {
     const search = normalize(searchTerm);
 
     const matchesSearch =
-      name.includes(search) ||
-      category.includes(search) ||
-      location.includes(search);
+      name.includes(search) || category.includes(search) || location.includes(search);
 
     const matchesCategory =
       filterCategory.length === 0 ||
@@ -292,20 +273,9 @@ const ChemicalReagents = () => {
   const handleSaveInlineEdit = async () => {
     // compute status before saving
     let updatedStatus = editingData.status;
-    if (editingData.expiration_date) {
-      const expDate = new Date(editingData.expiration_date);
-      const today = new Date();
-      if (expDate < today) {
-        if (updatedStatus.includes("Opened")) updatedStatus = "EXPIRED: Opened";
-        else if (updatedStatus.includes("Unopened"))
-          updatedStatus = "EXPIRED: Unopened";
-        else if (updatedStatus.includes("Sealed"))
-          updatedStatus = "EXPIRED: Sealed";
-        else updatedStatus = "EXPIRED: " + updatedStatus;
-      } else if (updatedStatus.startsWith("EXPIRED: ")) {
-        updatedStatus = updatedStatus.replace("EXPIRED: ", "");
-      }
-    }
+    
+    updatedStatus = (updatedStatus || "").replace(/^(\s*EXPIRED:\s*)+/i, "").trim();
+
 
     const payload = { ...editingData, status: updatedStatus };
     const res = await fetch(`${API_URL}/${editingRowId}`, {

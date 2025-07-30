@@ -82,41 +82,28 @@ const Instruments = () => {
       setInstruments(formatted);
 
       const locationMap = {};
-      data.forEach((r) => {
-        if (r.location) {
-          const key = r.location.trim().toLowerCase();
-          if (!locationMap[key]) {
-            locationMap[key] = r.location.trim();
-          }
-        }
-      });
-      setLocationList(Object.values(locationMap));
-
       const statusMap = {};
-      data.forEach((r) => {
-        if (r.status) {
-          const key = r.status.trim().toLowerCase();
-          if (!statusMap[key]) {
-            statusMap[key] = r.status.trim();
-          }
-        }
-      });
-      setStatusList(Object.values(statusMap));
-
       const conditionMap = {};
+
       data.forEach((r) => {
-        if (r.condition) {
-          const key = r.condition.trim().toLowerCase();
-          if (!conditionMap[key]) {
-            conditionMap[key] = r.condition.trim();
-          }
-        }
+        const loc = (r.location || "").trim();
+        locationMap[loc.toLowerCase()] = loc;
+
+        const status = (r.status || "").trim();
+        statusMap[status.toLowerCase()] = status;
+
+        const cond = (r.condition || "").trim();
+        conditionMap[cond.toLowerCase()] = cond;
       });
+
+      setLocationList(Object.values(locationMap));
+      setStatusList(Object.values(statusMap));
       setConditionList(Object.values(conditionMap));
     } catch (err) {
       console.error("Fetch error:", err);
     }
   };
+
 
   useEffect(() => {
     fetchInstruments();
@@ -144,15 +131,7 @@ const Instruments = () => {
     const search = normalize(searchTerm);
 
     const matchesSearch =
-      (item.instrument || "")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      (item.brand || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.description || "")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      (item.location || "").toLowerCase().includes(searchTerm.toLowerCase());
-    instrument.includes(search) ||
+      instrument.includes(search) ||
       brand.includes(search) ||
       desc.includes(search) ||
       location.includes(search);
@@ -385,7 +364,7 @@ const Instruments = () => {
                   {showFilters.location && (
                     <div ref={filterRefs.location} className="filter-dropdown">
                       {locationList.map((loc) => (
-                        <label key={loc} className="filter-option">
+                       <label key={loc || "__blank__"}className="filter-option" >
                           <input
                             type="checkbox"
                             checked={filterLocation.includes(loc)}
@@ -547,8 +526,8 @@ const Instruments = () => {
                                 className="inline-edit-select"
                               >
                                 {locationList.map((loc) => (
-                                  <option key={loc} value={loc}>
-                                    {loc}
+                                  <option key={loc || "__blank__"} value={loc}>
+                                    {loc || "(Blank)"}
                                   </option>
                                 ))}
                               </select>

@@ -101,21 +101,17 @@ const Consumables = () => {
 
       setConsumables(formatted);
 
-      const locationMap = {};
+      const locationSet = new Set();
       data.forEach((r) => {
-        if (r.location) {
-          const key = r.location.trim().toLowerCase();
-          if (!locationMap[key]) {
-            locationMap[key] = r.location.trim();
-          }
-        }
+        const loc = (r.location || "").trim();
+        locationSet.add(loc); // will include "" when missing
       });
-      const uniqueLocations = Object.values(locationMap);
-      setLocations(uniqueLocations);
+      setLocations([...locationSet]);
     } catch (err) {
       console.error("Fetch error:", err);
     }
   };
+
 
   useEffect(() => {
     fetchConsumables();
@@ -532,19 +528,17 @@ const Consumables = () => {
                             {editingRowId === item.id ? (
                               <select
                                 value={editingData.location}
-                                onChange={(e) =>
-                                  handleInputChange("location", e.target.value)
-                                }
+                                onChange={(e) => handleInputChange("location", e.target.value)}
                                 className="inline-edit-select"
                               >
                                 {locations.map((loc) => (
-                                  <option key={loc} value={loc}>
-                                    {loc}
+                                  <option key={loc || "__blank__"} value={loc}>
+                                    {loc || ""}
                                   </option>
                                 ))}
                               </select>
                             ) : (
-                              <span className="text-left">{item.location}</span>
+                              <span className="text-left">{item.location || ""}</span>
                             )}
                           </div>
                           <div className="row-cell">
