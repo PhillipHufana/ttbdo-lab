@@ -618,7 +618,7 @@ const Equipment = () => {
                             }`}
                           >
                             {/* Equipment Name */}
-                            <div className="row-cell">
+                            <div className="row-cell name-column">
                               <div className="item-details">
                                 <button
                                   className="item-name"

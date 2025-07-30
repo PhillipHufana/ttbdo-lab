@@ -575,19 +575,20 @@ const ChemicalReagents = () => {
                             }`}
                           >
                             {/* Chemical Name */}
-                            <div className="row-cell flex-[2]">
-                              <div className="item-details">
+                            <div className="row-cell name-column flex-[2]">
+                              <div className="item-details flex flex-col space-y-1">
                                 <button
-                                  className="item-name"
+                                  className="item-name text-left truncate font-medium leading-snug max-w-[200px]"
                                   onClick={() => handleViewDetails(reagent)}
                                 >
                                   {reagent.name}
                                 </button>
-                                <div className="item-brand">
+                                <div className="text-left text-sm text-gray-500 truncate leading-snug max-w-[200px]">
                                   {reagent.brand}
                                 </div>
                               </div>
                             </div>
+
 
                             {/* Category */}
                             <div

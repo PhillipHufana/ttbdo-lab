@@ -375,14 +375,27 @@ body {
   background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
 }
 
+/* ✅ Safe base for all row cells */
 .row-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 0.5rem 0.3rem;
   overflow: hidden;
   word-break: break-word;
-  align-items: center;
   font-size: 0.875rem;
+  min-width: 6rem;
+  text-align: center;
+  border-bottom: 1px dashed #f1f1f1;
+}
+
+/* ✅ Override JUST the first column */
+.row-cell.name-column {
+  align-items: flex-start;     /* Top-align vertically */
+  justify-content: flex-start; /* Left-align horizontally */
   text-align: left;
 }
+
 
 .row-cell,
 .header-cell {
