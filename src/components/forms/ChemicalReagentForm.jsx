@@ -131,7 +131,9 @@ const ChemicalReagentForm = ({
                   {opt}
                 </div>
               ))}
+
               <div
+                key="__add__"
                 className="custom-dropdown-option add-new"
                 onClick={() => handleSelect(field, "__add__")}
               >

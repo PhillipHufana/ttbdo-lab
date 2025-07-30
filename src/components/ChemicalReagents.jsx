@@ -96,15 +96,7 @@ const ChemicalReagents = () => {
 
       const formatted = data.map((item) => ({
         id: item.chemical_id,
-        name: item.name,
-        brand: item.brand,
-        category: item.category,
-        status: item.status,
-        description: item.description,
-        dateOpened: item.date_opened,
-        expirationDate: item.expiration_date,
-        containerSize: item.container_size,
-        location: item.location,
+        ...item,
       }));
 
       setReagents(formatted);
@@ -293,7 +285,7 @@ const ChemicalReagents = () => {
   };
 
   const handleInlineEdit = (r) => {
-    setEditingRowId(r.chemical_id);
+    setEditingRowId(r.id); // ✅ correct
     setEditingData({ ...r });
   };
 
@@ -604,9 +596,9 @@ const ChemicalReagents = () => {
                         })
                         .map((reagent) => (
                           <div
-                            key={reagent.chemical_id}
+                            key={reagent.id}
                             className={`table-row ${
-                              editingRowId === reagent.chemical_id
+                              editingRowId === reagent.id
                                 ? "editing-row"
                                 : ""
                             }`}
@@ -631,7 +623,7 @@ const ChemicalReagents = () => {
                               className="row-cell flex-[1.2]"
                               data-label="Category"
                             >
-                              {editingRowId === reagent.chemical_id ? (
+                              {editingRowId === reagent.id ? (
                                 <select
                                   value={editingData.category}
                                   onChange={(e) =>
@@ -657,7 +649,7 @@ const ChemicalReagents = () => {
 
                             {/* Date Opened */}
                             <div className="row-cell flex-[1] hide-mobile">
-                              {editingRowId === reagent.chemical_id ? (
+                              {editingRowId === reagent.id ? (
                                 <input
                                   type="date"
                                   value={editingData.date_opened || ""}
@@ -682,7 +674,7 @@ const ChemicalReagents = () => {
                               className="row-cell flex-[1]"
                               data-label="Exp. Date"
                             >
-                              {editingRowId === reagent.chemical_id ? (
+                              {editingRowId === reagent.id ? (
                                 <input
                                   type="date"
                                   value={editingData.expiration_date || ""}
@@ -707,7 +699,7 @@ const ChemicalReagents = () => {
 
                             {/* Container Size */}
                             <div className="row-cell flex-[0.8] hide-mobile">
-                              {editingRowId === reagent.chemical_id ? (
+                              {editingRowId === reagent.id ? (
                                 <input
                                   type="text"
                                   value={editingData.container_size || ""}
@@ -731,7 +723,7 @@ const ChemicalReagents = () => {
                               className="row-cell flex-[1]"
                               data-label="Location"
                             >
-                              {editingRowId === reagent.chemical_id ? (
+                              {editingRowId === reagent.id ? (
                                 <select
                                   value={editingData.location}
                                   onChange={(e) =>
@@ -760,7 +752,7 @@ const ChemicalReagents = () => {
                               className="row-cell flex-[1]"
                               data-label="Status"
                             >
-                              {editingRowId === reagent.chemical_id ? (
+                              {editingRowId === reagent.id ? (
                                 <select
                                   value={editingData.status}
                                   onChange={(e) =>
@@ -787,7 +779,7 @@ const ChemicalReagents = () => {
 
                             {/* Actions */}
                             <div className="row-cell flex-[1]">
-                              {editingRowId === reagent.chemical_id ? (
+                              {editingRowId === reagent.id ? (
                                 <div className="action-buttons">
                                   <button
                                     className="btn-icon btn-save"
@@ -816,7 +808,7 @@ const ChemicalReagents = () => {
                                   <button
                                     className="btn-icon btn-delete"
                                     onClick={() =>
-                                      handleDelete(reagent.chemical_id)
+                                      handleDelete(reagent.id)
                                     }
                                     title="Delete"
                                   >
@@ -953,7 +945,7 @@ const ChemicalReagents = () => {
                   }
 
                   const res = await fetch(
-                    `${API_URL}/${detailItem.chemical_id}`,
+                    `${API_URL}/${detailItem.id}`,
                     {
                       method: "PUT",
                       body,

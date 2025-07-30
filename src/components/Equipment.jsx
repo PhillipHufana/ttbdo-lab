@@ -443,7 +443,7 @@ const Equipment = () => {
                         onClick={(e) => e.stopPropagation()}
                       >
                         {["Overdue", "Due Soon", "On Track"].map((option) => (
-                          <label key={option} className="filter-option">
+                          <label key={`maint-${option}`} className="filter-option">
                             <input
                               type="checkbox"
                               checked={filterNextMaintenanceStatus === option}
@@ -527,7 +527,7 @@ const Equipment = () => {
                         onClick={(e) => e.stopPropagation()}
                       >
                         {["Overdue", "Due Soon", "On Track"].map((option) => (
-                          <label key={option} className="filter-option">
+                          <label key={`calib-${option}`} className="filter-option">
                             <input
                               type="checkbox"
                               checked={filterNextCalibrationStatus === option}
