@@ -136,9 +136,23 @@ body {
   transition: margin-left 0.3s ease;
 }
 
-.content-section {
-  max-width: 100%;
+.content-section .table-header,
+.content-section .table-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1.7fr 1.4fr 1.4fr 1.6fr 1.6fr 1.2fr;
+  gap: 8px;
 }
+
+.content-section .table-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.content-section .btn-icon {
+  padding: 2px;
+}
+
 
 .content-card {
   background: rgba(248, 250, 252, 0.9);
@@ -226,7 +240,7 @@ body {
 
 .equipment-page .table-header {
   display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1fr 1.8fr 1fr;
+  grid-template-columns: 1.5fr 1fr 1fr 1.5fr 1fr 1fr 1fr 1fr 1.8fr 1.2fr;
   gap: 4px;
 }
 
@@ -246,7 +260,7 @@ body {
 .reagents .table-header,
 .reagents .table-row {
   display: grid;
-  grid-template-columns: 1.5fr 1.7fr 1.4fr 1.4fr 1.6fr 1.6fr 1.7fr 1fr;
+  grid-template-columns: 1.5fr 1.7fr 1.4fr 1.4fr 1.6fr 1.6fr 1.7fr 1.2fr;
   gap: 8px;
 }
 
@@ -1417,9 +1431,11 @@ body {
 
   .table-header,
   .table-row {
-    grid-template-columns: 2fr 1fr 1fr 1fr 80px;
-    gap: 0.5rem;
+    display: grid;
+    grid-template-columns: 1.8fr 0.8fr 1.3fr 1.4fr 1.2fr 1.3fr 80px;
+    gap: 1rem;
   }
+
 
   .table-row {
     padding: 1rem;
