@@ -106,7 +106,7 @@ const Consumables = () => {
         const loc = (r.location || "").trim();
         locationSet.add(loc); // will include "" when missing
       });
-      
+
       setLocations([...locationSet].sort((a, b) => a.localeCompare(b)));
 
     } catch (err) {
@@ -594,64 +594,22 @@ const Consumables = () => {
             onClose={() => setDetailItem(null)}
             title="Consumable Details"
             fields={[
-              {
-                name: "supplyItem",
-                label: "Name",
-                value: detailItem.supplyItem,
-              },
-              { name: "brand", label: "Brand", value: detailItem.brand },
-              {
-                name: "description",
-                label: "Description",
-                value: detailItem.description,
-              },
-              {
-                name: "quantity",
-                label: "Quantity",
-                value: detailItem.quantity,
-              },
-              {
-                name: "remainingQuantity",
-                label: "Remaining Quantity",
-                value: detailItem.remainingQuantity,
-              },
-              {
-                name: "dateReceived",
-                label: "Date Received",
-                value: detailItem.dateReceived,
-              },
-              {
-                name: "dateOpened",
-                label: "Date Opened",
-                value: detailItem.dateOpened,
-              },
-              {
-                name: "expirationDate",
-                label: "Expiration Date",
-                value: detailItem.expirationDate,
-              },
-              { name: "poNo", label: "PO No.", value: detailItem.poNo },
-              { name: "price", label: "Price", value: detailItem.price },
-              {
-                name: "totalPrice",
-                label: "Total Price",
-                value: detailItem.totalPrice,
-              },
-              {
-                name: "receivedBy",
-                label: "Received By",
-                value: detailItem.receivedBy,
-              },
-              {
-                name: "supplier",
-                label: "Supplier",
-                value: detailItem.supplier,
-              },
-              {
-                name: "location",
-                label: "Location",
-                value: detailItem.location,
-              },
+              { label: "Name", value: detailItem.supplyItem, name: "supplyItem", type: "text" },
+              { label: "Brand", value: detailItem.brand, name: "brand", type: "text" },
+              { label: "Description", value: detailItem.description, name: "description", type: "text" },
+              { label: "Quantity", value: detailItem.quantity, name: "quantity", type: "number" },
+              { label: "Remaining Quantity", value: detailItem.remainingQuantity, name: "remainingQuantity", type: "number" },
+              { label: "Date Received", value: detailItem.dateReceived, name: "dateReceived", type: "date" },
+              { label: "Date Opened", value: detailItem.dateOpened, name: "dateOpened", type: "date" },
+              { label: "Expiration Date", value: detailItem.expirationDate, name: "expirationDate", type: "date" },
+              { label: "PO No.", value: detailItem.poNo, name: "poNo", type: "text" },
+              { label: "Price", value: String(detailItem.price || ""), name: "price", type: "number" },
+              { label: "Total Price", value: String(detailItem.totalPrice || ""), name: "totalPrice", type: "number" },
+              { label: "Received By", value: detailItem.receivedBy, name: "receivedBy", type: "text" },
+              { label: "Supplier", value: detailItem.supplier, name: "supplier", type: "text" },
+              { label: "Location", value: detailItem.location, name: "location", type: "text" },
+              { label: "Unit", value: detailItem.unit, name: "unit", type: "text"},
+              // { label: "Category", value: detailItem.category || "Consumable", name: "category", type: "text"},
             ]}
             onSave={async (formData) => {
               const raw = Object.fromEntries(formData.entries());
