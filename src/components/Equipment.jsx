@@ -122,7 +122,7 @@ const Equipment = () => {
         statusMap[rawStatus.toLowerCase()] = rawStatus;
       });
 
-      setStatusList(Object.values(statusMap));
+      setStatusList(Object.values(statusMap).sort((a, b) => a.localeCompare(b)));
 
       const locationMap = {};
       data.forEach((item) => {
@@ -130,7 +130,7 @@ const Equipment = () => {
         locationMap[rawLoc.toLowerCase()] = rawLoc;
       });
 
-      setLocationList(Object.values(locationMap));
+      setLocationList(Object.values(locationMap).sort((a, b) => a.localeCompare(b)));
 
     } catch (err) {
       console.error("Fetch equipment error:", err);

@@ -115,9 +115,10 @@ const ChemicalReagents = () => {
         statusSet.add((r.status || "").trim());
       });
 
-      setCategories([...categorySet]);
-      setLocations([...locationSet]);
-      setStatuses([...statusSet]);
+      setCategories([...categorySet].sort((a, b) => a.localeCompare(b)));
+      setLocations([...locationSet].sort((a, b) => a.localeCompare(b)));
+      setStatuses([...statusSet].sort((a, b) => a.localeCompare(b)));
+
     } catch (err) {
       console.error("Fetch error:", err);
     }

@@ -106,7 +106,9 @@ const Consumables = () => {
         const loc = (r.location || "").trim();
         locationSet.add(loc); // will include "" when missing
       });
-      setLocations([...locationSet]);
+      
+      setLocations([...locationSet].sort((a, b) => a.localeCompare(b)));
+
     } catch (err) {
       console.error("Fetch error:", err);
     }

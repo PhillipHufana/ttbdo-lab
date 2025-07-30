@@ -96,9 +96,10 @@ const Instruments = () => {
         conditionMap[cond.toLowerCase()] = cond;
       });
 
-      setLocationList(Object.values(locationMap));
-      setStatusList(Object.values(statusMap));
-      setConditionList(Object.values(conditionMap));
+      setLocationList(Object.values(locationMap).sort((a, b) => a.localeCompare(b)));
+      setStatusList(Object.values(statusMap).sort((a, b) => a.localeCompare(b)));
+      setConditionList(Object.values(conditionMap).sort((a, b) => a.localeCompare(b)));
+
     } catch (err) {
       console.error("Fetch error:", err);
     }
@@ -527,7 +528,7 @@ const Instruments = () => {
                               >
                                 {locationList.map((loc) => (
                                   <option key={loc || "__blank__"} value={loc}>
-                                    {loc || "(Blank)"}
+                                    {loc || " "}
                                   </option>
                                 ))}
                               </select>
