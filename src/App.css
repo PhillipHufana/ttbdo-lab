@@ -316,15 +316,36 @@ body {
 /* Card-Style Table Rows */
 .table-row {
   display: grid;
-  grid-template-columns: 1.8fr 0.8fr 1.3fr 1.4fr 1.2fr 1.3fr 80px;
+  grid-template-columns: repeat(7, 1fr); /* Desktop */
   gap: 1rem;
   padding: 1.5rem;
   background: #f9fafb;
   border-radius: 16px;
-  border: 2px solid transparent;
   transition: all 0.2s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  position: relative;
+}
+
+/* Mobile: stack columns vertically */
+@media (max-width: 768px) {
+  .table-row {
+  min-width: 100%;
+  min-height: 180px; /* optional */
+}
+
+
+  .row-cell {
+  min-width: 100px; /* ← NEW: add this */
+  flex: 1 1 auto;
+  word-break: break-word;
+}
+
+
+  .row-cell::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #6b7280;
+    margin-right: 1rem;
+  }
 }
 
 .table-row:hover {
@@ -355,6 +376,7 @@ body {
   align-items: center;
   justify-content: center;
   text-align: center;
+  min-width: 6rem;
 }
 
 .filter-header {
@@ -663,7 +685,7 @@ body {
     justify-content: space-between;
     padding: 6px 0;
     border-bottom: 1px dashed #f1f1f1;
-    white-space: nowrap;
+    /* white-space: nowrap; */
     overflow: hidden;
   }
 
