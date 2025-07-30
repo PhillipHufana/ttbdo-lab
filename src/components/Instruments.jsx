@@ -383,18 +383,14 @@ const Instruments = () => {
                     }`}
                   />
                   {showFilters.location && (
-                    <div className="filter-dropdown">
+                    <div ref={filterRefs.location} className="filter-dropdown">
                       {locationList.map((loc) => (
                         <label key={loc} className="filter-option">
                           <input
                             type="checkbox"
                             checked={filterLocation.includes(loc)}
                             onChange={(e) =>
-                              handleFilterChange(
-                                "location",
-                                loc,
-                                e.target.checked
-                              )
+                              handleFilterChange("location", loc, e.target.checked)
                             }
                           />
                           <span>{toTitleCase(loc.trim())}</span>
@@ -531,33 +527,29 @@ const Instruments = () => {
                               item.quantity
                             )}
                           </div>
-                          <div className="row-cell  hide-mobile">
-                            {item.description}
+                          <div className="row-cell hide-mobile">
+                            {editingRowId === item.id ? (
+                              <input
+                                type="text"
+                                value={editingData.description}
+                                onChange={(e) => handleInputChange("description", e.target.value)}
+                                className="inline-edit-input"
+                              />
+                            ) : (
+                              item.description
+                            )}
                           </div>
                           <div className="row-cell" data-label="Location">
                             {editingRowId === item.id ? (
                               <select
                                 value={editingData.location}
-                                onChange={(e) =>
-                                  handleInputChange("location", e.target.value)
-                                }
+                                onChange={(e) => handleInputChange("location", e.target.value)}
                                 className="inline-edit-select"
                               >
                                 {locationList.map((loc) => (
-                                  <label key={loc} className="filter-option">
-                                    <input
-                                      type="checkbox"
-                                      checked={filterLocation.includes(loc)}
-                                      onChange={(e) =>
-                                        handleFilterChange(
-                                          "location",
-                                          loc,
-                                          e.target.checked
-                                        )
-                                      }
-                                    />
-                                    <span>{loc}</span>
-                                  </label>
+                                  <option key={loc} value={loc}>
+                                    {loc}
+                                  </option>
                                 ))}
                               </select>
                             ) : (
