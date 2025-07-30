@@ -33,7 +33,7 @@ router.post("/", async (req, res) => {
     const [result] = await db.query(
       `INSERT INTO instruments 
         (name, brand, description, location, quantity, unit, capacity, status, \`condition\`, remarks)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         name,
         brand,
