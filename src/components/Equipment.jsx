@@ -645,7 +645,18 @@ const Equipment = () => {
 
                             {/* Code */}
                             <div className="row-cell hide-mobile">
-                              {item.equipment_code}
+                              {editingRowId === item.equipment_id ? (
+                                <input
+                                  type="text"
+                                  value={editingData.equipment_code}
+                                  onChange={(e) =>
+                                    handleInputChange("equipment_code", e.target.value)
+                                  }
+                                  className="inline-edit-input"
+                                />
+                              ) : (
+                                item.equipment_code
+                              )}
                             </div>
 
                             {/* Model */}
