@@ -45,11 +45,11 @@ router.get("/", async (req, res) => {
 });
 
 // POST /api/equipment
+// POST /api/equipment
 router.post("/", upload.single("manual_file"), async (req, res) => {
   try {
     console.log("🧪 equipment_code:", req.body.equipment_code);
     console.log("🧪 name:", req.body.name);
-
 
     const name = typeof req.body.name === "string" ? req.body.name.trim() : "";
     const equipment_code =
@@ -61,13 +61,12 @@ router.post("/", upload.single("manual_file"), async (req, res) => {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-
     const manual_file = req.file ? req.file.filename : null;
 
     const parsedPrice = parseFloat(req.body.purchase_price);
     const price = isNaN(parsedPrice) ? null : parsedPrice;
 
-    await db.query(
+    const [insertResult] = await db.query(
       `INSERT INTO equipment (
         equipment_code, name, other_name, location, brand, model, serial_no,
         other_details, status, remarks,
@@ -100,12 +99,27 @@ router.post("/", upload.single("manual_file"), async (req, res) => {
       ]
     );
 
-    res.status(201).json({ message: "Equipment added successfully" });
+    // ✅ Fetch the newly inserted row
+    const [rows] = await db.query("SELECT * FROM equipment WHERE equipment_id = ?", [insertResult.insertId]);
+
+    const item = rows[0];
+
+    // ✅ Format the dates like your GET endpoint
+    const formatted = {
+      ...item,
+      date_received: formatDbDate(item.date_received),
+      last_updated: formatDbDate(item.last_updated),
+      last_calibration_date: formatDbDate(item.last_calibration_date),
+      next_calibration_date: formatDbDate(item.next_calibration_date),
+    };
+
+    res.status(201).json(formatted); // ✅ return full object
   } catch (error) {
     console.error("🔥 POST /api/equipment error:", error.message);
     res.status(500).json({ error: error.message });
   }
 });
+
 
 
 router.put("/:id", upload.single("manual_file"), async (req, res) => {

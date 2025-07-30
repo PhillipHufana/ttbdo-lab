@@ -272,8 +272,19 @@ const Equipment = () => {
   };
 
   const handleSave = (saved) => {
-    console.log("Parent got:", saved);
-    setEquipment((prev) => [...prev, saved]);
+    console.log("🆕 Saved:", saved);
+    console.log("📦 Before:", equipment);
+    const updated = [...equipment, saved];
+    console.log("📦 After:", updated);
+
+    setFilterStatus([]);
+    setFilterLocation([]);
+    setFilterLastMaintenance("");
+    setFilterLastCalibration("");
+    setFilterNextMaintenanceStatus("");
+    setFilterNextCalibrationStatus("");
+
+    setEquipment(updated);
     setShowForm(false);
     setEditingItem(null);
   };
